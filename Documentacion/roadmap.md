@@ -25,20 +25,70 @@ Este roadmap define las **3 fases principales** del proyecto, desde el MVP hasta
 
 ---
 
-### Sprint 1-2: Infraestructura y Autenticación
+### Sprint 1-2: Infraestructura y Autenticación ⏳ EN PROGRESO
+
+**Fecha inicio:** 2025-11-10
+**Estado:** 75% completado
+**Última actualización:** 2025-11-10 19:00
 
 #### Tareas Backend
-- [ ] Setup proyecto Go con estructura hexagonal
-- [ ] Configuración Docker Compose (Postgres, Redis)
-- [ ] Migraciones base (users, roles, audit_logs)
-- [ ] Sistema de autenticación:
-  - Registro con email/teléfono
-  - Login con JWT (access + refresh tokens)
-  - Middleware de autorización por roles
-  - Endpoint de verificación email/SMS (integración Twilio/SendGrid)
-- [ ] Logging estructurado con Zap
-- [ ] Configuración Viper con .env
-- [ ] Rate limiting con Redis
+- [x] ✅ Setup proyecto Go con estructura hexagonal (2025-11-10)
+  - go.mod con 40+ dependencias
+  - Estructura de carpetas hexagonal (cmd, internal, pkg)
+- [x] ✅ Configuración Docker Compose (Postgres, Redis) (2025-11-10)
+  - PostgreSQL 15-alpine con health checks
+  - Redis 7-alpine con persistencia
+  - Adminer y Redis Commander (debug profile)
+- [x] ✅ Migraciones base (users, user_consents, audit_logs) (2025-11-10)
+  - 001_create_users_table: tabla users con ENUMs (role, kyc_level, status)
+  - 002_create_user_consents_table: consentimientos GDPR
+  - 003_create_audit_logs_table: auditoría con índices optimizados
+- [x] ✅ Logging estructurado con Zap (2025-11-10)
+  - pkg/logger/logger.go con diferentes niveles
+- [x] ✅ Configuración Viper con .env (2025-11-10)
+  - pkg/config/config.go con validaciones
+  - .env.example con todas las variables
+- [x] ✅ Entry point main.go (2025-11-10)
+  - Servidor Gin con middlewares (CORS, logging, recovery, request ID)
+  - Health checks (/health, /ready)
+  - Conexión a PostgreSQL y Redis con pools
+  - Graceful shutdown
+- [x] ✅ Sistema de errores personalizado (2025-11-10)
+  - pkg/errors/errors.go con códigos HTTP
+- [x] ✅ Dockerfile multi-stage (2025-11-10)
+- [x] ✅ Makefile con comandos de desarrollo (2025-11-10)
+- [x] ✅ README.md completo con guías (2025-11-10)
+- [x] ✅ Domain entities (2025-11-10 19:00)
+  - internal/domain/user.go con validaciones (email, phone, password)
+  - internal/domain/user_consent.go para GDPR
+  - internal/domain/audit_log.go con builder pattern
+- [x] ✅ User repository con GORM (2025-11-10 19:00)
+  - internal/adapters/db/user_repository.go
+  - CRUD completo con soft delete
+  - Búsquedas optimizadas (email, phone, cedula)
+  - Listado paginado con filtros
+- [x] ✅ JWT Token Manager con Redis (2025-11-10 19:00)
+  - internal/adapters/redis/token_manager.go
+  - Generación de access/refresh tokens
+  - Validación y rotación de tokens
+  - Blacklist de tokens
+  - Códigos de verificación
+- [x] ✅ Crypto utilities (2025-11-10 19:00)
+  - pkg/crypto/password.go (bcrypt cost 12)
+  - pkg/crypto/code.go (códigos de 6 dígitos)
+- [x] ✅ Use cases de autenticación (2025-11-10 19:00)
+  - internal/usecase/auth/register.go
+  - internal/usecase/auth/login.go
+  - internal/usecase/auth/refresh_token.go
+  - internal/usecase/auth/verify_email.go
+- [ ] ⏳ HTTP handlers para autenticación
+  - [ ] POST /auth/register
+  - [ ] POST /auth/login
+  - [ ] POST /auth/refresh
+  - [ ] POST /auth/verify-email
+- [ ] ⏳ Middleware de autorización por roles
+- [ ] ⏳ Rate limiting con Redis
+- [ ] ⏳ Integración SendGrid/Twilio
 
 #### Tareas Frontend
 - [ ] Setup proyecto Vite + React + TypeScript
@@ -50,9 +100,53 @@ Este roadmap define las **3 fases principales** del proyecto, desde el MVP hasta
 - [ ] Protected routes
 
 #### Entregables
-- Usuario puede registrarse, verificar cuenta y hacer login
-- Tokens JWT funcionales con refresh automático
-- Dark mode funcional
+- ⏳ Usuario puede registrarse, verificar cuenta y hacer login
+- ⏳ Tokens JWT funcionales con refresh automático
+- ⏳ Dark mode funcional
+
+#### Archivos Creados (2025-11-10)
+```
+backend/
+├── cmd/api/main.go                                    ✅
+├── internal/
+│   ├── domain/
+│   │   ├── user.go                                    ✅ NEW
+│   │   ├── user_consent.go                            ✅ NEW
+│   │   └── audit_log.go                               ✅ NEW
+│   ├── usecase/auth/
+│   │   ├── register.go                                ✅ NEW
+│   │   ├── login.go                                   ✅ NEW
+│   │   ├── refresh_token.go                           ✅ NEW
+│   │   └── verify_email.go                            ✅ NEW
+│   └── adapters/
+│       ├── db/user_repository.go                      ✅ NEW
+│       └── redis/token_manager.go                     ✅ NEW
+├── pkg/
+│   ├── config/config.go                               ✅
+│   ├── logger/logger.go                               ✅ (actualizado)
+│   ├── errors/errors.go                               ✅
+│   └── crypto/
+│       ├── password.go                                ✅ NEW
+│       └── code.go                                    ✅ NEW
+├── migrations/
+│   ├── 001_create_users_table.up.sql                  ✅
+│   ├── 001_create_users_table.down.sql                ✅
+│   ├── 002_create_user_consents_table.up.sql          ✅
+│   ├── 002_create_user_consents_table.down.sql        ✅
+│   ├── 003_create_audit_logs_table.up.sql             ✅
+│   └── 003_create_audit_logs_table.down.sql           ✅
+├── go.mod                                             ✅
+├── .env.example                                       ✅
+├── .env                                               ✅
+├── .gitignore                                         ✅
+├── Dockerfile                                         ✅
+├── .dockerignore                                      ✅
+├── Makefile                                           ✅
+└── README.md                                          ✅
+docker-compose.yml                                     ✅ (actualizado)
+```
+
+**Total archivos nuevos en esta actualización:** 11 archivos (domain: 3, use cases: 4, adapters: 2, crypto: 2)
 
 ---
 
@@ -512,13 +606,32 @@ Este roadmap define las **3 fases principales** del proyecto, desde el MVP hasta
 
 ## 11. Próximos Pasos Inmediatos
 
-1. **Definir stack de desarrollo:** ✅ (ver [stack_tecnico.md](./stack_tecnico.md))
-2. **Crear estructura de carpetas:** En progreso
-3. **Setup repositorio Git:** Pendiente
-4. **Diseño de base de datos:** Siguiente
-5. **Sprint 0 (setup):** Semana 1
+1. **Definir stack de desarrollo:** ✅ Completado (ver [stack_tecnico.md](./stack_tecnico.md))
+2. **Crear estructura de carpetas:** ✅ Completado (2025-11-10)
+3. **Setup repositorio Git:** ⏳ Pendiente
+4. **Diseño de base de datos:** ✅ Migraciones iniciales completadas (users, user_consents, audit_logs)
+5. **Sprint 1-2 (Infraestructura):** ⏳ 60% completado (2025-11-10)
+
+### Próximas Tareas (Sprint 1-2 continuación)
+
+**Backend:**
+1. Implementar domain entities (`internal/domain/user.go`)
+2. Implementar user repository (`internal/adapters/db/user_repository.go`)
+3. Implementar JWT token manager (`internal/adapters/redis/token_manager.go`)
+4. Implementar use cases de autenticación (`internal/usecase/auth/`)
+5. Implementar HTTP handlers (`internal/adapters/http/handler/auth/`)
+6. Implementar rate limiting middleware
+7. Integrar SendGrid para emails
+
+**Frontend:**
+1. Setup Vite + React + TypeScript
+2. Configurar Tailwind CSS + shadcn/ui
+3. Crear componentes base
+4. Implementar páginas de autenticación
+5. Configurar React Query y Zustand
 
 ---
 
-**Actualizado:** 2025-11-10
-**Próxima revisión:** Después de Sprint 2
+**Actualizado:** 2025-11-10 18:30
+**Próxima revisión:** Después de completar Sprint 1-2
+**Última modificación:** Actualizado progreso de infraestructura backend (60% completado)

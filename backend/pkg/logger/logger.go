@@ -87,3 +87,28 @@ func (l *Logger) DebugWithFields(msg string, fields ...zap.Field) {
 func (l *Logger) Sync() error {
 	return l.Logger.Sync()
 }
+
+// Helper functions para crear campos zap
+func String(key, val string) zap.Field {
+	return zap.String(key, val)
+}
+
+func Int64(key string, val int64) zap.Field {
+	return zap.Int64(key, val)
+}
+
+func Int(key string, val int) zap.Field {
+	return zap.Int(key, val)
+}
+
+func Bool(key string, val bool) zap.Field {
+	return zap.Bool(key, val)
+}
+
+func Error(err error) zap.Field {
+	return zap.Error(err)
+}
+
+func Any(key string, val interface{}) zap.Field {
+	return zap.Any(key, val)
+}
