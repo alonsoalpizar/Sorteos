@@ -3,10 +3,14 @@ package auth
 import (
 	"context"
 
+	redisAdapter "github.com/sorteos-platform/backend/internal/adapters/redis"
 	"github.com/sorteos-platform/backend/internal/domain"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 )
+
+// Claims es un alias para los claims de JWT del adaptador de Redis
+type Claims = redisAdapter.Claims
 
 // RefreshTokenInput representa los datos de entrada para refresh token
 type RefreshTokenInput struct {

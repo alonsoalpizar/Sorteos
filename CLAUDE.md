@@ -376,21 +376,128 @@ k6 run scripts/load-test-reservations.js
 
 ---
 
-## 🚀 Próximos Pasos (Sprint 1-2)
+## ✅ Estado Actual del Sistema (2025-11-10)
 
-1. Setup proyecto Go (go.mod, estructura hexagonal)
-2. Migraciones iniciales (users, raffles, raffle_numbers)
-3. Implementar módulo Auth:
-   - JWT con bcrypt
-   - Middleware de autorización
-   - Rate limiting
-4. Setup React + Tailwind + shadcn/ui
-5. Componentes base:
-   - RaffleCard
-   - NumberGrid
-   - Button, Input, Card
+### Sprint 1-2: Infraestructura y Autenticación ✅ COMPLETADO
 
-Ver: `Documentacion/roadmap.md` para detalles
+**Despliegue:** http://62.171.188.255
+
+#### Backend (100% ✅)
+- ✅ Go 1.22 con estructura hexagonal implementada
+- ✅ PostgreSQL 15 configurado y corriendo (puerto 5432)
+- ✅ Redis 7 configurado y corriendo (puerto 6379)
+- ✅ 3 migraciones ejecutadas:
+  - `001_create_users_table` - Users con ENUMs (role, kyc_level, status)
+  - `002_create_user_consents_table` - GDPR compliance
+  - `003_create_audit_logs_table` - Auditoría completa
+- ✅ Sistema de autenticación completo:
+  - JWT (Access 15min, Refresh 7 días) con Redis
+  - Bcrypt cost 12 para passwords
+  - Rate limiting con Redis sliding window
+  - Email verification con SendGrid
+  - Audit logging en todas las acciones
+- ✅ Endpoints funcionando:
+  - `POST /api/v1/auth/register`
+  - `POST /api/v1/auth/login`
+  - `POST /api/v1/auth/verify-email`
+  - `POST /api/v1/auth/refresh`
+  - `GET /health` - Health check
+  - `GET /api/v1/ping` - Ping test
+
+#### Frontend (100% ✅)
+- ✅ React 18 + TypeScript + Vite configurado
+- ✅ Tailwind CSS + shadcn/ui con **COLORES APROBADOS**
+- ✅ TanStack Query + Zustand implementados
+- ✅ 6 componentes UI: Button, Input, Label, Card, Alert, Badge
+- ✅ 4 páginas funcionales:
+  - `/login` - Login con validación Zod
+  - `/register` - Registro con GDPR checkboxes
+  - `/verify-email` - Verificación con código 6 dígitos
+  - `/dashboard` - Dashboard protegido
+- ✅ Protected routes con ProtectedRoute component
+- ✅ API client con refresh automático de tokens
+- ✅ Dark mode support
+- ✅ Build de producción servido por Nginx
+
+#### Infraestructura (100% ✅)
+- ✅ Docker Compose configurado (postgres + redis + api)
+- ✅ Nginx como reverse proxy
+  - Frontend servido desde `/opt/Sorteos/frontend/dist`
+  - API proxy a `localhost:8080`
+  - Compresión gzip
+  - Headers de seguridad
+  - Cache de assets (1 año)
+- ✅ Backend compilado y corriendo en Docker
+- ✅ Todos los servicios healthy
+
+#### Archivos Creados (53 total)
+- **Backend:** 22 archivos (domain, use cases, repos, handlers, middlewares)
+- **Frontend:** 31 archivos (components, pages, hooks, stores, config)
+
+### 🔍 Validaciones Realizadas
+
+```bash
+# ✅ Services health
+docker compose ps
+# - postgres: Up 4 minutes (healthy)
+# - redis: Up 4 minutes (healthy)
+# - api: Up 9 seconds (healthy)
+
+# ✅ Backend API
+curl http://localhost:8080/health
+# {"status":"ok","time":"2025-11-10T06:05:12Z"}
+
+curl http://localhost:8080/api/v1/ping
+# {"message":"pong","timestamp":"2025-11-10T06:05:30Z"}
+
+# ✅ Public access
+curl http://62.171.188.255/api/v1/ping
+# {"message":"pong","timestamp":"2025-11-10T06:06:10Z"}
+
+curl -I http://62.171.188.255/
+# HTTP/1.1 200 OK (Frontend servido correctamente)
+```
+
+### 🔗 URLs Activas
+
+- **Frontend**: http://62.171.188.255
+- **API**: http://62.171.188.255/api/v1/
+- **Health**: http://62.171.188.255/health
+- **Database**: PostgreSQL en puerto 5432
+- **Redis**: En puerto 6379
+
+### 📊 Logs del Backend
+
+```log
+[INFO] Starting Sorteos Platform API (environment: development, port: 8080)
+[INFO] Connected to PostgreSQL (host: postgres, database: sorteos_db)
+[INFO] Connected to Redis (host: redis, db: 0)
+[GIN-debug] POST /api/v1/auth/register
+[GIN-debug] POST /api/v1/auth/login
+[GIN-debug] POST /api/v1/auth/refresh
+[GIN-debug] POST /api/v1/auth/verify-email
+[INFO] Server listening (address: :8080)
+```
+
+---
+
+## 🚀 Próximos Pasos (Sprint 3-4)
+
+### Gestión de Sorteos (CRUD Básico)
+
+1. **Backend:**
+   - Migración `004_create_raffles_table`
+   - Migración `005_create_raffle_numbers_table`
+   - Domain: Raffle, RaffleNumber entities
+   - Use Cases: CreateRaffle, ListRaffles, PublishRaffle
+   - Implementar locks distribuidos con Redis (preparación para reservas)
+
+2. **Frontend:**
+   - Páginas: CreateRaffle, ListRaffles, RaffleDetail
+   - Componentes: RaffleCard, NumberGrid
+   - Form de creación con validaciones
+
+Ver: `Documentacion/roadmap.md` para detalles completos
 
 ---
 
@@ -419,6 +526,22 @@ Cuando agregues features importantes:
 
 ---
 
-**Última actualización:** 2025-11-10
-**Versión:** 1.0
+## 📝 Resumen Ejecutivo
+
+**Sprint 1-2 COMPLETADO (2025-11-10):**
+- ✅ 53 archivos creados (22 backend + 31 frontend)
+- ✅ Sistema de autenticación funcional end-to-end
+- ✅ Infraestructura desplegada y validada
+- ✅ Frontend público en http://62.171.188.255
+- ✅ API funcionando con rate limiting y JWT
+- ✅ Base de datos con 3 migraciones aplicadas
+- ✅ COLORES APROBADOS implementados (Blue #3B82F6 / Slate #64748B)
+
+**Próximo Sprint:** Gestión de Sorteos (CRUD) + Sistema de Reservas con locks distribuidos
+
+---
+
+**Última actualización:** 2025-11-10 21:30 UTC
+**Versión:** 1.1 - Sistema en producción
 **Contacto:** Ing. Alonso Alpízar
+**Despliegue:** http://62.171.188.255

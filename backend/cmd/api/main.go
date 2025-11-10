@@ -311,22 +311,16 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, cfg *config
 		})
 	})
 
-	// API v1
+	// Setup auth routes
+	setupAuthRoutes(router, db, rdb, cfg, log)
+
+	// API v1 - Ruta de prueba
 	v1 := router.Group("/api/v1")
 	{
-		// TODO: Agregar rutas de autenticación
-		// auth := v1.Group("/auth")
-		// {
-		//     auth.POST("/register", handlers.Register)
-		//     auth.POST("/login", handlers.Login)
-		//     auth.POST("/refresh", handlers.RefreshToken)
-		//     auth.POST("/verify-email", handlers.VerifyEmail)
-		// }
-
-		// Ruta de prueba
 		v1.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"message": "pong",
+				"timestamp": time.Now().UTC(),
 			})
 		})
 	}

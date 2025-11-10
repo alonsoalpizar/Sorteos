@@ -64,7 +64,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      # Solo montar uploads, no todo el código (para evitar sobrescribir el binario)
       - ./backend/uploads:/app/uploads
     networks:
       - sorteos-network

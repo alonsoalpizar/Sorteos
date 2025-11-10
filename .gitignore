@@ -1,0 +1,65 @@
+# Binarios compilados / ejecutables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+api
+
+# Go
+*.test
+*.out
+go.work
+.env.local
+
+# Node / npm
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Variables de entorno (pero dejar .env.example)
+.env
+.env.production
+.env.development
+
+# IDE / Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+
+# Uploads y data
+uploads/
+*.sqlite
+*.db
+
+# Docker
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+*.cover
+*.coverage
+
+# Build artifacts
+build/
+bin/
+
+# OS
+Thumbs.db

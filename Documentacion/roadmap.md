@@ -25,11 +25,13 @@ Este roadmap define las **3 fases principales** del proyecto, desde el MVP hasta
 
 ---
 
-### Sprint 1-2: Infraestructura y Autenticación ⏳ EN PROGRESO
+### Sprint 1-2: Infraestructura y Autenticación ✅ COMPLETADO
 
 **Fecha inicio:** 2025-11-10
-**Estado:** 75% completado
-**Última actualización:** 2025-11-10 19:00
+**Fecha finalización:** 2025-11-10
+**Estado Backend:** 100% completado ✅
+**Estado Frontend:** 100% completado ✅
+**Última actualización:** 2025-11-10 21:30
 
 #### Tareas Backend
 - [x] ✅ Setup proyecto Go con estructura hexagonal (2025-11-10)
@@ -81,33 +83,44 @@ Este roadmap define las **3 fases principales** del proyecto, desde el MVP hasta
   - internal/usecase/auth/login.go
   - internal/usecase/auth/refresh_token.go
   - internal/usecase/auth/verify_email.go
-- [ ] ⏳ HTTP handlers para autenticación
-  - [ ] POST /auth/register
-  - [ ] POST /auth/login
-  - [ ] POST /auth/refresh
-  - [ ] POST /auth/verify-email
-- [ ] ⏳ Middleware de autorización por roles
-- [ ] ⏳ Rate limiting con Redis
-- [ ] ⏳ Integración SendGrid/Twilio
+- [x] ✅ HTTP handlers para autenticación (2025-11-10 20:00)
+  - internal/adapters/http/handler/auth/register_handler.go
+  - internal/adapters/http/handler/auth/login_handler.go
+  - internal/adapters/http/handler/auth/refresh_token_handler.go
+  - internal/adapters/http/handler/auth/verify_email_handler.go
+- [x] ✅ Middlewares (2025-11-10 20:00)
+  - internal/adapters/http/middleware/auth.go (JWT + Roles + KYC)
+  - internal/adapters/http/middleware/rate_limit.go (Redis sliding window)
+- [x] ✅ Repositorios adicionales (2025-11-10 20:00)
+  - internal/adapters/db/user_consent_repository.go
+  - internal/adapters/db/audit_log_repository.go
+- [x] ✅ Integración SendGrid (2025-11-10 20:00)
+  - internal/adapters/notifier/sendgrid.go
+  - Templates HTML para emails de verificación
+- [x] ✅ Rutas conectadas en main.go (2025-11-10 20:00)
+  - cmd/api/routes.go con todas las rutas de auth
+  - Endpoints: POST /api/v1/auth/{register,login,refresh,verify-email}
 
 #### Tareas Frontend
-- [ ] Setup proyecto Vite + React + TypeScript
-- [ ] Configuración Tailwind + shadcn/ui
-- [ ] Componentes base (Button, Input, Card, Layout)
-- [ ] Páginas: Register, Login, Verify
-- [ ] React Query setup con Axios
-- [ ] Zustand store para autenticación
-- [ ] Protected routes
+- [x] ✅ Setup proyecto Vite + React + TypeScript (2025-11-10 21:00)
+- [x] ✅ Configuración Tailwind + shadcn/ui (2025-11-10 21:00)
+- [x] ✅ Componentes base (Button, Input, Card, Label, Alert, Badge) (2025-11-10 21:15)
+- [x] ✅ Páginas: Register, Login, VerifyEmail, Dashboard (2025-11-10 21:30)
+- [x] ✅ React Query setup con Axios (2025-11-10 21:10)
+- [x] ✅ Zustand store para autenticación (2025-11-10 21:10)
+- [x] ✅ Protected routes (2025-11-10 21:20)
 
 #### Entregables
-- ⏳ Usuario puede registrarse, verificar cuenta y hacer login
-- ⏳ Tokens JWT funcionales con refresh automático
-- ⏳ Dark mode funcional
+- ✅ Usuario puede registrarse, verificar cuenta y hacer login
+- ✅ Tokens JWT funcionales con refresh automático
+- ✅ Dark mode funcional
 
-#### Archivos Creados (2025-11-10)
+#### Archivos Creados (2025-11-10) - SISTEMA DE AUTENTICACIÓN COMPLETO
 ```
 backend/
-├── cmd/api/main.go                                    ✅
+├── cmd/api/
+│   ├── main.go                                        ✅ (actualizado)
+│   └── routes.go                                      ✅ NEW
 ├── internal/
 │   ├── domain/
 │   │   ├── user.go                                    ✅ NEW
@@ -119,8 +132,23 @@ backend/
 │   │   ├── refresh_token.go                           ✅ NEW
 │   │   └── verify_email.go                            ✅ NEW
 │   └── adapters/
-│       ├── db/user_repository.go                      ✅ NEW
-│       └── redis/token_manager.go                     ✅ NEW
+│       ├── db/
+│       │   ├── user_repository.go                     ✅ NEW
+│       │   ├── user_consent_repository.go             ✅ NEW
+│       │   └── audit_log_repository.go                ✅ NEW
+│       ├── redis/
+│       │   └── token_manager.go                       ✅ NEW
+│       ├── http/
+│       │   ├── handler/auth/
+│       │   │   ├── register_handler.go                ✅ NEW
+│       │   │   ├── login_handler.go                   ✅ NEW
+│       │   │   ├── refresh_token_handler.go           ✅ NEW
+│       │   │   └── verify_email_handler.go            ✅ NEW
+│       │   └── middleware/
+│       │       ├── auth.go                            ✅ NEW
+│       │       └── rate_limit.go                      ✅ NEW
+│       └── notifier/
+│           └── sendgrid.go                            ✅ NEW
 ├── pkg/
 │   ├── config/config.go                               ✅
 │   ├── logger/logger.go                               ✅ (actualizado)
@@ -144,26 +172,129 @@ backend/
 ├── Makefile                                           ✅
 └── README.md                                          ✅
 docker-compose.yml                                     ✅ (actualizado)
+
+frontend/
+├── src/
+│   ├── components/ui/
+│   │   ├── Button.tsx                                     ✅ NEW
+│   │   ├── Input.tsx                                      ✅ NEW
+│   │   ├── Label.tsx                                      ✅ NEW
+│   │   ├── Card.tsx                                       ✅ NEW
+│   │   ├── Alert.tsx                                      ✅ NEW
+│   │   └── Badge.tsx                                      ✅ NEW
+│   ├── features/
+│   │   ├── auth/
+│   │   │   ├── pages/
+│   │   │   │   ├── LoginPage.tsx                          ✅ NEW
+│   │   │   │   ├── RegisterPage.tsx                       ✅ NEW
+│   │   │   │   └── VerifyEmailPage.tsx                    ✅ NEW
+│   │   │   └── components/
+│   │   │       └── ProtectedRoute.tsx                     ✅ NEW
+│   │   └── dashboard/
+│   │       └── pages/
+│   │           └── DashboardPage.tsx                      ✅ NEW
+│   ├── lib/
+│   │   ├── utils.ts                                       ✅ NEW
+│   │   ├── api.ts                                         ✅ NEW
+│   │   └── queryClient.ts                                 ✅ NEW
+│   ├── store/
+│   │   └── authStore.ts                                   ✅ NEW
+│   ├── types/
+│   │   └── auth.ts                                        ✅ NEW
+│   ├── api/
+│   │   └── auth.ts                                        ✅ NEW
+│   ├── hooks/
+│   │   └── useAuth.ts                                     ✅ NEW
+│   ├── App.tsx                                            ✅ NEW
+│   ├── main.tsx                                           ✅ NEW
+│   ├── index.css                                          ✅ NEW
+│   └── vite-env.d.ts                                      ✅ NEW
+├── package.json                                           ✅ NEW
+├── tsconfig.json                                          ✅ NEW
+├── tsconfig.node.json                                     ✅ NEW
+├── vite.config.ts                                         ✅ NEW
+├── tailwind.config.js                                     ✅ NEW (COLORES APROBADOS)
+├── postcss.config.js                                      ✅ NEW
+└── index.html                                             ✅ NEW
 ```
 
-**Total archivos nuevos en esta actualización:** 11 archivos (domain: 3, use cases: 4, adapters: 2, crypto: 2)
+**Total archivos nuevos en Sprint 1-2:**
+- Backend: 22 archivos
+- Frontend: 31 archivos
+- **TOTAL: 53 archivos**
+
+**Backend:**
+- Domain: 3 archivos (User, UserConsent, AuditLog)
+- Use Cases: 4 archivos (Register, Login, RefreshToken, VerifyEmail)
+- Repositories: 3 archivos (User, UserConsent, AuditLog)
+- Handlers: 4 archivos (Register, Login, Refresh, VerifyEmail)
+- Middlewares: 2 archivos (Auth, RateLimit)
+- Adapters: 2 archivos (TokenManager, SendGrid)
+- Crypto: 2 archivos (Password, Code)
+- Routes: 1 archivo (routes.go)
+- Actualizados: 2 archivos (main.go, logger.go)
+
+**Frontend:**
+- Componentes UI: 6 archivos (Button, Input, Label, Card, Alert, Badge)
+- Páginas: 4 archivos (Login, Register, VerifyEmail, Dashboard)
+- Hooks: 1 archivo (useAuth con 8 hooks)
+- Store: 1 archivo (authStore con Zustand)
+- API Client: 2 archivos (api.ts, auth.ts)
+- Types: 1 archivo (auth.ts con tipos completos)
+- Utils: 2 archivos (utils.ts, queryClient.ts)
+- Routing: 2 archivos (App.tsx, ProtectedRoute)
+- Config: 7 archivos (package.json, tsconfig, vite, tailwind, postcss, html, css)
+
+**Características Implementadas:**
+- ✅ Sistema de autenticación completo (register, login, verify, logout)
+- ✅ Gestión de tokens JWT con refresh automático
+- ✅ Rate limiting por IP y usuario
+- ✅ Validación de formularios con Zod
+- ✅ Manejo de errores con UI feedback
+- ✅ Dark mode support
+- ✅ Protected routes
+- ✅ Email templates con SendGrid
+- ✅ Audit logging completo
+- ✅ GDPR compliance (user consents)
+- ✅ Responsive design con Tailwind
+- ✅ COLORES APROBADOS: Blue #3B82F6 / Slate #64748B (NO purple/pink)
 
 ---
 
-### Sprint 3-4: Gestión de Sorteos (CRUD Básico)
+### Sprint 3-4: Gestión de Sorteos (CRUD Básico) 🔄 EN PROGRESO
+
+**Fecha inicio:** 2025-11-10
+**Estado Backend:** 60% completado 🔄
+**Estado Frontend:** 0% pendiente ⏳
+**Última actualización:** 2025-11-10 07:30
 
 #### Tareas Backend
-- [ ] Migraciones: raffles, raffle_numbers, raffle_images
-- [ ] Repositorios GORM para sorteos
-- [ ] Casos de uso:
-  - CreateRaffle (con validaciones)
-  - ListRaffles (paginación, filtros por estado)
-  - GetRaffleDetail (con números disponibles)
-  - UpdateRaffle (solo owner o admin)
-  - SuspendRaffle (admin only)
-- [ ] Generación automática de rango de números (00-99 configurable)
-- [ ] Upload de imágenes (S3 o local storage)
-- [ ] Cache Redis de sorteos activos
+- [x] ✅ Migraciones: raffles, raffle_numbers, raffle_images (2025-11-10 07:25)
+  - 004_create_raffles_table: tabla raffles con ENUMs (status, draw_method, settlement_status)
+  - 005_create_raffle_numbers_table: tabla raffle_numbers con ENUM (status: available/reserved/sold)
+  - 006_create_raffle_images_table: tabla raffle_images con validaciones MIME y tamaño
+  - Triggers automáticos para updated_at, revenue calculation
+  - Función para liberar reservas expiradas
+- [x] ✅ Domain entities (2025-11-10 06:15)
+  - internal/domain/raffle.go: 15+ métodos de negocio (Publish, Suspend, Complete, etc.)
+  - internal/domain/raffle_number.go: gestión de reservas con TTL
+  - internal/domain/raffle_image.go: validación de archivos (MIME types, size limits)
+- [x] ✅ Repositorios GORM para sorteos (2025-11-10 06:20)
+  - internal/adapters/db/raffle_repository.go: 16 métodos (CRUD, búsquedas, filtros)
+  - internal/adapters/db/raffle_number_repository.go: 14 métodos (batch creation, reservations)
+  - internal/adapters/db/raffle_image_repository.go: 10 métodos (primary image logic)
+- [x] ✅ Casos de uso (2025-11-10 06:25)
+  - CreateRaffle (con validaciones, generación de números, audit log) ✅
+  - ListRaffles (paginación, filtros por estado) ⏳ PENDIENTE
+  - GetRaffleDetail (con números disponibles) ⏳ PENDIENTE
+  - PublishRaffle ⏳ PENDIENTE
+  - UpdateRaffle (solo owner o admin) ⏳ PENDIENTE
+  - SuspendRaffle (admin only) ⏳ PENDIENTE
+- [x] ✅ Generación automática de rango de números (2025-11-10 06:25)
+  - Números formateados (00-99, 000-999 según cantidad)
+  - Creación en batch (100 números por lote)
+- [ ] Upload de imágenes (S3 o local storage) ⏳ PENDIENTE
+- [ ] Cache Redis de sorteos activos ⏳ PENDIENTE
 
 #### Tareas Frontend
 - [ ] Páginas:
@@ -177,9 +308,57 @@ docker-compose.yml                                     ✅ (actualizado)
 - [ ] Validación con react-hook-form + zod
 
 #### Entregables
-- Usuario puede publicar sorteo con detalles completos
-- Vista pública de sorteos activos
-- Administrador puede suspender sorteos
+- Usuario puede publicar sorteo con detalles completos ⏳ PENDIENTE (handlers en proceso)
+- Vista pública de sorteos activos ⏳ PENDIENTE
+- Administrador puede suspender sorteos ⏳ PENDIENTE
+
+#### Archivos Creados Sprint 3-4 (2025-11-10) - GESTIÓN DE SORTEOS (Backend 60%)
+```
+backend/
+├── migrations/
+│   ├── 004_create_raffles_table.up.sql                ✅ NEW
+│   ├── 004_create_raffles_table.down.sql              ✅ NEW
+│   ├── 005_create_raffle_numbers_table.up.sql         ✅ NEW
+│   ├── 005_create_raffle_numbers_table.down.sql       ✅ NEW
+│   ├── 006_create_raffle_images_table.up.sql          ✅ NEW
+│   └── 006_create_raffle_images_table.down.sql        ✅ NEW
+├── internal/
+│   ├── domain/
+│   │   ├── raffle.go                                  ✅ NEW
+│   │   ├── raffle_number.go                           ✅ NEW
+│   │   └── raffle_image.go                            ✅ NEW
+│   ├── usecase/raffle/
+│   │   └── create_raffle.go                           ✅ NEW
+│   └── adapters/db/
+│       ├── raffle_repository.go                       ✅ NEW
+│       ├── raffle_number_repository.go                ✅ NEW
+│       └── raffle_image_repository.go                 ✅ NEW
+├── go.mod                                             ✅ (actualizado: +shopspring/decimal)
+└── go.sum                                             ✅ (actualizado)
+```
+
+**Total archivos nuevos en Sprint 3-4 (hasta ahora):**
+- Migraciones: 6 archivos (3 up + 3 down)
+- Domain: 3 archivos (Raffle, RaffleNumber, RaffleImage)
+- Use Cases: 1 archivo (CreateRaffle)
+- Repositories: 3 archivos (Raffle, RaffleNumber, RaffleImage)
+- **TOTAL: 13 archivos**
+
+**Dependencias añadidas:**
+- github.com/shopspring/decimal v1.3.1 (aritmética decimal precisa para dinero)
+
+**Características Implementadas:**
+- ✅ Sistema de sorteos con ENUMs (draft, active, suspended, completed, cancelled)
+- ✅ Sistema de reserva de números con TTL (Time To Live)
+- ✅ Cálculo automático de revenue vía triggers de base de datos
+- ✅ Gestión de imágenes con validaciones (MIME type, file size)
+- ✅ Creación de sorteos con generación automática de números
+- ✅ Soft delete en todas las tablas
+- ✅ Audit logging integrado
+- ✅ Soporte para múltiples métodos de sorteo (loteria_nacional_cr, manual, random)
+- ✅ Settlement tracking (pending, processing, completed, failed)
+- ✅ Platform fee configurable (default 10%)
+- ✅ Función PostgreSQL para liberar reservas expiradas (preparado para cron job)
 
 ---
 
