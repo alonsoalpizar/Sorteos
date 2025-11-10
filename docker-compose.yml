@@ -45,8 +45,8 @@ services:
   # Backend API (Go)
   api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: sorteos-api
     restart: unless-stopped
     ports:

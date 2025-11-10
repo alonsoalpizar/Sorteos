@@ -1,5 +1,22 @@
-# Builder stage
-FROM golang:1.22-alpine AS builder
+# Frontend builder stage
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+# Copiar package files del frontend
+COPY frontend/package*.json ./
+
+# Instalar dependencias
+RUN npm ci
+
+# Copiar código fuente del frontend
+COPY frontend/ ./
+
+# Build frontend
+RUN npm run build
+
+# Backend builder stage
+FROM golang:1.22-alpine AS backend-builder
 
 # Instalar dependencias de compilación
 RUN apk add --no-cache git make
@@ -8,13 +25,13 @@ RUN apk add --no-cache git make
 WORKDIR /app
 
 # Copiar go.mod y go.sum
-COPY go.mod go.sum ./
+COPY backend/go.mod backend/go.sum ./
 
 # Descargar dependencias
 RUN go mod download
 
 # Copiar código fuente
-COPY . .
+COPY backend/ .
 
 # Compilar binario
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
@@ -32,10 +49,13 @@ RUN addgroup -g 1000 appuser && \
 WORKDIR /app
 
 # Copiar binario desde builder
-COPY --from=builder /app/main .
+COPY --from=backend-builder /app/main .
 
 # Copiar archivos necesarios
-COPY --from=builder /app/migrations ./migrations
+COPY --from=backend-builder /app/migrations ./migrations
+
+# Copiar frontend build
+COPY --from=frontend-builder /frontend/dist ./frontend/dist
 
 # Cambiar ownership
 RUN chown -R appuser:appuser /app

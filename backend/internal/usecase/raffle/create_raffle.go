@@ -44,8 +44,8 @@ type CreateRaffleOutput struct {
 type CreateRaffleUseCase struct {
 	raffleRepo       db.RaffleRepository
 	raffleNumberRepo db.RaffleNumberRepository
-	userRepo         db.UserRepository
-	auditRepo        db.AuditLogRepository
+	userRepo         domain.UserRepository
+	auditRepo        domain.AuditLogRepository
 	logger           *logger.Logger
 }
 
@@ -53,8 +53,8 @@ type CreateRaffleUseCase struct {
 func NewCreateRaffleUseCase(
 	raffleRepo db.RaffleRepository,
 	raffleNumberRepo db.RaffleNumberRepository,
-	userRepo db.UserRepository,
-	auditRepo db.AuditLogRepository,
+	userRepo domain.UserRepository,
+	auditRepo domain.AuditLogRepository,
 	logger *logger.Logger,
 ) *CreateRaffleUseCase {
 	return &CreateRaffleUseCase{
@@ -142,18 +142,18 @@ func (uc *CreateRaffleUseCase) Execute(ctx context.Context, input *CreateRaffleI
 	}
 
 	// Registrar en audit log
-	uc.auditRepo.Create(&domain.AuditLog{
-		UserID:     &user.ID,
-		Action:     domain.AuditActionCreate,
-		EntityType: "raffle",
-		EntityID:   raffle.ID,
-		Metadata: map[string]interface{}{
+	auditLog := domain.NewAuditLog(domain.AuditActionRaffleCreated).
+		WithUser(user.ID).
+		WithEntity("raffle", raffle.ID).
+		WithDescription(fmt.Sprintf("Sorteo creado: %s", raffle.Title)).
+		WithMetadata(map[string]interface{}{
 			"title":         raffle.Title,
 			"total_numbers": raffle.TotalNumbers,
 			"price":         raffle.PricePerNumber.String(),
-		},
-		Severity: domain.AuditSeverityInfo,
-	})
+		}).
+		Build()
+
+	uc.auditRepo.Create(auditLog)
 
 	uc.logger.Info("Sorteo creado exitosamente",
 		logger.Int64("raffle_id", raffle.ID),

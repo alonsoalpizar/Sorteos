@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"gorm.io/datatypes"
 )
 
 // RaffleStatus representa el estado de un sorteo
@@ -80,7 +81,7 @@ type Raffle struct {
 	SettlementStatus SettlementStatus
 
 	// Metadata
-	Metadata map[string]interface{}
+	Metadata datatypes.JSON
 
 	// Timestamps
 	CreatedAt   time.Time

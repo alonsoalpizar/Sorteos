@@ -135,3 +135,20 @@ export const useIsEmailVerified = () => {
 export const useUser = () => {
   return useAuthStore((state) => state.user);
 };
+
+/**
+ * Hook to get auth state (combines user and auth status)
+ */
+export const useAuth = () => {
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAdmin = useAuthStore((state) => state.isAdmin());
+  const isEmailVerified = useAuthStore((state) => state.isEmailVerified());
+
+  return {
+    user,
+    isAuthenticated,
+    isAdmin,
+    isEmailVerified,
+  };
+};

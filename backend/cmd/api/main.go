@@ -314,6 +314,9 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, cfg *config
 	// Setup auth routes
 	setupAuthRoutes(router, db, rdb, cfg, log)
 
+	// Setup raffle routes
+	setupRaffleRoutes(router, db, rdb, cfg, log)
+
 	// API v1 - Ruta de prueba
 	v1 := router.Group("/api/v1")
 	{
@@ -325,11 +328,22 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, cfg *config
 		})
 	}
 
-	// 404 handler
+	// Serve frontend static files
+	router.Static("/assets", "./frontend/dist/assets")
+	router.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
+
+	// Serve index.html for all non-API routes (SPA support)
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"code":    "NOT_FOUND",
-			"message": "Endpoint not found",
-		})
+		// Si la ruta comienza con /api, retornar 404 JSON
+		if len(c.Request.URL.Path) >= 4 && c.Request.URL.Path[:4] == "/api" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"code":    "NOT_FOUND",
+				"message": "Endpoint not found",
+			})
+			return
+		}
+
+		// Para rutas no-API, servir el index.html (SPA)
+		c.File("./frontend/dist/index.html")
 	})
 }

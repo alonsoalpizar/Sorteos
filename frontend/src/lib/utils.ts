@@ -77,3 +77,61 @@ export function isValidPhone(phone: string): boolean {
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
   return phoneRegex.test(phone);
 }
+
+/**
+ * Get status badge color variant
+ */
+export function getStatusColor(
+  status: string
+): "default" | "success" | "warning" | "error" | "info" {
+  switch (status) {
+    case "active":
+      return "success";
+    case "draft":
+      return "default";
+    case "suspended":
+      return "warning";
+    case "completed":
+      return "info";
+    case "cancelled":
+      return "error";
+    default:
+      return "default";
+  }
+}
+
+/**
+ * Get status label in Spanish
+ */
+export function getStatusLabel(status: string): string {
+  switch (status) {
+    case "draft":
+      return "Borrador";
+    case "active":
+      return "Activo";
+    case "suspended":
+      return "Suspendido";
+    case "completed":
+      return "Completado";
+    case "cancelled":
+      return "Cancelado";
+    default:
+      return status;
+  }
+}
+
+/**
+ * Get draw method label in Spanish
+ */
+export function getDrawMethodLabel(method: string): string {
+  switch (method) {
+    case "loteria_nacional_cr":
+      return "Lotería Nacional CR";
+    case "manual":
+      return "Sorteo Manual";
+    case "random":
+      return "Sorteo Aleatorio";
+    default:
+      return method;
+  }
+}
