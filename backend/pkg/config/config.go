@@ -13,6 +13,7 @@ type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
 	JWT      JWTConfig
+	Payment  PaymentConfig
 	Stripe   StripeConfig
 	SendGrid SendGridConfig
 	Twilio   TwilioConfig
@@ -59,7 +60,18 @@ type JWTConfig struct {
 	RefreshTokenRotate  bool
 }
 
-// StripeConfig configuración de Stripe
+// PaymentConfig configuración del procesador de pagos
+type PaymentConfig struct {
+	Provider      string // "paypal" or "stripe"
+	ClientID      string // PayPal Client ID
+	Secret        string // PayPal Secret or Stripe Secret Key
+	WebhookSecret string
+	Sandbox       bool   // Use sandbox/test mode
+	SuccessURL    string
+	CancelURL     string
+}
+
+// StripeConfig configuración de Stripe (legacy/optional)
 type StripeConfig struct {
 	SecretKey     string
 	WebhookSecret string
@@ -139,6 +151,15 @@ func Load() (*Config, error) {
 			Issuer:              viper.GetString("CONFIG_JWT_ISSUER"),
 			RefreshTokenRotate:  viper.GetBool("CONFIG_JWT_REFRESH_TOKEN_ROTATE"),
 		},
+		Payment: PaymentConfig{
+			Provider:      viper.GetString("CONFIG_PAYMENT_PROVIDER"),
+			ClientID:      viper.GetString("CONFIG_PAYMENT_CLIENT_ID"),
+			Secret:        viper.GetString("CONFIG_PAYMENT_SECRET"),
+			WebhookSecret: viper.GetString("CONFIG_PAYMENT_WEBHOOK_SECRET"),
+			Sandbox:       viper.GetBool("CONFIG_PAYMENT_SANDBOX"),
+			SuccessURL:    viper.GetString("CONFIG_PAYMENT_SUCCESS_URL"),
+			CancelURL:     viper.GetString("CONFIG_PAYMENT_CANCEL_URL"),
+		},
 		Stripe: StripeConfig{
 			SecretKey:     viper.GetString("CONFIG_STRIPE_SECRET_KEY"),
 			WebhookSecret: viper.GetString("CONFIG_STRIPE_WEBHOOK_SECRET"),
@@ -204,6 +225,12 @@ func setDefaults() {
 	viper.SetDefault("CONFIG_JWT_REFRESH_TOKEN_EXPIRY", "168h") // 7 días
 	viper.SetDefault("CONFIG_JWT_ISSUER", "sorteos-platform")
 	viper.SetDefault("CONFIG_JWT_REFRESH_TOKEN_ROTATE", true)
+
+	// Payment (PayPal by default)
+	viper.SetDefault("CONFIG_PAYMENT_PROVIDER", "paypal")
+	viper.SetDefault("CONFIG_PAYMENT_SANDBOX", true)
+	viper.SetDefault("CONFIG_PAYMENT_SUCCESS_URL", "http://localhost:5173/payment/success")
+	viper.SetDefault("CONFIG_PAYMENT_CANCEL_URL", "http://localhost:5173/payment/cancel")
 
 	// Business
 	viper.SetDefault("CONFIG_RAFFLE_MAX_ACTIVE_PER_USER", 10)

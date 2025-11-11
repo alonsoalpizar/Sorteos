@@ -33,6 +33,9 @@ RUN go mod download
 # Copiar código fuente
 COPY backend/ .
 
+# Actualizar dependencias y generar go.sum
+RUN go mod tidy
+
 # Compilar binario
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 

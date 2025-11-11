@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # PostgreSQL para testing
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: sorteos-postgres-test
+    environment:
+      POSTGRES_DB: sorteos_test
+      POSTGRES_USER: sorteos_test
+      POSTGRES_PASSWORD: sorteos_test_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sorteos_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sorteos-test-network
+
+  # Redis para testing
+  redis-test:
+    image: redis:7-alpine
+    container_name: sorteos-redis-test
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-test-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sorteos-test-network
+
+  # API Backend para testing
+  api-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sorteos-api-test
+    environment:
+      # Database
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_NAME: sorteos_test
+      DB_USER: sorteos_test
+      DB_PASSWORD: sorteos_test_pass
+      DB_SSLMODE: disable
+
+      # Redis
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+
+      # JWT
+      JWT_SECRET: test-jwt-secret-change-in-production-please
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+
+      # Email (mock for testing)
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-SG.mock-key-for-testing}
+      EMAIL_FROM: test@sorteos.com
+      EMAIL_FROM_NAME: Sorteos Test
+
+      # URLs
+      FRONTEND_URL: http://localhost:5174
+      API_URL: http://localhost:8081
+
+      # PayPal Sandbox
+      CONFIG_PAYMENT_PROVIDER: paypal
+      CONFIG_PAYMENT_CLIENT_ID: ${PAYPAL_SANDBOX_CLIENT_ID:-sandbox-client-id}
+      CONFIG_PAYMENT_SECRET: ${PAYPAL_SANDBOX_SECRET:-sandbox-secret}
+      CONFIG_PAYMENT_WEBHOOK_SECRET: ${PAYPAL_WEBHOOK_SECRET:-webhook-secret}
+      CONFIG_PAYMENT_SANDBOX: "true"
+      CONFIG_PAYMENT_SUCCESS_URL: http://localhost:5174/payment/success
+      CONFIG_PAYMENT_CANCEL_URL: http://localhost:5174/payment/cancel
+
+      # Business Config
+      CONFIG_BUSINESS_MIN_RAFFLE_NUMBERS: 10
+      CONFIG_BUSINESS_MAX_RAFFLE_NUMBERS: 10000
+      CONFIG_BUSINESS_RESERVATION_TTL_MINUTES: 5
+      CONFIG_BUSINESS_RATE_LIMIT_RESERVE_PER_MINUTE: 10
+      CONFIG_BUSINESS_RATE_LIMIT_PAYMENT_PER_MINUTE: 5
+
+      # Server
+      SERVER_PORT: 8080
+      SERVER_ENV: test
+      LOG_LEVEL: debug
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - sorteos-test-network
+    command: >
+      sh -c "
+        echo 'Waiting for migrations to run...' &&
+        sleep 5 &&
+        /app/main
+      "
+
+  # Frontend para testing (opcional - solo si quieres testing E2E con UI)
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: sorteos-frontend-test
+    environment:
+      VITE_API_URL: http://localhost:8081/api/v1
+    ports:
+      - "5174:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - sorteos-test-network
+    command: npm run dev -- --host
+
+volumes:
+  postgres-test-data:
+    driver: local
+  redis-test-data:
+    driver: local
+
+networks:
+  sorteos-test-network:
+    driver: bridge

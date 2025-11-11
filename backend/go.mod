@@ -6,10 +6,13 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.6.0
+	github.com/lib/pq v1.10.9
+	github.com/plutov/paypal/v4 v4.10.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/viper v1.18.2
+	github.com/stripe/stripe-go/v76 v76.25.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.19.0
 	gorm.io/datatypes v1.2.0

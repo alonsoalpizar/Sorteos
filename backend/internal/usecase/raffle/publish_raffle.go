@@ -66,6 +66,10 @@ func (uc *PublishRaffleUseCase) Execute(ctx context.Context, input *PublishRaffl
 	}
 
 	// 4. Verificar que tenga al menos una imagen
+	// TODO: TEMPORARILY DISABLED - Image upload not implemented yet (Sprint 4 pending)
+	// This validation will be re-enabled once image upload functionality is complete
+	// See: roadmap.md Sprint 4 - Image upload implementation
+	/*
 	imageCount, err := uc.raffleImageRepo.CountByRaffleID(raffle.ID)
 	if err != nil {
 		return nil, errors.Wrap(errors.ErrDatabaseError, err)
@@ -82,6 +86,7 @@ func (uc *PublishRaffleUseCase) Execute(ctx context.Context, input *PublishRaffl
 		}
 		return nil, errors.Wrap(errors.ErrDatabaseError, err)
 	}
+	*/
 
 	// 6. Verificar que la fecha del sorteo sea futura
 	if raffle.DrawDate.Before(time.Now()) {

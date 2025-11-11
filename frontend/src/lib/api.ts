@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 // Base API URL - uses Vite proxy in development
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 // Create axios instance
 export const api = axios.create({
@@ -116,7 +116,7 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh the token
-        const response = await axios.post(`${API_BASE_URL}/v1/auth/refresh`, {
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refresh_token: refreshTokenValue,
         });
 

@@ -68,6 +68,9 @@ func main() {
 	setupMiddleware(router, log, cfg)
 	setupRoutes(router, db, rdb, cfg, log)
 
+	// Iniciar jobs de fondo
+	startBackgroundJobs(db, rdb, cfg, log)
+
 	// Crear servidor HTTP
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.Port,
@@ -316,6 +319,9 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, cfg *config
 
 	// Setup raffle routes
 	setupRaffleRoutes(router, db, rdb, cfg, log)
+
+	// Setup reservation and payment routes
+	setupReservationAndPaymentRoutes(router, db, rdb, cfg, log)
 
 	// API v1 - Ruta de prueba
 	v1 := router.Group("/api/v1")
