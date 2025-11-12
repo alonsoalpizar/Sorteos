@@ -69,6 +69,9 @@ export function RaffleDetailPage() {
   const createOrUpdateReservation = useCallback(async () => {
     if (!data?.raffle.uuid || getSelectedCount() === 0 || isOwner) return;
 
+    // Don't create reservation if already processing
+    if (createReservation.isPending) return;
+
     try {
       const response = await createReservation.mutateAsync({
         raffle_id: data.raffle.uuid,
@@ -89,23 +92,24 @@ export function RaffleDetailPage() {
       toast.error('Error al reservar números', {
         description: error instanceof Error ? error.message : 'Intenta de nuevo',
       });
-      clearNumbers();
+      // Don't clear numbers on error - just let user try again
     }
-  }, [data?.raffle.uuid, selectedNumbers, sessionId, getSelectedCount, isOwner, createReservation, clearNumbers]);
+  }, [data?.raffle.uuid, selectedNumbers, sessionId, getSelectedCount, isOwner, createReservation]);
 
-  // Debounced reservation creation
-  useEffect(() => {
-    if (getSelectedCount() === 0) {
-      setCurrentReservation(null);
-      return;
-    }
+  // Debounced reservation creation - DISABLED FOR NOW
+  // We'll create reservation manually when user clicks checkout
+  // useEffect(() => {
+  //   if (getSelectedCount() === 0) {
+  //     setCurrentReservation(null);
+  //     return;
+  //   }
 
-    const timer = setTimeout(() => {
-      createOrUpdateReservation();
-    }, 500); // Wait 500ms after last selection
+  //   const timer = setTimeout(() => {
+  //     createOrUpdateReservation();
+  //   }, 1000); // Wait 1 second after last selection
 
-    return () => clearTimeout(timer);
-  }, [getSelectedCount, createOrUpdateReservation]);
+  //   return () => clearTimeout(timer);
+  // }, [selectedNumbers, createOrUpdateReservation]);
 
   const handlePublish = async () => {
     if (!id || !confirm('¿Estás seguro de publicar este sorteo?')) return;
@@ -138,11 +142,17 @@ export function RaffleDetailPage() {
     });
   };
 
-  const handleProceedToCheckout = () => {
+  const handleProceedToCheckout = async () => {
     if (getSelectedCount() === 0) {
-      alert('Por favor selecciona al menos un número');
+      toast.error('Por favor selecciona al menos un número');
       return;
     }
+
+    // Create reservation before going to checkout
+    if (!currentReservation) {
+      await createOrUpdateReservation();
+    }
+
     navigate('/checkout');
   };
 
