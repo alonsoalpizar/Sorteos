@@ -10,6 +10,8 @@ interface FloatingCheckoutButtonProps {
   onCheckout: () => void;
   onClear: () => void;
   show: boolean;
+  isAuthenticated?: boolean;
+  isEmailVerified?: boolean;
 }
 
 export function FloatingCheckoutButton({
@@ -19,6 +21,8 @@ export function FloatingCheckoutButton({
   onCheckout,
   onClear,
   show,
+  isAuthenticated = true,
+  isEmailVerified = true,
 }: FloatingCheckoutButtonProps) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isExpiring, setIsExpiring] = useState(false);
@@ -121,11 +125,25 @@ export function FloatingCheckoutButton({
                 <p className="text-2xl font-bold text-white">{formatCurrency(totalAmount)}</p>
               </div>
 
-              {/* Timer Display (if active) */}
-              {timeLeft !== null && timeLeft > 0 && !isExpiring && (
+              {/* Timer Display (if active and authenticated) */}
+              {isAuthenticated && timeLeft !== null && timeLeft > 0 && !isExpiring && (
                 <div className="flex items-center justify-center gap-2 text-xs text-primary-100">
                   <Clock className="w-3.5 h-3.5" />
                   <span>Reservado por {formatTime(timeLeft)}</span>
+                </div>
+              )}
+
+              {/* Login reminder for non-authenticated users */}
+              {!isAuthenticated && (
+                <div className="flex items-center justify-center gap-2 text-xs text-primary-100">
+                  <span>⚠️ Inicia sesión para continuar</span>
+                </div>
+              )}
+
+              {/* Email verification reminder */}
+              {isAuthenticated && !isEmailVerified && (
+                <div className="flex items-center justify-center gap-2 text-xs text-primary-100">
+                  <span>⚠️ Verifica tu email para continuar</span>
                 </div>
               )}
 
@@ -145,6 +163,11 @@ export function FloatingCheckoutButton({
                   <>
                     <X className="w-5 h-5" />
                     <span>Reserva expirada</span>
+                  </>
+                ) : !isAuthenticated ? (
+                  <>
+                    <ShoppingCart className="w-5 h-5" />
+                    <span>Iniciar Sesión</span>
                   </>
                 ) : (
                   <>

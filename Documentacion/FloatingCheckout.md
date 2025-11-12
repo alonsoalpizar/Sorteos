@@ -355,13 +355,58 @@ Usamos `sonner` (ya instalado) para notificaciones elegantes y no intrusivas.
 ## ✅ Estado Actual
 
 - ✅ Componente `FloatingCheckoutButton` creado
-- ✅ Auto-reserva implementada
+- ✅ Auto-reserva implementada (solo usuarios autenticados)
+- ✅ Validación de email verificado (KYC)
 - ✅ Timer de expiración funcionando
 - ✅ Alertas visuales (amarillo < 2min, rojo = expirado)
 - ✅ Animaciones y transiciones
 - ✅ Responsive design
 - ✅ Toast notifications
+- ✅ Manejo de errores 401 (no autenticado) y 403 (email no verificado)
 - ✅ Compilado y desplegado
 
 **URL de prueba**: https://sorteos.club/raffles/1
 (o cualquier sorteo activo)
+
+---
+
+## 🔐 Requisitos de Autenticación y KYC
+
+### Niveles de Acceso
+
+**1. Usuario no autenticado:**
+- ✅ Puede ver sorteos
+- ✅ Puede seleccionar números (solo en memoria)
+- ❌ NO puede crear reservas
+- ➡️ Al hacer checkout → Redirige a `/login`
+
+**2. Usuario autenticado pero email NO verificado:**
+- ✅ Puede ver sorteos
+- ✅ Puede seleccionar números
+- ❌ NO puede crear reservas (error 403)
+- ⚠️ Muestra: "⚠️ Verifica tu email para reservar"
+- 📧 Toast: "Email no verificado - Revisa tu bandeja de entrada"
+
+**3. Usuario autenticado con email verificado:**
+- ✅ Puede ver sorteos
+- ✅ Puede seleccionar números
+- ✅ Puede crear reservas (auto-reserva después de 1.5s)
+- ✅ Timer de expiración activo
+- ✅ Puede proceder al checkout
+
+### Verificar Email Manualmente (Solo Desarrollo)
+
+Para testing en desarrollo, puedes verificar el email de un usuario manualmente:
+
+```bash
+# Opción 1: Script SQL incluido
+docker exec sorteos-postgres psql -U sorteos_user -d sorteos_db -f /path/to/verify-email.sql
+
+# Opción 2: Comando directo
+docker exec sorteos-postgres psql -U sorteos_user -d sorteos_db -c "UPDATE users SET kyc_level = 'email_verified' WHERE email = 'tu@email.com';"
+
+# Verificar estado
+docker exec sorteos-postgres psql -U sorteos_user -d sorteos_db -c "SELECT email, kyc_level FROM users;"
+```
+
+**Script disponible:** `/opt/Sorteos/Documentacion/verify-email.sql`

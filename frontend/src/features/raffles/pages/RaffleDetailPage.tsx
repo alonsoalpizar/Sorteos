@@ -69,6 +69,12 @@ export function RaffleDetailPage() {
   const createOrUpdateReservation = useCallback(async () => {
     if (!data?.raffle.uuid || getSelectedCount() === 0 || isOwner) return;
 
+    // Don't create reservation if user is not authenticated
+    if (!user) {
+      console.log('User not authenticated, skipping auto-reservation');
+      return;
+    }
+
     // Don't create reservation if already processing
     if (createReservation.isPending) return;
 
@@ -89,27 +95,64 @@ export function RaffleDetailPage() {
       });
     } catch (error) {
       console.error('Error creating reservation:', error);
+
+      // Check for specific error types
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+
+        // 403: Email not verified
+        if (axiosError.response?.status === 403) {
+          toast.error('Email no verificado', {
+            description: 'Debes verificar tu email para reservar números. Revisa tu bandeja de entrada.',
+            duration: 5000,
+          });
+          return;
+        }
+
+        // 409: Numbers already reserved (possibly by another user or stale reservation)
+        if (axiosError.response?.status === 409) {
+          toast.warning('Números no disponibles', {
+            description: 'Uno o más números ya están reservados. Por favor refresca la página.',
+            duration: 4000,
+          });
+          // Don't clear automatically - let user see what they selected
+          return;
+        }
+
+        // 429: Rate limit exceeded (too many requests)
+        if (axiosError.response?.status === 429) {
+          toast.info('Demasiadas solicitudes', {
+            description: 'Por favor espera un momento antes de intentar de nuevo.',
+            duration: 3000,
+          });
+          return;
+        }
+      }
+
       toast.error('Error al reservar números', {
         description: error instanceof Error ? error.message : 'Intenta de nuevo',
       });
       // Don't clear numbers on error - just let user try again
     }
-  }, [data?.raffle.uuid, selectedNumbers, sessionId, getSelectedCount, isOwner, createReservation]);
+  }, [data?.raffle.uuid, selectedNumbers, sessionId, getSelectedCount, isOwner, user, createReservation]);
 
-  // Debounced reservation creation - DISABLED FOR NOW
-  // We'll create reservation manually when user clicks checkout
+  // DISABLED: Auto-reservation causes issues when user selects multiple numbers
+  // Instead, reservation is created only when user clicks "Proceder al Pago"
   // useEffect(() => {
   //   if (getSelectedCount() === 0) {
   //     setCurrentReservation(null);
   //     return;
   //   }
 
+  //   // Don't create if already have a reservation
+  //   if (currentReservation) return;
+
   //   const timer = setTimeout(() => {
   //     createOrUpdateReservation();
-  //   }, 1000); // Wait 1 second after last selection
+  //   }, 1500); // Wait 1.5 seconds after last selection
 
   //   return () => clearTimeout(timer);
-  // }, [selectedNumbers, createOrUpdateReservation]);
+  // }, [selectedNumbers, currentReservation, createOrUpdateReservation, getSelectedCount]);
 
   const handlePublish = async () => {
     if (!id || !confirm('¿Estás seguro de publicar este sorteo?')) return;
@@ -145,6 +188,16 @@ export function RaffleDetailPage() {
   const handleProceedToCheckout = async () => {
     if (getSelectedCount() === 0) {
       toast.error('Por favor selecciona al menos un número');
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!user) {
+      toast.info('Inicia sesión para continuar con tu compra', {
+        description: 'Te redirigiremos al login',
+      });
+      // Redirect to login with return URL
+      navigate(`/login?redirect=/raffles/${id}`);
       return;
     }
 
@@ -434,6 +487,8 @@ export function RaffleDetailPage() {
           onCheckout={handleProceedToCheckout}
           onClear={clearNumbers}
           show={getSelectedCount() > 0}
+          isAuthenticated={!!user}
+          isEmailVerified={user?.kyc_level !== 'none'}
         />
       )}
     </div>
