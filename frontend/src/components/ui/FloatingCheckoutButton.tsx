@@ -66,7 +66,7 @@ export function FloatingCheckoutButton({
       {/* Overlay for mobile */}
       <div
         className={cn(
-          'fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity lg:hidden',
+          'fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] transition-opacity lg:hidden',
           show ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={onClear}
@@ -75,7 +75,7 @@ export function FloatingCheckoutButton({
       {/* Floating Button */}
       <div
         className={cn(
-          'fixed bottom-6 right-6 z-50 transition-all duration-300 transform',
+          'fixed bottom-6 right-6 z-[9999] transition-all duration-300 transform',
           show ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-95 pointer-events-none'
         )}
       >
