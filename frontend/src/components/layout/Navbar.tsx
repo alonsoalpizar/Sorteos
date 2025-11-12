@@ -1,10 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { UserMenu } from './UserMenu';
 import { useAuthStore } from '@/store/authStore';
+import { useUserMode } from '@/contexts/UserModeContext';
 import { useState } from 'react';
 
 export function Navbar() {
   const { user } = useAuthStore();
+  const { mode } = useUserMode();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -60,18 +62,43 @@ export function Navbar() {
             {/* Main navigation for authenticated users */}
             {user && (
               <nav className="hidden lg:flex items-center gap-1">
-                <Link
-                  to="/raffles"
-                  className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Explorar Sorteos
-                </Link>
-                <Link
-                  to="/raffles/create"
-                  className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Crear Sorteo
-                </Link>
+                {mode === 'participant' ? (
+                  <>
+                    <Link
+                      to="/explore"
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      Explorar
+                    </Link>
+                    <Link
+                      to="/my-tickets"
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      Mis Números
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/organizer"
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      Panel
+                    </Link>
+                    <Link
+                      to="/organizer/raffles"
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      Sorteos
+                    </Link>
+                    <Link
+                      to="/organizer/raffles/new"
+                      className="px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    >
+                      + Crear
+                    </Link>
+                  </>
+                )}
               </nav>
             )}
 
@@ -85,24 +112,43 @@ export function Navbar() {
       {user && (
         <div className="border-t border-slate-200 dark:border-slate-700 lg:hidden">
           <nav className="container mx-auto px-4 flex items-center gap-1 overflow-x-auto">
-            <Link
-              to="/dashboard"
-              className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/raffles"
-              className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
-            >
-              Explorar
-            </Link>
-            <Link
-              to="/raffles/create"
-              className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
-            >
-              Crear
-            </Link>
+            {mode === 'participant' ? (
+              <>
+                <Link
+                  to="/explore"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+                >
+                  Explorar
+                </Link>
+                <Link
+                  to="/my-tickets"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+                >
+                  Mis Números
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/organizer"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+                >
+                  Panel
+                </Link>
+                <Link
+                  to="/organizer/raffles"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+                >
+                  Sorteos
+                </Link>
+                <Link
+                  to="/organizer/raffles/new"
+                  className="px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 transition-colors whitespace-nowrap"
+                >
+                  + Crear
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       )}

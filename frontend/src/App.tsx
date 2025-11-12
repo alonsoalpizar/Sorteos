@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 import { queryClient } from "@/lib/queryClient";
+import { UserModeProvider } from "@/contexts/UserModeContext";
 
 // Layout
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -14,6 +16,13 @@ import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 
 // Landing page
 import { LandingPage } from "@/features/landing/pages/LandingPage";
+
+// Participant pages
+import { ExplorePage } from "@/features/raffles/pages/ExplorePage";
+import { MyTicketsPage } from "@/features/raffles/pages/MyTicketsPage";
+
+// Organizer pages
+import { OrganizerDashboardPage } from "@/features/organizer/pages/OrganizerDashboardPage";
 
 // Raffle pages
 import { RafflesListPage } from "@/features/raffles/pages/RafflesListPage";
@@ -30,25 +39,81 @@ import { PaymentCancelPage } from "@/features/checkout/pages/PaymentCancelPage";
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes (no layout) */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <UserModeProvider>
+        <Toaster position="top-right" richColors closeButton />
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes (no layout) */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-          {/* Protected routes with layout */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <DashboardPage />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Participant routes (protected, with layout) */}
+            <Route
+              path="/explore"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <ExplorePage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-tickets"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <MyTicketsPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Organizer routes (protected, with layout) */}
+            <Route
+              path="/organizer"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <OrganizerDashboardPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organizer/raffles"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <MyRafflesPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organizer/raffles/new"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <CreateRafflePage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Legacy dashboard route - redirect based on mode */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <DashboardPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
           {/* Raffle routes with layout */}
           <Route
@@ -136,7 +201,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
-    </QueryClientProvider>
+    </UserModeProvider>
+  </QueryClientProvider>
   );
 }
 

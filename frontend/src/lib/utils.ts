@@ -10,22 +10,22 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format currency to COP (Colombian Peso)
+ * Format currency to CRC (Costa Rican Colón)
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("es-CO", {
+  return new Intl.NumberFormat("es-CR", {
     style: "currency",
-    currency: "COP",
+    currency: "CRC",
     minimumFractionDigits: 0,
   }).format(amount);
 }
 
 /**
- * Format date to Colombian format
+ * Format date to Costa Rican format
  */
 export function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("es-CO", {
+  return new Intl.DateTimeFormat("es-CR", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -33,11 +33,11 @@ export function formatDate(date: Date | string): string {
 }
 
 /**
- * Format datetime to Colombian format
+ * Format datetime to Costa Rican format
  */
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("es-CO", {
+  return new Intl.DateTimeFormat("es-CR", {
     year: "numeric",
     month: "long",
     day: "numeric",
