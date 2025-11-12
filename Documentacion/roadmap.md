@@ -15,6 +15,48 @@ Este roadmap define las **3 fases principales** del proyecto, desde el MVP hasta
 - **Fase 2 (Escalamiento):** 10-12 semanas
 - **Fase 3 (Expansión):** 12-16 semanas
 
+**Documentos relacionados:**
+- [Arquitectura de Navegación y Capas Visuales](arquitectura-navegacion.md) - Define estructura FRONTOFFICE/BACKOFFICE y modalidades de sorteo
+
+### 1.1 Arquitectura de Navegación (3 Capas)
+
+La plataforma se estructura en **3 capas visuales** independientes:
+
+1. **FRONTOFFICE - Marketplace** (`/explorar`)
+   - Experiencia pública optimizada para compra de números
+   - Landing page atractiva con sorteos destacados
+   - Catálogo con filtros por categoría, precio, fecha
+   - Detalle de sorteo con call-to-actions claros
+
+2. **BACKOFFICE - Dashboard Usuario** (`/dashboard`)
+   - Panel de control para creadores de sorteos
+   - Administración de sorteos propios (CRUD, estadísticas)
+   - Gestión de reservas pendientes (para sorteos autogestionados)
+   - Asignación manual de números
+   - Perfil, compras y liquidaciones
+
+3. **BACKOFFICE - Panel Admin** (`/admin`)
+   - Moderación de sorteos y usuarios
+   - Suspender/activar sorteos
+   - Audit logs
+   - Liquidaciones pendientes
+
+### 1.2 Modalidades de Sorteo (2 Tipos)
+
+**GESTIONADO** (Commission-based)
+- Pago automático con PayPal/Stripe
+- Comisión de plataforma: 5%
+- Liquidación automática post-sorteo
+- Ideal para sorteos públicos de alto volumen
+
+**AUTOGESTIONADO** (Self-managed) - **FASE 2**
+- Pago manual (SINPE Móvil, efectivo, transferencia)
+- Sin comisión, pago por suscripción mensual
+- Reservas con timeout de 24 horas
+- Creador confirma pagos manualmente desde backoffice
+- Asignación directa de números (ej: "guardar número para mi hermano")
+- Ideal para sorteos privados entre amigos/comunidades
+
 ---
 
 ## 2. Fase 1 - MVP (Producto Mínimo Viable)
@@ -1066,14 +1108,186 @@ frontend/
 
 ---
 
-### Sprint 7-8: Selección de Ganador y Backoffice Mínimo
+### Sprint 6.5: Arquitectura de Navegación y UX Fixes
+
+**Objetivo:** Implementar separación de capas FRONTOFFICE/BACKOFFICE y resolver inconsistencias de UX
+
+**Duración estimada:** 3-4 días
+**Prioridad:** Alta (bloqueante para testing de usuarios)
+
+#### Tareas Frontend
+
+##### 1. Fix Navbar - Consistencia de Estado de Login
+**Problema identificado:**
+- Usuario autenticado en `/dashboard` ve botones "Login" y "Registro" al navegar a `/` (home)
+- Estado de sesión no se refleja consistentemente en todas las rutas
+
+**Solución:**
+- [ ] Unificar componente Navbar para todas las rutas (frontoffice y backoffice)
+- [ ] Implementar conditional rendering basado en `useAuthStore()`
+- [ ] Mostrar avatar + UserMenu cuando `user` existe
+- [ ] Ocultar botones Login/Register cuando usuario está autenticado
+- [ ] Validar persistencia de sesión (JWT refresh en localStorage)
+
+**Archivos afectados:**
+- `frontend/src/components/layout/Navbar.tsx`
+- `frontend/src/components/layout/MainLayout.tsx`
+- Posible `frontend/src/components/layout/PublicLayout.tsx` (si existe)
+
+##### 2. Separación de Layouts (Frontoffice vs Backoffice)
+
+**Implementar 3 layouts distintos:**
+
+- [ ] **PublicLayout** - Para landing y exploración
+  - Navbar simple con búsqueda, categorías
+  - Footer público con links legales
+  - Sin sidebar
+  - Rutas: `/`, `/explorar`, `/sorteos/:id`
+
+- [ ] **DashboardLayout** - Para panel de usuario
+  - Navbar compacto + sidebar izquierdo
+  - Menú: Dashboard, Mis Sorteos, Mis Compras, Perfil, Liquidaciones
+  - Botón destacado: "Volver al Market" → `/explorar`
+  - Rutas: `/dashboard/*`
+
+- [ ] **AdminLayout** - Para panel administrativo
+  - Similar a DashboardLayout pero con opciones de admin
+  - Menú: Dashboard Admin, Sorteos, Usuarios, Liquidaciones, Auditoría
+  - Restricción: solo `admin` o `super_admin`
+  - Rutas: `/admin/*`
+
+**Archivos a crear/modificar:**
+- `frontend/src/components/layout/PublicLayout.tsx`
+- `frontend/src/components/layout/DashboardLayout.tsx`
+- `frontend/src/components/layout/AdminLayout.tsx`
+- `frontend/src/App.tsx` (actualizar routing)
+
+##### 3. Reorganización de Rutas
+
+**Nueva estructura de rutas:**
+
+```tsx
+// FRONTOFFICE - Público
+/                           → LandingPage (sorteos destacados)
+/explorar                   → ExplorePage (catálogo con filtros)
+/sorteos/:id                → RaffleDetailPage (vista pública)
+/categorias/:categoria      → ExplorePage con filtro
+
+// AUTH
+/login                      → LoginPage
+/register                   → RegisterPage
+
+// BACKOFFICE - Usuario
+/dashboard                  → DashboardPage (resumen)
+/dashboard/sorteos          → MyRafflesPage (listado completo)
+/dashboard/sorteos/nuevo    → CreateRafflePage
+/dashboard/sorteos/:id/edit → EditRafflePage
+/dashboard/sorteos/:id      → RaffleManagePage (gestión detallada)
+/dashboard/compras          → MyPurchasesPage
+/dashboard/perfil           → ProfilePage
+/dashboard/pagos            → PaymentsPage
+/dashboard/liquidaciones    → SettlementsPage
+
+// BACKOFFICE - Admin
+/admin                      → AdminDashboardPage
+/admin/sorteos              → AdminRafflesPage
+/admin/usuarios             → AdminUsersPage
+/admin/liquidaciones        → AdminSettlementsPage
+/admin/auditoria            → AdminAuditPage
+
+// CHECKOUT
+/checkout                   → CheckoutPage
+/payment/success            → PaymentSuccessPage
+/payment/cancel             → PaymentCancelPage
+```
+
+**Tareas:**
+- [ ] Refactorizar App.tsx con nuevos layouts
+- [ ] Crear rutas protegidas para `/dashboard/*` y `/admin/*`
+- [ ] Implementar redirect a `/login` si no autenticado
+- [ ] Implementar redirect a `/dashboard` si admin intenta acceder sin permisos
+
+##### 4. Mejorar Landing Page
+
+**Objetivo:** Experiencia atractiva de marketplace
+
+- [ ] Hero section con sorteos destacados (carrusel)
+- [ ] Sección "Sorteos Populares" (6-8 cards)
+- [ ] Sección "Próximos a Finalizar" (urgencia)
+- [ ] Sección "Cómo Funciona" (3 pasos con iconos)
+- [ ] Call-to-actions claros: "Explorar Sorteos" → `/explorar`
+- [ ] Footer con enlaces: Términos, Privacidad, FAQ, Contacto
+
+**Archivos:**
+- `frontend/src/features/landing/pages/LandingPage.tsx` (crear)
+- `frontend/src/features/landing/components/HeroSection.tsx` (crear)
+- `frontend/src/features/landing/components/FeaturedRaffles.tsx` (crear)
+
+##### 5. Página de Exploración
+
+**Funcionalidad:**
+- [ ] Listado de sorteos activos con filtros
+- [ ] Filtros: categoría, precio (min/max), estado, fecha
+- [ ] Ordenamiento: más reciente, precio, popularidad, terminan pronto
+- [ ] Paginación o scroll infinito
+- [ ] Vista grid responsive (3 columnas desktop, 1 móvil)
+- [ ] Buscador por palabra clave (título, descripción)
+
+**Archivos:**
+- `frontend/src/features/landing/pages/ExplorePage.tsx` (crear)
+- `frontend/src/features/landing/components/RaffleFilters.tsx` (crear)
+- `frontend/src/features/landing/components/RaffleGrid.tsx` (crear)
+
+#### Tareas Backend (Mínimas)
+
+- [ ] Endpoint GET /api/v1/raffles/featured (sorteos destacados para landing)
+- [ ] Modificar GET /api/v1/raffles (agregar query params: sort, category, min_price, max_price)
+- [ ] Endpoint GET /api/v1/dashboard/stats (resumen para dashboard usuario)
+
+#### Criterios de Aceptación
+
+- ✅ Usuario autenticado ve su avatar en navbar en TODAS las rutas
+- ✅ Usuario no autenticado ve botones Login/Register
+- ✅ Landing page `/` es atractiva y muestra sorteos destacados
+- ✅ `/explorar` permite filtrar y ordenar sorteos
+- ✅ `/dashboard` tiene sidebar con navegación clara
+- ✅ Transición fluida entre frontoffice y backoffice
+- ✅ Rutas protegidas redirigen correctamente
+- ✅ Build sin errores TypeScript
+
+#### Entregables
+
+- Navbar unificado con estado consistente
+- 3 layouts implementados (Public, Dashboard, Admin)
+- Landing page atractiva
+- Página de exploración con filtros
+- Routing reorganizado con protección de rutas
+
+---
+
+### Sprint 7-8: Selección de Ganador y Backoffice Usuario Completo
+
+**Nota:** Sprint 7-8 original se divide en dos fases:
+- **Sprint 7:** Dashboard usuario completo + selección de ganador
+- **Sprint 8:** Backoffice admin + modalidad autogestionada (Fase 2)
 
 #### Tareas Backend
-- [ ] Sistema de selección de ganador:
-  - Integración con API Lotería Nacional (o mock)
-  - Cron job que consulta resultados en draw_date
-  - Marca ganadores en raffle_numbers
-  - Notificación por email/SMS al ganador
+- [ ] Sistema de selección de ganador (basado en Lotería Nacional):
+  - **IMPORTANTE:** El ganador NO se genera aleatoriamente - se determina usando el resultado oficial de la Lotería Nacional de Costa Rica
+  - Cada sorteo tiene un `draw_date` que define qué sorteo de lotería se usará
+  - El número ganador se extrae de las últimas cifras del premio mayor (ej: si sale 12345, ganador = 345 o 45 según config)
+  - Integración con API oficial de Lotería Nacional CR (o scraping si no hay API)
+  - Cron job que corre automáticamente el día después del `draw_date` (para dar tiempo a publicación oficial)
+  - Proceso:
+    1. Job encuentra sorteos con draw_date = ayer y status = completed_draw_pending
+    2. Consulta resultado oficial de lotería del día
+    3. Calcula número ganador según fórmula (ej: últimas 2-3 cifras)
+    4. Busca en raffle_numbers el número coincidente y status = sold
+    5. Marca ese número como winner = true
+    6. Actualiza raffle.status = completed_winner_selected
+    7. Envía notificación al ganador por email/SMS
+  - Fallback: Si ningún número coincide exactamente, buscar el más cercano (hacia arriba o abajo)
+  - Audit log completo del proceso de selección
 - [ ] Endpoints backoffice:
   - GET /admin/raffles (listado completo con filtros)
   - PATCH /admin/raffles/{id} (suspender/activar)
@@ -1142,28 +1356,156 @@ frontend/
 
 ---
 
-### Sprint 11-12: Múltiples PSPs y Modo "Sin Cobro"
+### Sprint 11-12: Modalidad AUTOGESTIONADA y Clasificaciones
+
+**Objetivo:** Implementar sistema de sorteos autogestionados (self-managed) con pago manual
+
+**Referencia:** Ver [arquitectura-navegacion.md](arquitectura-navegacion.md) sección 3.2
 
 #### Backend
-- [ ] Implementar providers adicionales:
-  - PayPalProvider
-  - LocalCRProvider (procesador de CR por definir)
-- [ ] Sistema de routing de pagos:
-  - Feature flags por sorteo (Stripe/PayPal/Local)
-  - Fallback automático si PSP falla
-- [ ] Modo "sin cobro en plataforma":
-  - Sorteos gratuitos (owner coordina pago fuera)
-  - Solo cobro de suscripción mensual al owner
-  - Modelo de suscripción (Stripe Billing)
+
+##### 1. Modelo de Datos - Modalidad Autogestionada
+- [ ] Migración: Agregar campo `management_type` ENUM a tabla `raffles`
+  ```sql
+  ALTER TABLE raffles ADD COLUMN management_type VARCHAR(20)
+    DEFAULT 'managed' CHECK (management_type IN ('managed', 'self_managed'));
+  ALTER TABLE raffles ADD COLUMN reservation_ttl_hours INT DEFAULT 5;
+  ```
+- [ ] Migración: Crear tabla `user_subscriptions`
+  ```sql
+  CREATE TABLE user_subscriptions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    plan VARCHAR(50), -- 'self_managed'
+    status VARCHAR(20), -- 'active', 'expired', 'canceled'
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+  ```
+- [ ] Agregar nuevo status para números: `reserved_pending_manual`
+- [ ] Entity: UserSubscription domain entity
+
+##### 2. Validaciones y Lógica de Negocio
+- [ ] Use Case: ValidateSubscriptionUseCase (verificar suscripción activa)
+- [ ] Modificar CreateRaffleUseCase:
+  - Validar suscripción si `management_type = 'self_managed'`
+  - Timeout de 24h para reservas en autogestionados
+  - `platform_fee_percentage = 0.00` para autogestionados
+- [ ] Modificar ReserveNumbersUseCase:
+  - Si raffle.management_type = 'self_managed':
+    - No crear payment intent
+    - Status de número = `reserved_pending_manual`
+    - TTL = 24 horas (en lugar de 5 min)
+    - Incluir instrucciones de pago en respuesta
+
+##### 3. Endpoints para Confirmación Manual
+- [ ] POST /api/v1/dashboard/sorteos/:id/numeros/:numero/confirmar
+  - Owner confirma pago manual
+  - Body: `{ notes: "SINPE recibido 8888-8888" }`
+  - Cambia status número a `sold`
+  - Envía email de confirmación al comprador
+- [ ] POST /api/v1/dashboard/sorteos/:id/numeros/:numero/asignar
+  - Owner asigna número directamente a usuario
+  - Body: `{ user_email: "hermano@example.com" }`
+  - Busca usuario por email
+  - Asigna número y envía confirmación
+- [ ] GET /api/v1/dashboard/sorteos/:id/reservas-pendientes
+  - Listar reservas con status = `reserved_pending_manual`
+  - Incluir datos de usuario, tiempo restante
+
+##### 4. Suscripciones
+- [ ] Use Case: CreateSubscriptionUseCase (integración con Stripe Billing)
+- [ ] Endpoint: POST /api/v1/subscriptions (crear suscripción)
+- [ ] Endpoint: GET /api/v1/subscriptions/me (ver estado de suscripción)
+- [ ] Cron job: Verificar suscripciones expiradas cada día
+- [ ] Webhook: Stripe subscription events (renewal, cancelation)
+
+##### 5. Clasificaciones (Categorías)
+- [ ] Migración: Crear tabla `raffle_categories`
+  ```sql
+  CREATE TABLE raffle_categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    icon VARCHAR(50),
+    display_order INT DEFAULT 0
+  );
+  ALTER TABLE raffles ADD COLUMN category_id BIGINT REFERENCES raffle_categories(id);
+  ```
+- [ ] Seed inicial: Electrónica, Vehículos, Viajes, Dinero, Experiencias, Hogar, Otros
+- [ ] Modificar GET /api/v1/raffles: agregar filtro `?category=electronica`
+- [ ] Endpoint: GET /api/v1/categories (listado de categorías)
 
 #### Frontend
-- [ ] Selector de método de pago en checkout
-- [ ] Modal de suscripción (planes Basic/Pro)
-- [ ] Dashboard de owner con estado de suscripción
+
+##### 1. Create/Edit Raffle - Selector de Modalidad
+- [ ] Toggle en CreateRafflePage: "Tipo de sorteo"
+  - Opción 1: **Gestionado** (pago automático, comisión 5%)
+  - Opción 2: **Autogestionado** (pago manual, suscripción requerida)
+- [ ] Mostrar advertencia si usuario no tiene suscripción activa
+- [ ] Selector de categoría (dropdown con categorías de API)
+
+##### 2. Dashboard - Gestión de Reservas Pendientes
+- [ ] Componente: `PendingReservations.tsx`
+  - Tabla con reservas pendientes
+  - Columnas: Número, Usuario, Email, Tiempo restante, Acciones
+  - Botón "Confirmar Pago" → Modal con campo de notas
+  - Botón "Liberar" → cancela reserva
+- [ ] Integrar en RaffleManagePage (dashboard/sorteos/:id)
+
+##### 3. Dashboard - Asignación Manual
+- [ ] Componente: `ManualAssignment.tsx`
+  - Buscador de usuario por email/nombre
+  - Selector de número disponible
+  - Botón "Asignar"
+  - Confirmación: "¿Asignar número X a usuario Y?"
+- [ ] Integrar en RaffleManagePage
+
+##### 4. Checkout - Flujo Autogestionado
+- [ ] CheckoutPage: detectar si raffle.management_type = 'self_managed'
+- [ ] Mostrar instrucciones de pago manual:
+  - "Reserva confirmada por 24 horas"
+  - "Contacta al organizador para realizar el pago"
+  - Mostrar datos de contacto del organizador
+  - Instrucciones: SINPE Móvil, transferencia, efectivo
+- [ ] No mostrar botón PayPal/Stripe
+
+##### 5. Landing/Exploración - Filtros de Categoría
+- [ ] ExplorePage: Agregar filtro por categoría
+- [ ] LandingPage: Secciones por categoría
+  - "Sorteos de Electrónica"
+  - "Sorteos de Vehículos"
+  - etc.
+- [ ] RaffleCard: Mostrar badge de categoría
+
+##### 6. Suscripción
+- [ ] Página: SubscriptionPage (/dashboard/suscripcion)
+  - Mostrar plan actual
+  - Fecha de vencimiento
+  - Botón "Renovar" (redirect a Stripe Checkout)
+- [ ] Modal: SubscriptionPrompt (cuando intenta crear raffle autogestionado sin suscripción)
+  - Explicar beneficios
+  - Precio: $10/mes USD
+  - Botón "Contratar Suscripción"
+
+#### Criterios de Aceptación
+
+- ✅ Usuario puede crear sorteo "Autogestionado" si tiene suscripción activa
+- ✅ Reservas en sorteos autogestionados tienen TTL de 24h
+- ✅ Owner puede confirmar pagos manualmente desde dashboard
+- ✅ Owner puede asignar números directamente a usuarios
+- ✅ Checkout muestra instrucciones correctas según modalidad
+- ✅ Usuario sin suscripción ve modal de upgrade al intentar crear autogestionado
+- ✅ Categorías aparecen en create raffle, exploración y landing
+- ✅ Filtro por categoría funciona correctamente
 
 #### Entregables
-- Usuario puede pagar con Stripe, PayPal o método local
-- Owners pueden publicar sorteos sin cobro + pagar suscripción
+
+- Sistema de modalidades: Gestionado vs Autogestionado
+- Backoffice para gestión manual de pagos
+- Sistema de suscripciones con Stripe Billing
+- Clasificaciones por categoría
+- Documentation update: User stories autogestionados
 
 ---
 

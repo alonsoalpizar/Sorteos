@@ -27,9 +27,9 @@ export interface RegisterRequest {
   first_name: string;
   last_name: string;
   phone?: string;
-  accept_terms: boolean;
-  accept_privacy: boolean;
-  accept_marketing?: boolean;
+  accepted_terms: boolean;
+  accepted_privacy: boolean;
+  accepted_marketing?: boolean;
 }
 
 export interface LoginRequest {

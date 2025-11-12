@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
 const registerSchema = z
   .object({
@@ -49,10 +50,19 @@ export const RegisterPage = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+    defaultValues: {
+      accept_terms: false,
+      accept_privacy: false,
+      accept_marketing: false,
+    },
   });
+
+  const password = watch("password", "");
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -62,7 +72,16 @@ export const RegisterPage = () => {
   }, [isAuthenticated, navigate]);
 
   const onSubmit = (data: RegisterFormData) => {
-    const { confirmPassword, ...registerData } = data;
+    const { confirmPassword, accept_terms, accept_privacy, accept_marketing, ...rest } = data;
+
+    // Transformar nombres de campos para coincidir con backend
+    const registerData = {
+      ...rest,
+      accepted_terms: accept_terms,
+      accepted_privacy: accept_privacy,
+      accepted_marketing: accept_marketing,
+    };
+
     registerMutation.mutate(registerData, {
       onSuccess: () => {
         navigate("/verify-email");
@@ -152,9 +171,7 @@ export const RegisterPage = () => {
                 error={errors.password?.message}
                 {...register("password")}
               />
-              <p className="text-xs text-muted-foreground">
-                Mínimo 12 caracteres, incluye mayúsculas, minúsculas, números y símbolos
-              </p>
+              <PasswordStrength password={password} />
             </div>
 
             <div className="space-y-2">

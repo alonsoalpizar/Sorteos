@@ -9,15 +9,16 @@ import (
 
 // Config estructura principal de configuración
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Redis    RedisConfig
-	JWT      JWTConfig
-	Payment  PaymentConfig
-	Stripe   StripeConfig
-	SendGrid SendGridConfig
-	Twilio   TwilioConfig
-	Business BusinessConfig
+	Server                ServerConfig
+	Database              DatabaseConfig
+	Redis                 RedisConfig
+	JWT                   JWTConfig
+	Payment               PaymentConfig
+	Stripe                StripeConfig
+	SendGrid              SendGridConfig
+	Twilio                TwilioConfig
+	Business              BusinessConfig
+	SkipEmailVerification bool
 }
 
 // ServerConfig configuración del servidor HTTP
@@ -188,6 +189,7 @@ func Load() (*Config, error) {
 			RateLimitReservePerMinute: viper.GetInt("CONFIG_RATE_LIMIT_RESERVE_PER_MINUTE"),
 			RateLimitPaymentPerMinute: viper.GetInt("CONFIG_RATE_LIMIT_PAYMENT_PER_MINUTE"),
 		},
+		SkipEmailVerification: viper.GetBool("CONFIG_SKIP_EMAIL_VERIFICATION"),
 	}
 
 	// Validar configuración crítica
@@ -246,6 +248,9 @@ func setDefaults() {
 	// SendGrid
 	viper.SetDefault("CONFIG_SENDGRID_FROM_NAME", "Sorteos Platform")
 	viper.SetDefault("CONFIG_SENDGRID_TEMPLATES_DIR", "./templates/email")
+
+	// Development Features
+	viper.SetDefault("CONFIG_SKIP_EMAIL_VERIFICATION", false)
 }
 
 // Validate valida que la configuración sea correcta

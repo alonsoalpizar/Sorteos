@@ -43,6 +43,13 @@ func (h *RegisterHandler) Handle(c *gin.Context) {
 		return
 	}
 
+	// DEBUG: Log del input recibido
+	h.logger.Info("Register input received",
+		logger.String("email", input.Email),
+		logger.Bool("accepted_terms", input.AcceptedTerms),
+		logger.Bool("accepted_privacy", input.AcceptedPrivacy),
+	)
+
 	// Obtener IP y User-Agent
 	ip := c.ClientIP()
 	userAgent := c.Request.UserAgent()

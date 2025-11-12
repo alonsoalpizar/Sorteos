@@ -19,8 +19,8 @@ type RegisterInput struct {
 	Phone           *string `json:"phone,omitempty"`
 	FirstName       *string `json:"first_name,omitempty"`
 	LastName        *string `json:"last_name,omitempty"`
-	AcceptedTerms   bool    `json:"accepted_terms" binding:"required"`
-	AcceptedPrivacy bool    `json:"accepted_privacy" binding:"required"`
+	AcceptedTerms   bool    `json:"accepted_terms"`
+	AcceptedPrivacy bool    `json:"accepted_privacy"`
 }
 
 // RegisterOutput representa los datos de salida del registro
@@ -32,12 +32,13 @@ type RegisterOutput struct {
 
 // RegisterUseCase maneja el registro de usuarios
 type RegisterUseCase struct {
-	userRepo    domain.UserRepository
-	consentRepo domain.UserConsentRepository
-	auditRepo   domain.AuditLogRepository
-	tokenMgr    TokenManager
-	notifier    Notifier
-	logger      *logger.Logger
+	userRepo              domain.UserRepository
+	consentRepo           domain.UserConsentRepository
+	auditRepo             domain.AuditLogRepository
+	tokenMgr              TokenManager
+	notifier              Notifier
+	logger                *logger.Logger
+	skipEmailVerification bool
 }
 
 // TokenManager interface para gestión de tokens
@@ -59,14 +60,16 @@ func NewRegisterUseCase(
 	tokenMgr TokenManager,
 	notifier Notifier,
 	logger *logger.Logger,
+	skipEmailVerification bool,
 ) *RegisterUseCase {
 	return &RegisterUseCase{
-		userRepo:    userRepo,
-		consentRepo: consentRepo,
-		auditRepo:   auditRepo,
-		tokenMgr:    tokenMgr,
-		notifier:    notifier,
-		logger:      logger,
+		userRepo:              userRepo,
+		consentRepo:           consentRepo,
+		auditRepo:             auditRepo,
+		tokenMgr:              tokenMgr,
+		notifier:              notifier,
+		logger:                logger,
+		skipEmailVerification: skipEmailVerification,
 	}
 }
 
@@ -87,6 +90,14 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, input *RegisterInput, ip
 		if err := domain.ValidatePhone(*input.Phone); err != nil {
 			return nil, errors.WrapWithMessage(errors.ErrValidationFailed, err.Error(), err)
 		}
+	}
+
+	// Validar aceptación de términos y privacidad
+	if !input.AcceptedTerms {
+		return nil, errors.WrapWithMessage(errors.ErrValidationFailed, "Debes aceptar los términos y condiciones", nil)
+	}
+	if !input.AcceptedPrivacy {
+		return nil, errors.WrapWithMessage(errors.ErrValidationFailed, "Debes aceptar la política de privacidad", nil)
 	}
 
 	// Verificar que el email no esté registrado
@@ -120,16 +131,17 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, input *RegisterInput, ip
 
 	// Crear usuario
 	user := &domain.User{
-		UUID:         uuid.New().String(),
-		Email:        input.Email,
-		PasswordHash: passwordHash,
-		Phone:        input.Phone,
-		FirstName:    input.FirstName,
-		LastName:     input.LastName,
-		Role:         domain.UserRoleUser,
-		KYCLevel:     domain.KYCLevelNone,
-		Status:       domain.UserStatusActive,
-		Country:      "CR",
+		UUID:          uuid.New().String(),
+		Email:         input.Email,
+		EmailVerified: uc.skipEmailVerification, // Auto-verificar si está en modo dev
+		PasswordHash:  passwordHash,
+		Phone:         input.Phone,
+		FirstName:     input.FirstName,
+		LastName:      input.LastName,
+		Role:          domain.UserRoleUser,
+		KYCLevel:      domain.KYCLevelNone,
+		Status:        domain.UserStatusActive,
+		Country:       "CR",
 	}
 
 	if err := uc.userRepo.Create(user); err != nil {
