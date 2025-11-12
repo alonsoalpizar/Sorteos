@@ -1,11 +1,14 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRaffleDetail, usePublishRaffle, useDeleteRaffle } from '../../../hooks/useRaffles';
+import { useCreateReservation } from '../../../hooks/useReservations';
 import { useAuth } from '../../../hooks/useAuth';
 import { NumberGrid } from '../components/NumberGrid';
 import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { FloatingCheckoutButton } from '../../../components/ui/FloatingCheckoutButton';
 import { useCartStore } from '../../../store/cartStore';
+import { toast } from 'sonner';
 import {
   formatCurrency,
   formatDateTime,
@@ -33,6 +36,7 @@ export function RaffleDetailPage() {
 
   const publishMutation = usePublishRaffle();
   const deleteMutation = useDeleteRaffle();
+  const createReservation = useCreateReservation();
 
   // Cart store integration
   const {
@@ -44,6 +48,13 @@ export function RaffleDetailPage() {
     clearNumbers,
   } = useCartStore();
 
+  // Reservation state
+  const [currentReservation, setCurrentReservation] = useState<{
+    id: string;
+    expires_at: string;
+  } | null>(null);
+  const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+
   const isOwner = user && data?.raffle && user.id === data.raffle.user_id;
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
@@ -53,6 +64,48 @@ export function RaffleDetailPage() {
       setCurrentRaffle(data.raffle.uuid);
     }
   }, [id, data?.raffle.uuid, setCurrentRaffle]);
+
+  // Auto-create reservation when numbers are selected
+  const createOrUpdateReservation = useCallback(async () => {
+    if (!data?.raffle.uuid || getSelectedCount() === 0 || isOwner) return;
+
+    try {
+      const response = await createReservation.mutateAsync({
+        raffle_id: data.raffle.uuid,
+        number_ids: selectedNumbers.map(n => n.id),
+        session_id: sessionId,
+      });
+
+      setCurrentReservation({
+        id: response.reservation.id,
+        expires_at: response.reservation.expires_at,
+      });
+
+      toast.success(`${getSelectedCount()} número(s) reservado(s) por 15 minutos`, {
+        description: 'Completa tu compra antes de que expire la reserva',
+      });
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      toast.error('Error al reservar números', {
+        description: error instanceof Error ? error.message : 'Intenta de nuevo',
+      });
+      clearNumbers();
+    }
+  }, [data?.raffle.uuid, selectedNumbers, sessionId, getSelectedCount, isOwner, createReservation, clearNumbers]);
+
+  // Debounced reservation creation
+  useEffect(() => {
+    if (getSelectedCount() === 0) {
+      setCurrentReservation(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      createOrUpdateReservation();
+    }, 500); // Wait 500ms after last selection
+
+    return () => clearTimeout(timer);
+  }, [getSelectedCount, createOrUpdateReservation]);
 
   const handlePublish = async () => {
     if (!id || !confirm('¿Estás seguro de publicar este sorteo?')) return;
@@ -360,6 +413,18 @@ export function RaffleDetailPage() {
             readonly={isOwner || raffle.status !== 'active'}
           />
         </div>
+      )}
+
+      {/* Floating Checkout Button */}
+      {!isOwner && raffle.status === 'active' && (
+        <FloatingCheckoutButton
+          selectedCount={getSelectedCount()}
+          totalAmount={getTotalAmount(Number(raffle.price_per_number))}
+          expiresAt={currentReservation?.expires_at}
+          onCheckout={handleProceedToCheckout}
+          onClear={clearNumbers}
+          show={getSelectedCount() > 0}
+        />
       )}
     </div>
   );
