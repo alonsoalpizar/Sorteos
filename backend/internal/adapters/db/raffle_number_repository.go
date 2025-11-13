@@ -200,23 +200,30 @@ func (r *RaffleNumberRepositoryImpl) ReleaseExpiredReservations() (int, error) {
 
 // MarkAsSold marca un número como vendido
 func (r *RaffleNumberRepositoryImpl) MarkAsSold(id int64, userID, paymentID int64) error {
-	// Buscar el número para obtener el precio del raffle
+	// Buscar el número para obtener el raffle_id
 	var number domain.RaffleNumber
-	if err := r.db.Preload("Raffle").First(&number, id).Error; err != nil {
+	if err := r.db.First(&number, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrNotFound
 		}
 		return errors.Wrap(errors.ErrDatabaseError, err)
 	}
 
-	// Nota: Asumiendo que el precio se obtendrá del raffle asociado
-	// En una implementación real, necesitarías hacer un JOIN o preload
+	// Obtener el precio del raffle asociado
+	var raffle struct {
+		PricePerNumber float64 `gorm:"column:price_per_number"`
+	}
+	if err := r.db.Table("raffles").Select("price_per_number").Where("id = ?", number.RaffleID).First(&raffle).Error; err != nil {
+		return errors.Wrap(errors.ErrDatabaseError, err)
+	}
+
 	now := time.Now()
 
 	updates := map[string]interface{}{
 		"status":         domain.RaffleNumberStatusSold,
 		"user_id":        userID,
 		"payment_id":     paymentID,
+		"price":          raffle.PricePerNumber, // Add price from raffle
 		"sold_at":        now,
 		"reserved_at":    nil,
 		"reserved_until": nil,

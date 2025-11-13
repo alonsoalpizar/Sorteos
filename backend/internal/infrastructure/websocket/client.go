@@ -76,21 +76,19 @@ func (c *Client) WritePump() {
 				return
 			}
 
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
-			if err != nil {
+			// Send the message
+			if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				return
 			}
-			w.Write(message)
 
-			// Add queued messages to the current websocket message
+			// Send any queued messages as separate WebSocket frames
+			// (each message should be a complete JSON object)
 			n := len(c.Send)
 			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.Send)
-			}
-
-			if err := w.Close(); err != nil {
-				return
+				queuedMsg := <-c.Send
+				if err := c.Conn.WriteMessage(websocket.TextMessage, queuedMsg); err != nil {
+					return
+				}
 			}
 
 		case <-ticker.C:

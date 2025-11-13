@@ -41,10 +41,21 @@ export function useRaffleWebSocket(raffleId: string | undefined): UseRaffleWebSo
       return;
     }
 
-    // Obtener la URL del WebSocket desde variables de entorno
+    // Construir URL del WebSocket
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = import.meta.env.VITE_API_URL?.replace(/^https?:\/\//, '') || window.location.host;
-    const wsUrl = `${wsProtocol}//${wsHost}/api/v1/raffles/${raffleId}/ws`;
+    const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+
+    let wsUrl: string;
+
+    // Si VITE_API_URL es una URL absoluta (desarrollo)
+    if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
+      const host = apiUrl.replace(/^https?:\/\//, '');
+      wsUrl = `${wsProtocol}//${host}/api/v1/raffles/${raffleId}/ws`;
+    }
+    // Si es una ruta relativa (producción)
+    else {
+      wsUrl = `${wsProtocol}//${window.location.host}${apiUrl}/raffles/${raffleId}/ws`;
+    }
 
     console.log('[WebSocket] Connecting to:', wsUrl);
 

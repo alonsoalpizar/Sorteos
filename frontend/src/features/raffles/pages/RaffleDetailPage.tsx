@@ -1,13 +1,13 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRaffleDetail, usePublishRaffle, useDeleteRaffle } from '../../../hooks/useRaffles';
-import { useCreateReservation } from '../../../hooks/useReservations';
 import { useAuth } from '../../../hooks/useAuth';
+import { useRaffleWebSocket } from '../../../hooks/useRaffleWebSocket';
 import { NumberGrid } from '../components/NumberGrid';
 import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { FloatingCheckoutButton } from '../../../components/ui/FloatingCheckoutButton';
-import { useCartStore } from '../../../store/cartStore';
+import { reservationService, Reservation } from '../../../services/reservationService';
 import { toast } from 'sonner';
 import {
   formatCurrency,
@@ -29,130 +29,224 @@ export function RaffleDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data, isLoading, error } = useRaffleDetail(id!, {
+  const { data, isLoading, error, refetch } = useRaffleDetail(id!, {
     includeNumbers: true,
     includeImages: true,
   });
 
   const publishMutation = usePublishRaffle();
   const deleteMutation = useDeleteRaffle();
-  const createReservation = useCreateReservation();
 
-  // Cart store integration
-  const {
-    setCurrentRaffle,
-    toggleNumber,
-    selectedNumbers,
-    getSelectedCount,
-    getTotalAmount,
-    clearNumbers,
-  } = useCartStore();
-
-  // Reservation state
-  const [currentReservation, setCurrentReservation] = useState<{
-    id: string;
-    expires_at: string;
-  } | null>(null);
+  // Reservation state (única fuente de verdad)
+  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+  const [selectedNumbers, setSelectedNumbers] = useState<string[]>([]);
+  const [isLoadingReservation, setIsLoadingReservation] = useState(false);
   const [sessionId] = useState(() => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   const isOwner = user && data?.raffle && user.id === data.raffle.user_id;
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
-  // Set current raffle when component mounts or id changes
+  // WebSocket connection for real-time updates
+  const { isConnected, onNumberUpdate, onReservationExpired } = useRaffleWebSocket(data?.raffle?.uuid);
+
+  // Listen for WebSocket number updates (available, reserved, sold)
   useEffect(() => {
-    if (id && data?.raffle.uuid) {
-      setCurrentRaffle(data.raffle.uuid);
-    }
-  }, [id, data?.raffle.uuid, setCurrentRaffle]);
+    if (!isConnected) return;
 
-  // Auto-create reservation when numbers are selected
-  const createOrUpdateReservation = useCallback(async () => {
-    if (!data?.raffle.uuid || getSelectedCount() === 0 || isOwner) return;
+    const unsubscribeNumberUpdate = onNumberUpdate((update) => {
+      console.log('[WebSocket] Number update:', update);
 
-    // Don't create reservation if user is not authenticated
-    if (!user) {
-      console.log('User not authenticated, skipping auto-reservation');
+      // Solo refrescar si la actualización NO es del usuario actual
+      // Si es del usuario actual, el estado ya se actualizó localmente
+      const isMyUpdate = update.user_id === user?.id;
+
+      if (!isMyUpdate) {
+        // Refrescar los datos del sorteo para actualizar la grilla
+        refetch();
+
+        // Mostrar notificación según el estado
+        if (update.status === 'sold') {
+          toast.info(`Número ${update.number_id} vendido`);
+        } else if (update.status === 'reserved') {
+          toast.info(`Número ${update.number_id} reservado`);
+        } else if (update.status === 'available') {
+          toast.info(`Número ${update.number_id} disponible`);
+        }
+      }
+    });
+
+    const unsubscribeExpired = onReservationExpired((data) => {
+      console.log('[WebSocket] Reservation expired:', data);
+
+      // Refrescar datos
+      refetch();
+    });
+
+    return () => {
+      unsubscribeNumberUpdate();
+      unsubscribeExpired();
+    };
+  }, [isConnected, onNumberUpdate, onReservationExpired, refetch, user?.id]);
+
+  // Al montar componente: Cargar reserva activa si existe
+  useEffect(() => {
+    const loadOrCleanup = async () => {
+      if (!data || !user || isOwner) return;
+
+      try {
+        const prevReservation = await reservationService.getActiveForRaffle(data.raffle.uuid);
+
+        if (prevReservation) {
+          // Ya tiene reserva activa - cargarla en lugar de cancelarla
+          setActiveReservation(prevReservation);
+          setSelectedNumbers(prevReservation.number_ids);
+          console.log('Reserva activa cargada:', prevReservation.id);
+        }
+      } catch (error) {
+        console.error('Error al cargar reserva activa:', error);
+      }
+    };
+
+    loadOrCleanup();
+
+    // NO hacemos cleanup automático aquí
+    // La reserva se cancela explícitamente con el botón "Limpiar selección"
+    // o expira automáticamente después de 10 minutos
+  }, [data, user, isOwner]);
+
+  // Monitorear timeout de reserva (10 minutos)
+  useEffect(() => {
+    if (!activeReservation) return;
+
+    const checkExpiration = () => {
+      const expiresAt = new Date(activeReservation.expires_at);
+      const now = new Date();
+      const timeLeft = expiresAt.getTime() - now.getTime();
+
+      // Si ya expiró
+      if (timeLeft <= 0) {
+        toast.error('Tu reserva ha expirado', {
+          description: 'Los números han sido liberados',
+        });
+        setActiveReservation(null);
+        setSelectedNumbers([]);
+        return;
+      }
+
+      // Alerta 1 minuto antes de expirar
+      if (timeLeft <= 60 * 1000 && timeLeft > 59 * 1000) {
+        toast.warning('¡Queda 1 minuto!', {
+          description: 'Tu reserva está por expirar. Completa tu compra ahora.',
+          duration: 10000,
+        });
+      }
+
+      // Alerta 30 segundos antes de expirar
+      if (timeLeft <= 30 * 1000 && timeLeft > 29 * 1000) {
+        toast.warning('¡30 segundos!', {
+          description: 'Tu reserva expirará pronto',
+          duration: 10000,
+        });
+      }
+    };
+
+    // Verificar cada segundo
+    const interval = setInterval(checkExpiration, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeReservation]);
+
+  // Manejar selección de números
+  const handleNumberSelect = async (numberStr: string) => {
+    // No permitir selección si es owner o no está autenticado
+    if (isOwner || !user) {
+      if (!user) {
+        toast.info('Inicia sesión para reservar números');
+      }
       return;
     }
 
-    // Don't create reservation if already processing
-    if (createReservation.isPending) return;
+    if (isLoadingReservation) return;
+
+    const isAlreadySelected = selectedNumbers.includes(numberStr);
 
     try {
-      const response = await createReservation.mutateAsync({
-        raffle_id: data.raffle.uuid,
-        number_ids: selectedNumbers.map(n => n.id),
-        session_id: sessionId,
-      });
+      setIsLoadingReservation(true);
 
-      setCurrentReservation({
-        id: response.reservation.id,
-        expires_at: response.reservation.expires_at,
-      });
-
-      toast.success(`${getSelectedCount()} número(s) reservado(s) por 15 minutos`, {
-        description: 'Completa tu compra antes de que expire la reserva',
-      });
-    } catch (error) {
-      console.error('Error creating reservation:', error);
-
-      // Check for specific error types
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
-
-        // 403: Email not verified
-        if (axiosError.response?.status === 403) {
-          toast.error('Email no verificado', {
-            description: 'Debes verificar tu email para reservar números. Revisa tu bandeja de entrada.',
-            duration: 5000,
-          });
-          return;
+      if (isAlreadySelected) {
+        // REMOVER número de reserva
+        if (activeReservation) {
+          // Si es el último número, cancelar toda la reserva
+          if (selectedNumbers.length === 1) {
+            await reservationService.cancel(activeReservation.id);
+            setActiveReservation(null);
+            setSelectedNumbers([]);
+            toast.info('Reserva cancelada');
+          } else {
+            // TODO: Implementar endpoint para remover número específico
+            // Por ahora, no permitimos remover números individuales
+            toast.warning('Por ahora no puedes desseleccionar números individuales. Usa "Limpiar selección"');
+            return;
+          }
+        } else {
+          // Solo está en estado local
+          setSelectedNumbers(prev => prev.filter(n => n !== numberStr));
         }
+      } else {
+        // AGREGAR número
+        const isFirstNumber = selectedNumbers.length === 0;
 
-        // 409: Numbers already reserved (possibly by another user or stale reservation)
-        if (axiosError.response?.status === 409) {
-          toast.warning('Números no disponibles', {
-            description: 'Uno o más números ya están reservados. Por favor refresca la página.',
-            duration: 4000,
+        if (isFirstNumber) {
+          // CREAR NUEVA RESERVA con primer número
+          const reservation = await reservationService.create({
+            raffle_id: data!.raffle.uuid,
+            number_ids: [numberStr],
+            session_id: sessionId,
           });
-          // Don't clear automatically - let user see what they selected
-          return;
-        }
 
-        // 429: Rate limit exceeded (too many requests)
-        if (axiosError.response?.status === 429) {
-          toast.info('Demasiadas solicitudes', {
-            description: 'Por favor espera un momento antes de intentar de nuevo.',
-            duration: 3000,
+          console.log('Reserva creada:', reservation);
+          setActiveReservation(reservation);
+          setSelectedNumbers([numberStr]);
+
+          toast.success('Número reservado', {
+            description: 'Tienes 10 minutos para completar tu compra',
           });
-          return;
+        } else {
+          // AGREGAR a reserva existente
+          if (!activeReservation) {
+            throw new Error('No hay reserva activa');
+          }
+
+          const updatedReservation = await reservationService.addNumber(
+            activeReservation.id,
+            numberStr
+          );
+
+          setActiveReservation(updatedReservation);
+          setSelectedNumbers(prev => [...prev, numberStr]);
         }
       }
+    } catch (error: any) {
+      console.error('Error al manejar selección:', error);
 
-      toast.error('Error al reservar números', {
-        description: error instanceof Error ? error.message : 'Intenta de nuevo',
-      });
-      // Don't clear numbers on error - just let user try again
+      // Manejo de errores específicos
+      if (error.response?.status === 403) {
+        toast.error('Email no verificado', {
+          description: 'Verifica tu email para poder reservar números',
+        });
+      } else if (error.response?.status === 409) {
+        toast.error('Número no disponible', {
+          description: 'Este número ya está reservado por otro usuario',
+        });
+      } else {
+        toast.error('Error al reservar', {
+          description: 'No se pudo reservar el número. Intenta de nuevo',
+        });
+      }
+    } finally {
+      setIsLoadingReservation(false);
     }
-  }, [data?.raffle.uuid, selectedNumbers, sessionId, getSelectedCount, isOwner, user, createReservation]);
-
-  // DISABLED: Auto-reservation causes issues when user selects multiple numbers
-  // Instead, reservation is created only when user clicks "Proceder al Pago"
-  // useEffect(() => {
-  //   if (getSelectedCount() === 0) {
-  //     setCurrentReservation(null);
-  //     return;
-  //   }
-
-  //   // Don't create if already have a reservation
-  //   if (currentReservation) return;
-
-  //   const timer = setTimeout(() => {
-  //     createOrUpdateReservation();
-  //   }, 1500); // Wait 1.5 seconds after last selection
-
-  //   return () => clearTimeout(timer);
-  // }, [selectedNumbers, currentReservation, createOrUpdateReservation, getSelectedCount]);
+  };
 
   const handlePublish = async () => {
     if (!id || !confirm('¿Estás seguro de publicar este sorteo?')) return;
@@ -178,35 +272,57 @@ export function RaffleDetailPage() {
     }
   };
 
-  const handleNumberSelect = (numberStr: string) => {
-    toggleNumber({
-      id: numberStr,
-      displayNumber: numberStr,
-    });
+  const handleClearSelection = async () => {
+    if (activeReservation) {
+      try {
+        await reservationService.cancel(activeReservation.id);
+        setActiveReservation(null);
+        setSelectedNumbers([]);
+        toast.info('Reserva cancelada');
+      } catch (error) {
+        console.error('Error al cancelar reserva:', error);
+        toast.error('Error al cancelar reserva');
+      }
+    } else {
+      setSelectedNumbers([]);
+    }
   };
 
-  const handleProceedToCheckout = async () => {
-    if (getSelectedCount() === 0) {
-      toast.error('Por favor selecciona al menos un número');
+  const handlePayNow = async () => {
+    console.log('handlePayNow - activeReservation:', activeReservation);
+    console.log('handlePayNow - selectedNumbers:', selectedNumbers);
+
+    if (!activeReservation) {
+      toast.error('No tienes números reservados');
       return;
     }
 
-    // Check if user is authenticated
     if (!user) {
-      toast.info('Inicia sesión para continuar con tu compra', {
-        description: 'Te redirigiremos al login',
-      });
-      // Redirect to login with return URL
+      toast.info('Inicia sesión para continuar');
       navigate(`/login?redirect=/raffles/${id}`);
       return;
     }
 
-    // Create reservation before going to checkout
-    if (!currentReservation) {
-      await createOrUpdateReservation();
-    }
+    try {
+      // TODO: Implementar pago desde wallet (deducir balance)
 
-    navigate('/checkout');
+      // Confirmar reserva (marca como 'confirmed' y deja de contar timeout)
+      await reservationService.confirm(activeReservation.id);
+
+      toast.success('¡Gracias por tu compra!', {
+        description: `Has comprado ${selectedNumbers.length} número(s)`,
+        duration: 5000,
+      });
+
+      // Limpiar estado local
+      setActiveReservation(null);
+      setSelectedNumbers([]);
+
+      // NO navegar a ningún lado - quedarse en el sorteo
+    } catch (error) {
+      console.error('Error al procesar pago:', error);
+      toast.error('Error al procesar el pago');
+    }
   };
 
   if (error) {
@@ -282,29 +398,31 @@ export function RaffleDetailPage() {
             {/* CTA */}
             {raffle.status === 'active' && available_count > 0 && !isOwner && (
               <div className="flex-shrink-0">
-                {getSelectedCount() > 0 ? (
+                {selectedNumbers.length > 0 ? (
                   <div className="space-y-3">
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                      <p className="text-blue-100 text-sm mb-1">Números seleccionados</p>
-                      <p className="text-3xl font-bold text-white">{getSelectedCount()}</p>
+                      <p className="text-blue-100 text-sm mb-1">Números reservados</p>
+                      <p className="text-3xl font-bold text-white">{selectedNumbers.length}</p>
                       <p className="text-blue-100 text-sm mt-2">
-                        Total: {formatCurrency(getTotalAmount(Number(raffle.price_per_number)))}
+                        Total: {formatCurrency(selectedNumbers.length * Number(raffle.price_per_number))}
                       </p>
                     </div>
                     <Button
                       size="lg"
-                      onClick={handleProceedToCheckout}
+                      onClick={handlePayNow}
+                      disabled={isLoadingReservation}
                       className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg w-full"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Proceder al Pago
+                      Pagar Ahora
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={clearNumbers}
+                      onClick={handleClearSelection}
+                      disabled={isLoadingReservation}
                       className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
                     >
                       Limpiar selección
@@ -471,7 +589,7 @@ export function RaffleDetailPage() {
           </h2>
           <NumberGrid
             numbers={numbers}
-            selectedNumbers={selectedNumbers.map((n) => n.id)}
+            selectedNumbers={selectedNumbers}
             onNumberSelect={handleNumberSelect}
             readonly={isOwner || raffle.status !== 'active'}
           />
@@ -479,13 +597,13 @@ export function RaffleDetailPage() {
       )}
 
       {/* Floating Checkout Button */}
-      {!isOwner && raffle.status === 'active' && getSelectedCount() > 0 && (
+      {!isOwner && raffle.status === 'active' && selectedNumbers.length > 0 && (
         <FloatingCheckoutButton
-          selectedCount={getSelectedCount()}
-          totalAmount={getTotalAmount(Number(raffle.price_per_number))}
-          onCheckout={handleProceedToCheckout}
-          onCancel={clearNumbers}
-          disabled={!user || user?.kyc_level === 'none'}
+          selectedCount={selectedNumbers.length}
+          totalAmount={selectedNumbers.length * Number(raffle.price_per_number)}
+          onCheckout={handlePayNow}
+          onCancel={handleClearSelection}
+          disabled={!user || user?.kyc_level === 'none' || isLoadingReservation}
         />
       )}
     </div>
