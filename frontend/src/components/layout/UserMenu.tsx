@@ -31,6 +31,9 @@ export function UserMenu() {
   const handleLogout = async () => {
     await logout();
     setIsOpen(false);
+    // Clear all state and redirect to home
+    navigate('/');
+    window.location.reload(); // Force full page reload to clear all state
   };
 
   if (!user) {

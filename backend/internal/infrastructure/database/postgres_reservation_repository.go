@@ -115,3 +115,50 @@ func (r *PostgresReservationRepository) CountActiveReservationsForNumbers(ctx co
 
 	return int(count), err
 }
+
+// FindExpired finds all pending reservations that have expired (alias for FindExpiredPending)
+func (r *PostgresReservationRepository) FindExpired(ctx context.Context) ([]*entities.Reservation, error) {
+	var reservations []*entities.Reservation
+	err := r.db.WithContext(ctx).
+		Where("status = ?", entities.ReservationStatusPending).
+		Where("expires_at < ?", time.Now()).
+		Order("expires_at ASC").
+		Limit(100). // Process max 100 per execution
+		Find(&reservations).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return reservations, nil
+}
+
+// FindActiveByUserAndRaffle finds an active reservation for a user in a specific raffle
+func (r *PostgresReservationRepository) FindActiveByUserAndRaffle(ctx context.Context, userID uuid.UUID, raffleID uuid.UUID) (*entities.Reservation, error) {
+	var reservation entities.Reservation
+	err := r.db.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Where("raffle_id = ?", raffleID).
+		Where("status = ?", entities.ReservationStatusPending).
+		Where("expires_at > ?", time.Now()).
+		Order("created_at DESC").
+		First(&reservation).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &reservation, nil
+}
+
+// WithTransaction executes a function within a database transaction
+func (r *PostgresReservationRepository) WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Create a new context with the transaction
+		txCtx := context.WithValue(ctx, "gorm_tx", tx)
+		return fn(txCtx)
+	})
+}

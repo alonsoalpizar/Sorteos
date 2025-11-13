@@ -7,6 +7,7 @@ export interface Reservation {
   number_ids: string[];
   status: 'pending' | 'confirmed' | 'expired' | 'cancelled';
   phase: 'selection' | 'checkout' | 'completed' | 'expired';
+  session_id: string;
   selection_started_at: string;
   checkout_started_at?: string;
   total_amount: number;
@@ -18,6 +19,7 @@ export interface Reservation {
 export interface CreateReservationRequest {
   raffle_id: string;
   number_ids: string[];
+  session_id: string;
 }
 
 export interface CreateReservationResponse {
@@ -74,6 +76,13 @@ export const reservationService = {
   },
 
   /**
+   * Confirmar una reserva (pago completado)
+   */
+  async confirm(id: string): Promise<void> {
+    await api.post(`/reservations/${id}/confirm`);
+  },
+
+  /**
    * Agregar un número a una reserva existente
    */
   async addNumber(id: string, numberId: string): Promise<Reservation> {
@@ -82,5 +91,22 @@ export const reservationService = {
       { number_id: numberId }
     );
     return response.data.reservation;
+  },
+
+  /**
+   * Obtener reserva activa del usuario para un sorteo específico
+   */
+  async getActiveForRaffle(raffleId: string): Promise<Reservation | null> {
+    try {
+      const response = await api.get<{ success: boolean; data: Reservation }>(
+        `/raffles/${raffleId}/my-reservation`
+      );
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null; // No hay reserva activa
+      }
+      throw error;
+    }
   },
 };

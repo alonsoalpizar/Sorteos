@@ -36,4 +36,13 @@ type ReservationRepository interface {
 
 	// CountActiveReservationsForNumbers counts active reservations for specific numbers
 	CountActiveReservationsForNumbers(ctx context.Context, raffleID uuid.UUID, numberIDs []string) (int, error)
+
+	// FindExpired finds all pending reservations that have expired
+	FindExpired(ctx context.Context) ([]*entities.Reservation, error)
+
+	// FindActiveByUserAndRaffle finds an active reservation for a user in a specific raffle
+	FindActiveByUserAndRaffle(ctx context.Context, userID uuid.UUID, raffleID uuid.UUID) (*entities.Reservation, error)
+
+	// WithTransaction executes a function within a database transaction
+	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
 }

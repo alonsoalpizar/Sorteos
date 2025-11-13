@@ -19,9 +19,10 @@ Este archivo proporciona contexto rápido a Claude AI para trabajar eficientemen
 
 - **Backend:** Go 1.22+ con Gin (arquitectura hexagonal)
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
-- **Base de Datos:** PostgreSQL 15+ (transaccional)
-- **Cache/Locks:** Redis 7+ (locks distribuidos, rate limiting)
+- **Base de Datos:** PostgreSQL 16 (transaccional) - **INSTALACIÓN LOCAL**
+- **Cache/Locks:** Redis 7 (locks distribuidos, rate limiting) - **INSTALACIÓN LOCAL**
 - **Pagos:** Stripe (MVP) → PayPal (Fase 2)
+- **Servidor Web:** Nginx (reverse proxy + SSL)
 
 ### Estructura de Carpetas
 
@@ -34,13 +35,17 @@ Este archivo proporciona contexto rápido a Claude AI para trabajar eficientemen
 │   │   ├── usecase/          # Casos de uso (CreateRaffle, ReserveNumbers, etc.)
 │   │   └── adapters/         # HTTP, DB, Payments, Notifier
 │   ├── pkg/                  # Logger, Config, Errors
-│   └── migrations/           # SQL migrations
+│   ├── migrations/           # SQL migrations
+│   ├── uploads/              # Archivos subidos
+│   ├── .env                  # Variables de entorno
+│   └── sorteos-api           # Binario compilado
 ├── frontend/
 │   ├── src/
 │   │   ├── app/              # Router, providers
 │   │   ├── features/         # auth, raffles, checkout
 │   │   ├── components/ui/    # shadcn/ui components
 │   │   └── lib/              # Utilidades
+│   ├── dist/                 # Build de producción (servido por backend)
 │   └── public/
 └── Documentacion/            # 10 documentos técnicos (181 KB)
 ```
@@ -173,30 +178,60 @@ type Payment struct {
 
 ---
 
-## 🛠️ Comandos Útiles
+## 🛠️ Comandos Útiles - INSTALACIÓN LOCAL
 
-### Backend
+### Backend (Go)
 ```bash
-cd backend
-make run              # Ejecutar API
-make test             # Tests
-make migrate-up       # Aplicar migraciones
-make migrate-down     # Revertir última migración
+cd /opt/Sorteos/backend
+
+# Compilar binario
+go build -o sorteos-api ./cmd/api
+
+# Reiniciar servicio
+systemctl restart sorteos-api
+
+# Ver logs
+journalctl -xeu sorteos-api -f
+
+# Ver estado
+systemctl status sorteos-api
 ```
 
-### Frontend
+### Frontend (React)
 ```bash
-cd frontend
-npm run dev           # Servidor desarrollo
-npm run build         # Build producción
-npm run test          # Tests (Vitest)
+cd /opt/Sorteos/frontend
+
+# Desarrollo local
+npm run dev           # Puerto 5173
+
+# Build producción (10 segundos)
+npm run build         # Output: dist/
+
+# El backend ya sirve automáticamente desde dist/
 ```
 
-### Docker
+### Servicios del Sistema
 ```bash
-docker-compose up -d  # Levantar todos los servicios
-docker-compose logs -f api  # Ver logs
-docker-compose down   # Detener
+# PostgreSQL 16
+systemctl status postgresql
+psql -U sorteos_user -d sorteos_db
+
+# Redis 7
+systemctl status redis-server
+redis-cli ping
+
+# Backend API
+systemctl status sorteos-api
+systemctl restart sorteos-api
+```
+
+### Nginx (NO TOCAR - Ya configurado)
+```bash
+# Ver configuración
+cat /etc/nginx/sites-available/sorteos.club
+
+# Recargar (solo si es necesario)
+nginx -t && systemctl reload nginx
 ```
 
 ---
@@ -376,128 +411,233 @@ k6 run scripts/load-test-reservations.js
 
 ---
 
-## ✅ Estado Actual del Sistema (2025-11-10)
+## ✅ Estado Actual del Sistema (2025-11-13)
 
-### Sprint 1-2: Infraestructura y Autenticación ✅ COMPLETADO
+### Infraestructura - MIGRACIÓN COMPLETADA: Docker → Local
 
-**Despliegue:** http://62.171.188.255
+**Antes (Docker):**
+- 6 paquetes Docker + dependencias (464 MB overhead)
+- Rebuild frontend: 3+ minutos
+- Debugging complejo (logs en contenedores, exec, etc.)
 
-#### Backend (100% ✅)
-- ✅ Go 1.22 con estructura hexagonal implementada
-- ✅ PostgreSQL 15 configurado y corriendo (puerto 5432)
-- ✅ Redis 7 configurado y corriendo (puerto 6379)
-- ✅ 3 migraciones ejecutadas:
-  - `001_create_users_table` - Users con ENUMs (role, kyc_level, status)
-  - `002_create_user_consents_table` - GDPR compliance
-  - `003_create_audit_logs_table` - Auditoría completa
-- ✅ Sistema de autenticación completo:
-  - JWT (Access 15min, Refresh 7 días) con Redis
-  - Bcrypt cost 12 para passwords
-  - Rate limiting con Redis sliding window
-  - Email verification con SendGrid
-  - Audit logging en todas las acciones
-- ✅ Endpoints funcionando:
-  - `POST /api/v1/auth/register`
-  - `POST /api/v1/auth/login`
-  - `POST /api/v1/auth/verify-email`
-  - `POST /api/v1/auth/refresh`
-  - `GET /health` - Health check
-  - `GET /api/v1/ping` - Ping test
+**Ahora (Instalación Local):**
+- ✅ PostgreSQL 16 nativo (puerto 5432)
+- ✅ Redis 7 nativo (puerto 6379)
+- ✅ Backend Go como servicio systemd (puerto 8080)
+- ✅ Frontend servido por backend desde `frontend/dist/`
+- ✅ Nginx como reverse proxy con SSL
+- ✅ Rebuild frontend: **10 segundos** (`npm run build`)
+- ✅ Logs centralizados en journalctl
+- ✅ Debugging directo con herramientas estándar
 
-#### Frontend (100% ✅)
-- ✅ React 18 + TypeScript + Vite configurado
-- ✅ Tailwind CSS + shadcn/ui con **COLORES APROBADOS**
-- ✅ TanStack Query + Zustand implementados
-- ✅ 6 componentes UI: Button, Input, Label, Card, Alert, Badge
-- ✅ 4 páginas funcionales:
-  - `/login` - Login con validación Zod
-  - `/register` - Registro con GDPR checkboxes
-  - `/verify-email` - Verificación con código 6 dígitos
-  - `/dashboard` - Dashboard protegido
-- ✅ Protected routes con ProtectedRoute component
-- ✅ API client con refresh automático de tokens
-- ✅ Dark mode support
-- ✅ Build de producción servido por Nginx
-
-#### Infraestructura (100% ✅)
-- ✅ Docker Compose configurado (postgres + redis + api)
-- ✅ Nginx como reverse proxy
-  - Frontend servido desde `/opt/Sorteos/frontend/dist`
-  - API proxy a `localhost:8080`
-  - Compresión gzip
-  - Headers de seguridad
-  - Cache de assets (1 año)
-- ✅ Backend compilado y corriendo en Docker
-- ✅ Todos los servicios healthy
-
-#### Archivos Creados (53 total)
-- **Backend:** 22 archivos (domain, use cases, repos, handlers, middlewares)
-- **Frontend:** 31 archivos (components, pages, hooks, stores, config)
-
-### 🔍 Validaciones Realizadas
+### Servicios Activos
 
 ```bash
-# ✅ Services health
-docker compose ps
-# - postgres: Up 4 minutes (healthy)
-# - redis: Up 4 minutes (healthy)
-# - api: Up 9 seconds (healthy)
-
-# ✅ Backend API
-curl http://localhost:8080/health
-# {"status":"ok","time":"2025-11-10T06:05:12Z"}
-
-curl http://localhost:8080/api/v1/ping
-# {"message":"pong","timestamp":"2025-11-10T06:05:30Z"}
-
-# ✅ Public access
-curl http://62.171.188.255/api/v1/ping
-# {"message":"pong","timestamp":"2025-11-10T06:06:10Z"}
-
-curl -I http://62.171.188.255/
-# HTTP/1.1 200 OK (Frontend servido correctamente)
+# Verificación de servicios
+systemctl is-active postgresql redis-server sorteos-api nginx
+# postgresql: active
+# redis-server: active
+# sorteos-api: active
+# nginx: active
 ```
 
-### 🔗 URLs Activas
+### Configuración de Servicios
 
-- **Frontend**: http://62.171.188.255
-- **API**: http://62.171.188.255/api/v1/
-- **Health**: http://62.171.188.255/health
-- **Database**: PostgreSQL en puerto 5432
-- **Redis**: En puerto 6379
+**PostgreSQL:**
+- Host: localhost:5432
+- Database: sorteos_db
+- User: sorteos_user
+- Ubicación: /var/lib/postgresql/16/main
 
-### 📊 Logs del Backend
+**Redis:**
+- Host: localhost:6379
+- Sin password
+- Persistence: RDB + AOF
 
-```log
-[INFO] Starting Sorteos Platform API (environment: development, port: 8080)
-[INFO] Connected to PostgreSQL (host: postgres, database: sorteos_db)
-[INFO] Connected to Redis (host: redis, db: 0)
-[GIN-debug] POST /api/v1/auth/register
-[GIN-debug] POST /api/v1/auth/login
-[GIN-debug] POST /api/v1/auth/refresh
-[GIN-debug] POST /api/v1/auth/verify-email
-[INFO] Server listening (address: :8080)
+**Backend API (systemd):**
+- Servicio: sorteos-api.service
+- WorkingDirectory: /opt/Sorteos
+- Binario: /opt/Sorteos/backend/sorteos-api
+- Puerto: 8080
+- Auto-start: enabled
+
+**Nginx:**
+- Proxy: https://sorteos.club → localhost:8080
+- SSL: Configurado (certbot)
+- Static files: Servidos por backend Go
+
+---
+
+## 🔧 Flujo de Trabajo de Desarrollo
+
+### Cambios en Backend (Go)
+
+```bash
+cd /opt/Sorteos/backend
+
+# 1. Hacer cambios en archivos .go
+
+# 2. Compilar (verifica errores)
+go build -o sorteos-api ./cmd/api
+
+# 3. Reiniciar servicio
+systemctl restart sorteos-api
+
+# 4. Verificar logs
+journalctl -xeu sorteos-api -f
+
+# 5. Health check
+curl http://localhost:8080/health
+```
+
+**Tiempo total:** ~5-10 segundos
+
+### Cambios en Frontend (React/TypeScript)
+
+```bash
+cd /opt/Sorteos/frontend
+
+# 1. Hacer cambios en archivos .tsx/.ts
+
+# 2. Build (solo 10 segundos!)
+npm run build
+
+# 3. El backend ya está sirviendo el nuevo build
+# No se requiere reiniciar nada
+
+# 4. Verificar
+curl -I https://sorteos.club/
+```
+
+**Tiempo total:** ~10 segundos (vs 3+ minutos con Docker)
+
+### Cambios en Base de Datos
+
+```bash
+# Crear nueva migración
+cd /opt/Sorteos/backend/migrations
+touch 010_nueva_migracion.up.sql
+touch 010_nueva_migracion.down.sql
+
+# Aplicar migración (si usas migrate CLI)
+migrate -path ./migrations -database "postgresql://sorteos_user:sorteos_password@localhost:5432/sorteos_db?sslmode=disable" up
+
+# O aplicar manualmente
+psql -U sorteos_user -d sorteos_db -f migrations/010_nueva_migracion.up.sql
+```
+
+### Verificaciones Post-Deploy
+
+```bash
+# 1. Servicios corriendo
+systemctl is-active postgresql redis-server sorteos-api nginx
+
+# 2. Health checks
+curl http://localhost:8080/health
+curl http://localhost:8080/api/v1/ping
+
+# 3. Frontend
+curl -I https://sorteos.club/
+
+# 4. API pública
+curl https://sorteos.club/api/v1/ping
+
+# 5. Logs sin errores
+journalctl -xeu sorteos-api --since "5 minutes ago"
 ```
 
 ---
 
-## 🚀 Próximos Pasos (Sprint 3-4)
+## 🔍 Debugging y Troubleshooting
 
-### Gestión de Sorteos (CRUD Básico)
+### Ver Logs
 
-1. **Backend:**
-   - Migración `004_create_raffles_table`
-   - Migración `005_create_raffle_numbers_table`
-   - Domain: Raffle, RaffleNumber entities
-   - Use Cases: CreateRaffle, ListRaffles, PublishRaffle
-   - Implementar locks distribuidos con Redis (preparación para reservas)
+```bash
+# Backend API
+journalctl -xeu sorteos-api -f
+journalctl -xeu sorteos-api --since "1 hour ago"
 
-2. **Frontend:**
-   - Páginas: CreateRaffle, ListRaffles, RaffleDetail
-   - Componentes: RaffleCard, NumberGrid
-   - Form de creación con validaciones
+# PostgreSQL
+journalctl -xeu postgresql -f
 
-Ver: `Documentacion/roadmap.md` para detalles completos
+# Redis
+journalctl -xeu redis-server -f
+
+# Nginx
+tail -f /var/log/nginx/error.log
+tail -f /var/log/nginx/access.log
+```
+
+### Conectar a Bases de Datos
+
+```bash
+# PostgreSQL
+psql -U sorteos_user -d sorteos_db
+
+# Redis
+redis-cli
+> PING
+> KEYS *
+> GET user:session:12345
+```
+
+### Verificar Puertos
+
+```bash
+# Ver qué está escuchando en cada puerto
+ss -tlnp | grep -E "5432|6379|8080|80|443"
+
+# PostgreSQL (5432)
+# Redis (6379)
+# Backend API (8080)
+# Nginx (80, 443)
+```
+
+### Reiniciar Todo (Emergency)
+
+```bash
+# Reiniciar servicios en orden
+systemctl restart postgresql
+systemctl restart redis-server
+systemctl restart sorteos-api
+systemctl restart nginx
+
+# Verificar estado
+systemctl status postgresql redis-server sorteos-api nginx
+```
+
+---
+
+## 📝 Variables de Entorno
+
+Archivo: `/opt/Sorteos/backend/.env`
+
+**Críticas:**
+```bash
+# Base de Datos
+CONFIG_DB_HOST=localhost      # Era "postgres" en Docker
+CONFIG_DB_PORT=5432
+CONFIG_DB_USER=sorteos_user
+CONFIG_DB_PASSWORD=sorteos_password
+CONFIG_DB_NAME=sorteos_db
+
+# Redis
+CONFIG_REDIS_HOST=localhost   # Era "redis" en Docker
+CONFIG_REDIS_PORT=6379
+CONFIG_REDIS_PASSWORD=
+
+# JWT
+CONFIG_JWT_SECRET=change-this-to-a-secure-random-string-min-32-chars
+CONFIG_JWT_ACCESS_TOKEN_EXPIRY=15m
+CONFIG_JWT_REFRESH_TOKEN_EXPIRY=168h
+
+# Server
+CONFIG_ENV=development
+CONFIG_PORT=8080
+
+# Uploads
+CONFIG_STORAGE_PATH=./backend/uploads  # Relativo a /opt/Sorteos
+```
 
 ---
 
@@ -516,6 +656,26 @@ Ver: `Documentacion/roadmap.md` para detalles completos
 
 ---
 
+## 🚀 Próximos Pasos
+
+### Sprint Actual: Sistema de Pagos Completo
+
+1. **Backend:**
+   - Integración completa de Stripe
+   - Integración de PayPal
+   - Webhooks con verificación de firma
+   - Tests de concurrencia
+
+2. **Frontend:**
+   - Checkout flow completo
+   - Integración Stripe Elements
+   - Manejo de estados de pago
+   - Recovery de pagos fallidos
+
+Ver: `Documentacion/roadmap.md` para detalles completos
+
+---
+
 ## 🔄 Actualizaciones de este Archivo
 
 Cuando agregues features importantes:
@@ -528,291 +688,30 @@ Cuando agregues features importantes:
 
 ## 📝 Resumen Ejecutivo
 
-**Sprint 1-2 COMPLETADO (2025-11-10):**
-- ✅ 53 archivos creados (22 backend + 31 frontend)
-- ✅ Sistema de autenticación funcional end-to-end
-- ✅ Infraestructura desplegada y validada
-- ✅ Frontend público en http://62.171.188.255
-- ✅ API funcionando con rate limiting y JWT
-- ✅ Base de datos con 3 migraciones aplicadas
-- ✅ COLORES APROBADOS implementados (Blue #3B82F6 / Slate #64748B)
+**Migración Docker → Local (2025-11-13):**
+- ✅ PostgreSQL 16 instalado y configurado localmente
+- ✅ Redis 7 instalado y configurado localmente
+- ✅ Backend Go como servicio systemd (sorteos-api.service)
+- ✅ Docker completamente eliminado (464 MB liberados)
+- ✅ Rebuild frontend: 3+ min → 10 segundos
+- ✅ Debugging simplificado con journalctl
+- ✅ Stack nativo, rápido y mantenible
 
-**Próximo Sprint:** Gestión de Sorteos (CRUD) + Sistema de Reservas con locks distribuidos
+**Stack Actual:**
+- Backend: Go 1.22 (binario nativo)
+- Frontend: React 18 + Vite (servido por Go)
+- DB: PostgreSQL 16 (systemd)
+- Cache: Redis 7 (systemd)
+- Proxy: Nginx + SSL
+
+**URLs Activas:**
+- Frontend: https://sorteos.club
+- API: https://sorteos.club/api/v1/
+- Health: https://sorteos.club/health
 
 ---
 
-## 🔧 Guía de Compilación y Reinicio (IMPORTANTE)
-
-### ⚠️ REGLA DE ORO: Siempre usar Docker Compose
-
-**NUNCA ejecutar el binario directamente fuera de Docker** porque:
-1. Las variables de entorno usan nombres de host Docker (`CONFIG_DB_HOST=postgres`, `CONFIG_REDIS_HOST=redis`)
-2. El frontend compilado se sirve desde el mismo contenedor
-3. La configuración de red está optimizada para Docker
-
-### Estructura de Servicios Docker
-
-```yaml
-services:
-  postgres:      # Container: sorteos-postgres, Port: 5432
-  redis:         # Container: sorteos-redis, Port: 6379
-  api:           # Container: sorteos-api, Port: 8080
-```
-
-**IMPORTANTE**: El servicio se llama `api` en docker-compose.yml, pero el container se llama `sorteos-api`.
-
-### Proceso de Compilación y Reinicio
-
-#### 1. Comando Completo (RECOMENDADO)
-
-```bash
-cd /opt/Sorteos && docker compose build api && docker compose up -d api && sleep 3 && docker logs sorteos-api --tail 30
-```
-
-**Qué hace**:
-1. Va al directorio del proyecto
-2. Reconstruye el contenedor `api` (compila frontend + backend dentro de Docker)
-3. Lo reinicia en modo detached
-4. Espera 3 segundos
-5. Muestra los últimos 30 logs para verificación
-
-**Tiempo aproximado**: 30-60 segundos
-
-#### 2. Verificación Post-Reinicio
-
-```bash
-# Health check
-curl http://localhost:8080/health
-
-# Ready check (verifica DB + Redis)
-curl http://localhost:8080/ready
-
-# Ver logs completos
-docker logs sorteos-api -f
-```
-
-**Logs esperados**:
-```log
-INFO Starting Sorteos Platform API {"environment": "development", "port": "8080"}
-INFO Connected to PostgreSQL {"host": "postgres", "database": "sorteos_db"}
-INFO Connected to Redis {"host": "redis", "db": 0}
-INFO WebSocket Hub initialized
-[WebSocket Hub] Starting...
-INFO Background jobs started
-INFO Server listening {"address": ":8080"}
-```
-
-### Errores Comunes y Soluciones
-
-#### Error: "no such service: sorteos-api"
-
-❌ **Incorrecto**: `docker compose build sorteos-api`
-✅ **Correcto**: `docker compose build api`
-
-El nombre del servicio es `api`, no `sorteos-api`.
-
-#### Error: Compilación de TypeScript falla en Docker
-
-Si el build de Docker falla por errores de TypeScript:
-
-1. **Compilar frontend localmente primero**:
-```bash
-cd /opt/Sorteos/frontend
-npm install  # Si faltan dependencias
-npm run build
-```
-
-2. **Errores comunes de TypeScript**:
-   - **NodeJS namespace no encontrado**:
-     ```bash
-     npm install --save-dev @types/node
-     ```
-
-   - **Axios response.data**: Recordar que Axios devuelve `response.data.field`, no `response.field`
-     ```typescript
-     // ❌ Incorrecto
-     return response.reservation;
-
-     // ✅ Correcto
-     return response.data.reservation;
-     ```
-
-   - **Imports no usados**: Eliminar imports que TypeScript marca como unused
-
-3. **Después de corregir localmente**, rebuild Docker:
-```bash
-cd /opt/Sorteos
-docker compose build api && docker compose up -d api
-```
-
-#### Error: "failed to connect to postgres"
-
-Esto significa que el backend se está ejecutando **fuera de Docker**.
-
-**Solución**:
-```bash
-# 1. Matar cualquier proceso del backend corriendo localmente
-pkill -f "backend/bin/api"
-
-# 2. Reiniciar usando Docker
-cd /opt/Sorteos
-docker compose up -d api
-```
-
-#### Error: Puerto 8080 ya en uso
-
-```bash
-# Ver qué proceso está usando el puerto
-lsof -i :8080
-
-# Si es un contenedor viejo
-docker compose down
-docker compose up -d
-
-# Si es un proceso local
-pkill -f "backend/bin/api"
-```
-
-### Compilación Solo para Verificación (Sin Reiniciar)
-
-#### Backend (Go)
-```bash
-cd /opt/Sorteos/backend
-go build -v -o bin/api cmd/api/*.go
-```
-**Nota**: Solo verifica errores de compilación, NO inicia el servidor.
-
-#### Frontend (React)
-```bash
-cd /opt/Sorteos/frontend
-npm run build
-```
-**Output**: `dist/` con archivos compilados
-
-### Verificación del WebSocket Hub
-
-Después de reiniciar, verificar que el WebSocket Hub esté activo:
-
-```bash
-docker logs sorteos-api | grep -i websocket
-
-# Output esperado:
-# INFO WebSocket Hub initialized
-# [WebSocket Hub] Starting...
-# GET /api/v1/raffles/:id/ws --> ...
-```
-
-**Endpoints WebSocket**:
-- `ws://62.171.188.255:8080/api/v1/raffles/:raffle_id/ws` - Conexión WebSocket
-- `GET /api/v1/raffles/:id/ws/stats` - Stats por raffle (admin)
-- `GET /api/v1/admin/websocket/stats` - Stats globales (admin)
-
-### Jobs en Background
-
-Verificar que el job de expiración de reservas esté corriendo:
-
-```bash
-docker logs sorteos-api | grep "expire"
-
-# Output esperado:
-# INFO Starting expire reservations job {"interval": "1m0s"}
-# INFO Background jobs started
-```
-
-**Configuración actual**: Ejecuta cada 1 minuto para liberar números de reservas expiradas.
-
-### Checklist de Verificación Post-Deploy
-
-Después de cada rebuild, verificar:
-
-- [ ] Contenedor corriendo: `docker ps | grep sorteos-api`
-- [ ] Health check: `curl http://localhost:8080/health`
-- [ ] Ready check: `curl http://localhost:8080/ready`
-- [ ] WebSocket Hub: `docker logs sorteos-api | grep "WebSocket Hub"`
-- [ ] Background jobs: `docker logs sorteos-api | grep "Background jobs"`
-- [ ] No errores: `docker logs sorteos-api --tail 50`
-
-### Comandos de Debugging
-
-```bash
-# Ver logs en tiempo real
-docker logs sorteos-api -f
-
-# Entrar al contenedor
-docker exec -it sorteos-api sh
-
-# Conectar a PostgreSQL
-docker exec -it sorteos-postgres psql -U sorteos_user -d sorteos_db
-
-# Conectar a Redis
-docker exec -it sorteos-redis redis-cli
-
-# Ver locks activos en Redis
-docker exec sorteos-redis redis-cli KEYS "raffle:number:*"
-
-# Ver estado de servicios
-docker compose ps
-```
-
-### Flujo de Trabajo Recomendado
-
-**Para cambios en Backend (Go)**:
-```bash
-# 1. Hacer cambios en archivos .go
-
-# 2. (Opcional) Verificar compilación localmente
-cd /opt/Sorteos/backend
-go build -v -o bin/api cmd/api/*.go
-
-# 3. Rebuild y reiniciar Docker
-cd /opt/Sorteos
-docker compose build api && docker compose up -d api
-
-# 4. Verificar logs
-docker logs sorteos-api --tail 50
-```
-
-**Para cambios en Frontend (React/TypeScript)**:
-```bash
-# 1. Hacer cambios en archivos .tsx/.ts
-
-# 2. (Opcional) Verificar compilación localmente
-cd /opt/Sorteos/frontend
-npm run build
-
-# 3. Rebuild y reiniciar Docker
-cd /opt/Sorteos
-docker compose build api && docker compose up -d api
-
-# 4. Verificar que los assets se sirven
-curl -I http://localhost:8080/assets/index-*.js
-```
-
-**Para cambios en ambos**:
-```bash
-# Rebuild completo (sin caché)
-cd /opt/Sorteos
-docker compose build --no-cache api && docker compose up -d api
-```
-
-### Migraciones de Base de Datos
-
-**Última migración aplicada**:
-```sql
--- 009_enhance_reservations_double_timeout.up.sql
--- Agrega: phase, selection_started_at, checkout_started_at
-```
-
-**Verificar migraciones**:
-```bash
-docker exec sorteos-postgres psql -U sorteos_user -d sorteos_db -c "SELECT version FROM schema_migrations ORDER BY version;"
-```
-
-**Nota**: Las migraciones se aplican automáticamente al iniciar el contenedor.
-
----
-
-**Última actualización:** 2025-11-13 02:35 UTC
-**Versión:** 1.2 - WebSocket + Reservaciones implementado
+**Última actualización:** 2025-11-13 06:45 UTC
+**Versión:** 2.0 - Migración a instalación local completada
 **Contacto:** Ing. Alonso Alpízar
-**Despliegue:** http://62.171.188.255
+**Despliegue:** https://sorteos.club

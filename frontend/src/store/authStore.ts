@@ -54,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         clearTokens();
+        // Clear cart storage
+        localStorage.removeItem('sorteos-cart-storage');
         set({
           user: null,
           isAuthenticated: false,

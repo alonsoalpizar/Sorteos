@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 // ReservationStatus represents the state of a reservation
@@ -52,7 +53,7 @@ type Reservation struct {
 	ID          uuid.UUID         `json:"id"`
 	RaffleID    uuid.UUID         `json:"raffle_id"`
 	UserID      uuid.UUID         `json:"user_id"`
-	NumberIDs   []string          `json:"number_ids" gorm:"type:text[]"` // PostgreSQL text array
+	NumberIDs   pq.StringArray    `json:"number_ids" gorm:"type:text[]"` // PostgreSQL text array
 	Status      ReservationStatus `json:"status"`
 	SessionID   string            `json:"session_id"`   // For idempotency tracking
 	TotalAmount float64           `json:"total_amount"` // Total cost for reserved numbers
@@ -86,7 +87,7 @@ func NewReservation(raffleID, userID uuid.UUID, numberIDs []string, sessionID st
 		ID:                 uuid.New(),
 		RaffleID:           raffleID,
 		UserID:             userID,
-		NumberIDs:          numberIDs,
+		NumberIDs:          pq.StringArray(numberIDs),
 		Status:             ReservationStatusPending,
 		SessionID:          sessionID,
 		TotalAmount:        totalAmount,
