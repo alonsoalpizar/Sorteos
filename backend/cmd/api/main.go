@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
+	"github.com/sorteos-platform/backend/internal/infrastructure/websocket"
 	"github.com/sorteos-platform/backend/pkg/config"
 	"github.com/sorteos-platform/backend/pkg/logger"
 )
@@ -58,6 +59,11 @@ func main() {
 		zap.Int("db", cfg.Redis.DB),
 	)
 
+	// Inicializar WebSocket Hub
+	wsHub := websocket.NewHub()
+	go wsHub.Run() // Run hub in background goroutine
+	log.Info("WebSocket Hub initialized")
+
 	// Configurar modo Gin
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -66,10 +72,10 @@ func main() {
 	// Inicializar router
 	router := gin.New()
 	setupMiddleware(router, log, cfg)
-	setupRoutes(router, db, rdb, cfg, log)
+	setupRoutes(router, db, rdb, wsHub, cfg, log)
 
 	// Iniciar jobs de fondo
-	startBackgroundJobs(db, rdb, cfg, log)
+	startBackgroundJobs(db, rdb, wsHub, cfg, log)
 
 	// Crear servidor HTTP
 	srv := &http.Server{
@@ -274,7 +280,7 @@ func setupMiddleware(router *gin.Engine, log *logger.Logger, cfg *config.Config)
 }
 
 // setupRoutes configura las rutas de la API
-func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, cfg *config.Config, log *logger.Logger) {
+func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, wsHub *websocket.Hub, cfg *config.Config, log *logger.Logger) {
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -320,8 +326,11 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, cfg *config
 	// Setup raffle routes
 	setupRaffleRoutes(router, db, rdb, cfg, log)
 
+	// Setup WebSocket routes
+	setupWebSocketRoutes(router, wsHub, rdb, cfg, log)
+
 	// Setup reservation and payment routes
-	setupReservationAndPaymentRoutes(router, db, rdb, cfg, log)
+	setupReservationAndPaymentRoutes(router, db, rdb, wsHub, cfg, log)
 
 	// API v1 - Ruta de prueba
 	v1 := router.Group("/api/v1")

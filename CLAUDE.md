@@ -541,7 +541,278 @@ Cuando agregues features importantes:
 
 ---
 
-**Última actualización:** 2025-11-10 21:30 UTC
-**Versión:** 1.1 - Sistema en producción
+## 🔧 Guía de Compilación y Reinicio (IMPORTANTE)
+
+### ⚠️ REGLA DE ORO: Siempre usar Docker Compose
+
+**NUNCA ejecutar el binario directamente fuera de Docker** porque:
+1. Las variables de entorno usan nombres de host Docker (`CONFIG_DB_HOST=postgres`, `CONFIG_REDIS_HOST=redis`)
+2. El frontend compilado se sirve desde el mismo contenedor
+3. La configuración de red está optimizada para Docker
+
+### Estructura de Servicios Docker
+
+```yaml
+services:
+  postgres:      # Container: sorteos-postgres, Port: 5432
+  redis:         # Container: sorteos-redis, Port: 6379
+  api:           # Container: sorteos-api, Port: 8080
+```
+
+**IMPORTANTE**: El servicio se llama `api` en docker-compose.yml, pero el container se llama `sorteos-api`.
+
+### Proceso de Compilación y Reinicio
+
+#### 1. Comando Completo (RECOMENDADO)
+
+```bash
+cd /opt/Sorteos && docker compose build api && docker compose up -d api && sleep 3 && docker logs sorteos-api --tail 30
+```
+
+**Qué hace**:
+1. Va al directorio del proyecto
+2. Reconstruye el contenedor `api` (compila frontend + backend dentro de Docker)
+3. Lo reinicia en modo detached
+4. Espera 3 segundos
+5. Muestra los últimos 30 logs para verificación
+
+**Tiempo aproximado**: 30-60 segundos
+
+#### 2. Verificación Post-Reinicio
+
+```bash
+# Health check
+curl http://localhost:8080/health
+
+# Ready check (verifica DB + Redis)
+curl http://localhost:8080/ready
+
+# Ver logs completos
+docker logs sorteos-api -f
+```
+
+**Logs esperados**:
+```log
+INFO Starting Sorteos Platform API {"environment": "development", "port": "8080"}
+INFO Connected to PostgreSQL {"host": "postgres", "database": "sorteos_db"}
+INFO Connected to Redis {"host": "redis", "db": 0}
+INFO WebSocket Hub initialized
+[WebSocket Hub] Starting...
+INFO Background jobs started
+INFO Server listening {"address": ":8080"}
+```
+
+### Errores Comunes y Soluciones
+
+#### Error: "no such service: sorteos-api"
+
+❌ **Incorrecto**: `docker compose build sorteos-api`
+✅ **Correcto**: `docker compose build api`
+
+El nombre del servicio es `api`, no `sorteos-api`.
+
+#### Error: Compilación de TypeScript falla en Docker
+
+Si el build de Docker falla por errores de TypeScript:
+
+1. **Compilar frontend localmente primero**:
+```bash
+cd /opt/Sorteos/frontend
+npm install  # Si faltan dependencias
+npm run build
+```
+
+2. **Errores comunes de TypeScript**:
+   - **NodeJS namespace no encontrado**:
+     ```bash
+     npm install --save-dev @types/node
+     ```
+
+   - **Axios response.data**: Recordar que Axios devuelve `response.data.field`, no `response.field`
+     ```typescript
+     // ❌ Incorrecto
+     return response.reservation;
+
+     // ✅ Correcto
+     return response.data.reservation;
+     ```
+
+   - **Imports no usados**: Eliminar imports que TypeScript marca como unused
+
+3. **Después de corregir localmente**, rebuild Docker:
+```bash
+cd /opt/Sorteos
+docker compose build api && docker compose up -d api
+```
+
+#### Error: "failed to connect to postgres"
+
+Esto significa que el backend se está ejecutando **fuera de Docker**.
+
+**Solución**:
+```bash
+# 1. Matar cualquier proceso del backend corriendo localmente
+pkill -f "backend/bin/api"
+
+# 2. Reiniciar usando Docker
+cd /opt/Sorteos
+docker compose up -d api
+```
+
+#### Error: Puerto 8080 ya en uso
+
+```bash
+# Ver qué proceso está usando el puerto
+lsof -i :8080
+
+# Si es un contenedor viejo
+docker compose down
+docker compose up -d
+
+# Si es un proceso local
+pkill -f "backend/bin/api"
+```
+
+### Compilación Solo para Verificación (Sin Reiniciar)
+
+#### Backend (Go)
+```bash
+cd /opt/Sorteos/backend
+go build -v -o bin/api cmd/api/*.go
+```
+**Nota**: Solo verifica errores de compilación, NO inicia el servidor.
+
+#### Frontend (React)
+```bash
+cd /opt/Sorteos/frontend
+npm run build
+```
+**Output**: `dist/` con archivos compilados
+
+### Verificación del WebSocket Hub
+
+Después de reiniciar, verificar que el WebSocket Hub esté activo:
+
+```bash
+docker logs sorteos-api | grep -i websocket
+
+# Output esperado:
+# INFO WebSocket Hub initialized
+# [WebSocket Hub] Starting...
+# GET /api/v1/raffles/:id/ws --> ...
+```
+
+**Endpoints WebSocket**:
+- `ws://62.171.188.255:8080/api/v1/raffles/:raffle_id/ws` - Conexión WebSocket
+- `GET /api/v1/raffles/:id/ws/stats` - Stats por raffle (admin)
+- `GET /api/v1/admin/websocket/stats` - Stats globales (admin)
+
+### Jobs en Background
+
+Verificar que el job de expiración de reservas esté corriendo:
+
+```bash
+docker logs sorteos-api | grep "expire"
+
+# Output esperado:
+# INFO Starting expire reservations job {"interval": "1m0s"}
+# INFO Background jobs started
+```
+
+**Configuración actual**: Ejecuta cada 1 minuto para liberar números de reservas expiradas.
+
+### Checklist de Verificación Post-Deploy
+
+Después de cada rebuild, verificar:
+
+- [ ] Contenedor corriendo: `docker ps | grep sorteos-api`
+- [ ] Health check: `curl http://localhost:8080/health`
+- [ ] Ready check: `curl http://localhost:8080/ready`
+- [ ] WebSocket Hub: `docker logs sorteos-api | grep "WebSocket Hub"`
+- [ ] Background jobs: `docker logs sorteos-api | grep "Background jobs"`
+- [ ] No errores: `docker logs sorteos-api --tail 50`
+
+### Comandos de Debugging
+
+```bash
+# Ver logs en tiempo real
+docker logs sorteos-api -f
+
+# Entrar al contenedor
+docker exec -it sorteos-api sh
+
+# Conectar a PostgreSQL
+docker exec -it sorteos-postgres psql -U sorteos_user -d sorteos_db
+
+# Conectar a Redis
+docker exec -it sorteos-redis redis-cli
+
+# Ver locks activos en Redis
+docker exec sorteos-redis redis-cli KEYS "raffle:number:*"
+
+# Ver estado de servicios
+docker compose ps
+```
+
+### Flujo de Trabajo Recomendado
+
+**Para cambios en Backend (Go)**:
+```bash
+# 1. Hacer cambios en archivos .go
+
+# 2. (Opcional) Verificar compilación localmente
+cd /opt/Sorteos/backend
+go build -v -o bin/api cmd/api/*.go
+
+# 3. Rebuild y reiniciar Docker
+cd /opt/Sorteos
+docker compose build api && docker compose up -d api
+
+# 4. Verificar logs
+docker logs sorteos-api --tail 50
+```
+
+**Para cambios en Frontend (React/TypeScript)**:
+```bash
+# 1. Hacer cambios en archivos .tsx/.ts
+
+# 2. (Opcional) Verificar compilación localmente
+cd /opt/Sorteos/frontend
+npm run build
+
+# 3. Rebuild y reiniciar Docker
+cd /opt/Sorteos
+docker compose build api && docker compose up -d api
+
+# 4. Verificar que los assets se sirven
+curl -I http://localhost:8080/assets/index-*.js
+```
+
+**Para cambios en ambos**:
+```bash
+# Rebuild completo (sin caché)
+cd /opt/Sorteos
+docker compose build --no-cache api && docker compose up -d api
+```
+
+### Migraciones de Base de Datos
+
+**Última migración aplicada**:
+```sql
+-- 009_enhance_reservations_double_timeout.up.sql
+-- Agrega: phase, selection_started_at, checkout_started_at
+```
+
+**Verificar migraciones**:
+```bash
+docker exec sorteos-postgres psql -U sorteos_user -d sorteos_db -c "SELECT version FROM schema_migrations ORDER BY version;"
+```
+
+**Nota**: Las migraciones se aplican automáticamente al iniciar el contenedor.
+
+---
+
+**Última actualización:** 2025-11-13 02:35 UTC
+**Versión:** 1.2 - WebSocket + Reservaciones implementado
 **Contacto:** Ing. Alonso Alpízar
 **Despliegue:** http://62.171.188.255

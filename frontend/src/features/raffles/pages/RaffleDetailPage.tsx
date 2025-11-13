@@ -479,16 +479,13 @@ export function RaffleDetailPage() {
       )}
 
       {/* Floating Checkout Button */}
-      {!isOwner && raffle.status === 'active' && (
+      {!isOwner && raffle.status === 'active' && getSelectedCount() > 0 && (
         <FloatingCheckoutButton
           selectedCount={getSelectedCount()}
           totalAmount={getTotalAmount(Number(raffle.price_per_number))}
-          expiresAt={currentReservation?.expires_at}
           onCheckout={handleProceedToCheckout}
-          onClear={clearNumbers}
-          show={getSelectedCount() > 0}
-          isAuthenticated={!!user}
-          isEmailVerified={user?.kyc_level !== 'none'}
+          onCancel={clearNumbers}
+          disabled={!user || user?.kyc_level === 'none'}
         />
       )}
     </div>

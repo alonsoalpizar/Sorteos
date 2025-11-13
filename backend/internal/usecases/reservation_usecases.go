@@ -12,6 +12,7 @@ import (
 	"github.com/sorteos-platform/backend/internal/domain/entities"
 	"github.com/sorteos-platform/backend/internal/domain/repositories"
 	"github.com/sorteos-platform/backend/internal/infrastructure/redis"
+	"github.com/sorteos-platform/backend/internal/infrastructure/websocket"
 )
 
 var (
@@ -25,6 +26,7 @@ type ReservationUseCases struct {
 	reservationRepo repositories.ReservationRepository
 	raffleRepo      dbadapter.RaffleRepository
 	lockService     *redis.LockService
+	wsHub           *websocket.Hub // WebSocket hub for real-time updates
 }
 
 // NewReservationUseCases creates a new reservation use cases instance
@@ -32,11 +34,13 @@ func NewReservationUseCases(
 	reservationRepo repositories.ReservationRepository,
 	raffleRepo dbadapter.RaffleRepository,
 	lockService *redis.LockService,
+	wsHub *websocket.Hub,
 ) *ReservationUseCases {
 	return &ReservationUseCases{
 		reservationRepo: reservationRepo,
 		raffleRepo:      raffleRepo,
 		lockService:     lockService,
+		wsHub:           wsHub,
 	}
 }
 
@@ -125,7 +129,18 @@ func (uc *ReservationUseCases) CreateReservation(ctx context.Context, input Crea
 		return nil, fmt.Errorf("error saving reservation: %w", err)
 	}
 
-	// Locks will be held until they expire (5 minutes) or until the reservation is confirmed/cancelled
+	// 8. Notify via WebSocket about new reservation
+	userIDStr := input.UserID.String()
+	for _, numberID := range input.NumberIDs {
+		uc.wsHub.BroadcastNumberUpdate(
+			input.RaffleID.String(),
+			numberID,
+			"reserved",
+			&userIDStr,
+		)
+	}
+
+	// Locks will be held until they expire (10 minutes) or until the reservation is confirmed/cancelled
 	return reservation, nil
 }
 
@@ -168,6 +183,16 @@ func (uc *ReservationUseCases) CancelReservation(ctx context.Context, reservatio
 		return fmt.Errorf("error updating reservation: %w", err)
 	}
 
+	// Notify via WebSocket that numbers are available again
+	for _, numberID := range reservation.NumberIDs {
+		uc.wsHub.BroadcastNumberUpdate(
+			reservation.RaffleID.String(),
+			numberID,
+			"available",
+			nil,
+		)
+	}
+
 	// Release locks manually
 	return uc.releaseLocks(ctx, reservation)
 }
@@ -194,6 +219,12 @@ func (uc *ReservationUseCases) ExpireReservations(ctx context.Context) (int, err
 		// Release locks (they may have already expired, but try anyway)
 		_ = uc.releaseLocks(ctx, reservation)
 
+		// Notify via WebSocket that numbers are available again
+		uc.wsHub.BroadcastReservationExpired(
+			reservation.RaffleID.String(),
+			reservation.NumberIDs,
+		)
+
 		count++
 	}
 
@@ -215,6 +246,86 @@ func (uc *ReservationUseCases) GetReservation(ctx context.Context, reservationID
 // GetUserReservations retrieves all reservations for a user
 func (uc *ReservationUseCases) GetUserReservations(ctx context.Context, userID uuid.UUID) ([]*entities.Reservation, error) {
 	return uc.reservationRepo.FindByUserID(ctx, userID)
+}
+
+// MoveToCheckout transitions a reservation from selection to checkout phase
+// This is called when user clicks "Pay Now" button
+func (uc *ReservationUseCases) MoveToCheckout(ctx context.Context, reservationID uuid.UUID) error {
+	reservation, err := uc.reservationRepo.FindByID(ctx, reservationID)
+	if err != nil {
+		return fmt.Errorf("error fetching reservation: %w", err)
+	}
+	if reservation == nil {
+		return errors.New("reservation not found")
+	}
+
+	// Transition to checkout phase (extends timeout to 5 more minutes)
+	if err := reservation.MoveToCheckout(); err != nil {
+		return err
+	}
+
+	// Save updated reservation
+	if err := uc.reservationRepo.Update(ctx, reservation); err != nil {
+		return fmt.Errorf("error updating reservation: %w", err)
+	}
+
+	return nil
+}
+
+// AddNumberToReservation adds a number to an existing reservation (only in selection phase)
+func (uc *ReservationUseCases) AddNumberToReservation(ctx context.Context, reservationID uuid.UUID, numberID string) error {
+	// 1. Get reservation
+	reservation, err := uc.reservationRepo.FindByID(ctx, reservationID)
+	if err != nil {
+		return fmt.Errorf("error fetching reservation: %w", err)
+	}
+	if reservation == nil {
+		return errors.New("reservation not found")
+	}
+
+	// 2. Validate phase and expiration
+	if reservation.Phase != entities.ReservationPhaseSelection {
+		return entities.ErrCannotAddInCheckout
+	}
+	if reservation.IsExpired() {
+		return entities.ErrReservationExpired
+	}
+
+	// 3. Acquire lock for the new number
+	lockKey := redis.ReservationLockKey(reservation.RaffleID.String(), numberID)
+	lock, err := uc.lockService.AcquireLock(ctx, lockKey, entities.ReservationSelectionTimeout)
+	if err != nil {
+		if errors.Is(err, redis.ErrLockNotAcquired) {
+			return errors.New("number is already reserved")
+		}
+		return fmt.Errorf("error acquiring lock: %w", err)
+	}
+	defer lock.Release(ctx)
+
+	// 4. Check number availability in database
+	// (This would require a method in raffle number repository)
+	// For now, we skip this check
+
+	// 5. Add number to reservation
+	if err := reservation.AddNumber(numberID); err != nil {
+		return err
+	}
+
+	// 6. Update in database
+	if err := uc.reservationRepo.Update(ctx, reservation); err != nil {
+		return fmt.Errorf("error updating reservation: %w", err)
+	}
+
+	// 7. Notify via WebSocket
+	userIDStr := reservation.UserID.String()
+	uc.wsHub.BroadcastNumberUpdate(
+		reservation.RaffleID.String(),
+		numberID,
+		"reserved",
+		&userIDStr,
+	)
+
+	return nil
 }
 
 // releaseLocks releases Redis locks for a reservation
