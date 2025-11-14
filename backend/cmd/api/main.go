@@ -320,8 +320,14 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, wsHub *webs
 		})
 	})
 
-	// Setup auth routes
-	setupAuthRoutes(router, db, rdb, cfg, log)
+	// Setup auth routes (retorna el email notifier)
+	emailNotifier := setupAuthRoutes(router, db, rdb, cfg, log)
+
+	// Setup test email route (solo en desarrollo/staging)
+	if !cfg.IsProduction() {
+		setupTestEmailRoute(router, emailNotifier, log)
+		log.Info("Test email route enabled (non-production environment)")
+	}
 
 	// Setup raffle routes
 	setupRaffleRoutes(router, db, rdb, cfg, log)

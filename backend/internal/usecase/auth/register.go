@@ -130,6 +130,12 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, input *RegisterInput, ip
 	}
 
 	// Crear usuario
+	// Determinar KYC level inicial basado en si se verifica el email automáticamente
+	initialKYCLevel := domain.KYCLevelNone
+	if uc.skipEmailVerification {
+		initialKYCLevel = domain.KYCLevelEmailVerified
+	}
+
 	user := &domain.User{
 		UUID:          uuid.New().String(),
 		Email:         input.Email,
@@ -139,7 +145,7 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, input *RegisterInput, ip
 		FirstName:     input.FirstName,
 		LastName:      input.LastName,
 		Role:          domain.UserRoleUser,
-		KYCLevel:      domain.KYCLevelNone,
+		KYCLevel:      initialKYCLevel,
 		Status:        domain.UserStatusActive,
 		Country:       "CR",
 	}
@@ -178,26 +184,29 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, input *RegisterInput, ip
 		}
 	}
 
-	// Generar código de verificación
-	code, err := crypto.GenerateVerificationCode()
-	if err != nil {
-		uc.logger.Error("Error generating verification code", logger.Error(err))
-		return nil, errors.Wrap(errors.ErrInternalServer, err)
-	}
-
-	// Guardar código en Redis (expira en 15 minutos)
-	if err := uc.tokenMgr.StoreVerificationCode(user.ID, "email", code, 15*time.Minute); err != nil {
-		uc.logger.Error("Error storing verification code", logger.Error(err))
-		return nil, err
-	}
-
-	// Enviar email de verificación
+	// Enviar email de verificación solo si no está en modo skip
 	verificationSent := false
-	if err := uc.notifier.SendVerificationEmail(user.Email, code); err != nil {
-		uc.logger.Warn("Error sending verification email", logger.Error(err))
-		// No fallar el registro si el email no se envía
-	} else {
-		verificationSent = true
+	if !uc.skipEmailVerification {
+		// Generar código de verificación
+		code, err := crypto.GenerateVerificationCode()
+		if err != nil {
+			uc.logger.Error("Error generating verification code", logger.Error(err))
+			return nil, errors.Wrap(errors.ErrInternalServer, err)
+		}
+
+		// Guardar código en Redis (expira en 15 minutos)
+		if err := uc.tokenMgr.StoreVerificationCode(user.ID, "email", code, 15*time.Minute); err != nil {
+			uc.logger.Error("Error storing verification code", logger.Error(err))
+			return nil, err
+		}
+
+		// Enviar email de verificación
+		if err := uc.notifier.SendVerificationEmail(user.Email, code); err != nil {
+			uc.logger.Warn("Error sending verification email", logger.Error(err))
+			// No fallar el registro si el email no se envía
+		} else {
+			verificationSent = true
+		}
 	}
 
 	// Registrar en audit log
