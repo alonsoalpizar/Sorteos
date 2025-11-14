@@ -6,13 +6,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/internal/domain"
 	raffleuc "github.com/sorteos-platform/backend/internal/usecase/raffle"
 )
 
 // GetRaffleDetailResponse respuesta del detalle
+// El tipo de Raffle será PublicRaffleDTO, BuyerRaffleDTO o OwnerRaffleDTO según el contexto
 type GetRaffleDetailResponse struct {
-	Raffle         *RaffleDTO        `json:"raffle"`
+	Raffle         interface{}       `json:"raffle"` // Puede ser PublicRaffleDTO, BuyerRaffleDTO o OwnerRaffleDTO
 	Numbers        []RaffleNumberDTO `json:"numbers,omitempty"`
 	Images         []RaffleImageDTO  `json:"images,omitempty"`
 	AvailableCount int64             `json:"available_count"`
@@ -35,13 +37,18 @@ type RaffleImageDTO struct {
 
 // GetRaffleDetailHandler maneja la obtención de detalle de sorteo
 type GetRaffleDetailHandler struct {
-	useCase *raffleuc.GetRaffleDetailUseCase
+	useCase          *raffleuc.GetRaffleDetailUseCase
+	raffleNumberRepo db.RaffleNumberRepository
 }
 
 // NewGetRaffleDetailHandler crea una nueva instancia
-func NewGetRaffleDetailHandler(useCase *raffleuc.GetRaffleDetailUseCase) *GetRaffleDetailHandler {
+func NewGetRaffleDetailHandler(
+	useCase *raffleuc.GetRaffleDetailUseCase,
+	raffleNumberRepo db.RaffleNumberRepository,
+) *GetRaffleDetailHandler {
 	return &GetRaffleDetailHandler{
-		useCase: useCase,
+		useCase:          useCase,
+		raffleNumberRepo: raffleNumberRepo,
 	}
 }
 
@@ -71,9 +78,38 @@ func (h *GetRaffleDetailHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// 4. Construir response
+	// 4. Determinar el tipo de usuario y construir DTO apropiado
+	var raffleDTO interface{}
+
+	// Obtener user_id si está autenticado (opcional)
+	userID, isAuthenticated := c.Get("user_id")
+
+	if !isAuthenticated {
+		// Usuario NO autenticado -> PublicRaffleDTO
+		raffleDTO = toPublicRaffleDTO(output.Raffle)
+	} else {
+		userIDInt64, ok := userID.(int64)
+		if !ok {
+			raffleDTO = toPublicRaffleDTO(output.Raffle)
+		} else if userIDInt64 == output.Raffle.UserID {
+			// Usuario es el dueño del sorteo -> OwnerRaffleDTO
+			raffleDTO = toOwnerRaffleDTO(output.Raffle)
+		} else {
+			// Usuario autenticado pero no es el dueño -> verificar si ha comprado
+			myTotalSpent, myNumbersCount, err := h.raffleNumberRepo.GetUserSpentOnRaffle(output.Raffle.ID, userIDInt64)
+			if err != nil || myNumbersCount == 0 {
+				// No ha comprado o error -> PublicRaffleDTO
+				raffleDTO = toPublicRaffleDTO(output.Raffle)
+			} else {
+				// Ha comprado -> BuyerRaffleDTO
+				raffleDTO = toBuyerRaffleDTO(output.Raffle, myTotalSpent, myNumbersCount)
+			}
+		}
+	}
+
+	// 5. Construir response
 	response := &GetRaffleDetailResponse{
-		Raffle:         toRaffleDTO(output.Raffle),
+		Raffle:         raffleDTO,
 		AvailableCount: output.AvailableCount,
 		ReservedCount:  output.ReservedCount,
 		SoldCount:      output.SoldCount,

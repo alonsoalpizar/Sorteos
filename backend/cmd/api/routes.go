@@ -175,7 +175,7 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	// Inicializar handlers
 	createRaffleHandler := raffleHandler.NewCreateRaffleHandler(createRaffleUseCase)
 	listRafflesHandler := raffleHandler.NewListRafflesHandler(listRafflesUseCase)
-	getRaffleDetailHandler := raffleHandler.NewGetRaffleDetailHandler(getRaffleDetailUseCase)
+	getRaffleDetailHandler := raffleHandler.NewGetRaffleDetailHandler(getRaffleDetailUseCase, raffleNumberRepo)
 	publishRaffleHandler := raffleHandler.NewPublishRaffleHandler(publishRaffleUseCase)
 	updateRaffleHandler := raffleHandler.NewUpdateRaffleHandler(updateRaffleUseCase)
 	suspendRaffleHandler := raffleHandler.NewSuspendRaffleHandler(suspendRaffleUseCase)

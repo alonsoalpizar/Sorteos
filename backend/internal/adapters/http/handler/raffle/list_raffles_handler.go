@@ -12,8 +12,8 @@ import (
 
 // ListRafflesResponse respuesta del listado
 type ListRafflesResponse struct {
-	Raffles    []*RaffleDTO `json:"raffles"`
-	Pagination Pagination   `json:"pagination"`
+	Raffles    []*PublicRaffleDTO `json:"raffles"` // Siempre retorna DTO público sin info financiera
+	Pagination Pagination         `json:"pagination"`
 }
 
 // Pagination información de paginación
@@ -71,10 +71,10 @@ func (h *ListRafflesHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// 4. Construir response
-	raffles := make([]*RaffleDTO, len(output.Raffles))
+	// 4. Construir response con DTOs públicos (sin información financiera)
+	raffles := make([]*PublicRaffleDTO, len(output.Raffles))
 	for i, r := range output.Raffles {
-		raffles[i] = toRaffleDTO(r)
+		raffles[i] = toPublicRaffleDTO(r)
 	}
 
 	response := &ListRafflesResponse{

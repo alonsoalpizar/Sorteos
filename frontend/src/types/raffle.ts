@@ -5,10 +5,18 @@ export type DrawMethod = 'loteria_nacional_cr' | 'manual' | 'random';
 export type SettlementStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type RaffleNumberStatus = 'available' | 'reserved' | 'sold';
 
-export interface Raffle {
+// Información del organizador (sin exponer user_id)
+export interface OrganizerInfo {
+  name: string;
+  verified: boolean;
+}
+
+// PublicRaffle - Para usuarios NO autenticados o sin compras
+// Oculta información financiera y sensible
+export interface PublicRaffle {
   id: number;
   uuid: string;
-  user_id: number;
+  organizer: OrganizerInfo; // En lugar de user_id
   title: string;
   description: string;
   status: RaffleStatus;
@@ -18,11 +26,50 @@ export interface Raffle {
   draw_method: DrawMethod;
   sold_count: number;
   reserved_count: number;
+  available_count: number;
+  created_at: string;
+  published_at?: string;
+}
+
+// BuyerRaffle - Para usuarios autenticados que HAN comprado
+// Incluye gasto personal pero NO la información financiera del organizador
+export interface BuyerRaffle extends PublicRaffle {
+  my_total_spent: string;     // Cuánto ha gastado este usuario
+  my_numbers_count: number;   // Cuántos números tiene
+}
+
+// OwnerRaffle - Para el organizador del sorteo y admins
+// Incluye TODA la información financiera
+export interface OwnerRaffle extends PublicRaffle {
+  user_id: number; // Solo visible para owner/admin
   total_revenue: string;
   platform_fee_percentage: string;
   platform_fee_amount: string;
   net_amount: string;
   settlement_status: SettlementStatus;
+}
+
+// Raffle genérico - DEPRECATED: usar PublicRaffle, BuyerRaffle o OwnerRaffle
+// Se mantiene temporalmente para compatibilidad con código existente
+export interface Raffle {
+  id: number;
+  uuid: string;
+  user_id?: number;
+  title: string;
+  description: string;
+  status: RaffleStatus;
+  price_per_number: string;
+  total_numbers: number;
+  draw_date: string;
+  draw_method: DrawMethod;
+  sold_count: number;
+  reserved_count: number;
+  available_count?: number;
+  total_revenue?: string;
+  platform_fee_percentage?: string;
+  platform_fee_amount?: string;
+  net_amount?: string;
+  settlement_status?: SettlementStatus;
   winner_number?: string;
   winner_user_id?: number;
   published_at?: string;
@@ -30,6 +77,9 @@ export interface Raffle {
   cancelled_at?: string;
   created_at: string;
   updated_at?: string;
+  organizer?: OrganizerInfo;
+  my_total_spent?: string;
+  my_numbers_count?: number;
 }
 
 export interface RaffleNumber {

@@ -22,10 +22,10 @@ type UserTicketNumberDTO struct {
 
 // TicketGroupDTO representa un grupo de tickets por sorteo
 type TicketGroupDTO struct {
-	Raffle       *RaffleDTO             `json:"raffle"`
+	Raffle       *PublicRaffleDTO       `json:"raffle"` // Usa DTO público sin info financiera
 	Numbers      []*UserTicketNumberDTO `json:"numbers"`
 	TotalNumbers int                    `json:"total_numbers"`
-	TotalSpent   string                 `json:"total_spent"`
+	TotalSpent   string                 `json:"total_spent"` // Gasto personal del usuario
 }
 
 // GetUserTicketsResponse respuesta del listado de tickets
@@ -79,7 +79,7 @@ func (h *GetUserTicketsHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// 5. Construir response
+	// 5. Construir response con DTOs públicos
 	ticketGroups := make([]*TicketGroupDTO, len(output.Tickets))
 	for i, group := range output.Tickets {
 		numbers := make([]*UserTicketNumberDTO, len(group.Numbers))
@@ -88,10 +88,10 @@ func (h *GetUserTicketsHandler) Handle(c *gin.Context) {
 		}
 
 		ticketGroups[i] = &TicketGroupDTO{
-			Raffle:       toRaffleDTO(group.Raffle),
+			Raffle:       toPublicRaffleDTO(group.Raffle), // Usar DTO público
 			Numbers:      numbers,
 			TotalNumbers: group.TotalNumbers,
-			TotalSpent:   group.TotalSpent,
+			TotalSpent:   group.TotalSpent, // Ya incluye el gasto personal del usuario
 		}
 	}
 

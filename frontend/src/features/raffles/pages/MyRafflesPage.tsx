@@ -200,7 +200,7 @@ export function MyRafflesPage() {
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">
-                            ${parseFloat(raffle.total_revenue).toLocaleString()}
+                            ${parseFloat(raffle.total_revenue || '0').toLocaleString()}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
                             ${parseFloat(raffle.price_per_number).toFixed(2)}/número

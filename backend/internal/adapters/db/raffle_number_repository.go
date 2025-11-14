@@ -24,6 +24,7 @@ type RaffleNumberRepository interface {
 	ReleaseExpiredReservations() (int, error)
 	MarkAsSold(id int64, userID, paymentID int64) error
 	CancelReservation(id int64) error
+	GetUserSpentOnRaffle(raffleID, userID int64) (string, int, error) // Returns total spent and count
 }
 
 // RaffleNumberRepositoryImpl implementa RaffleNumberRepository
@@ -259,4 +260,26 @@ func (r *RaffleNumberRepositoryImpl) CancelReservation(id int64) error {
 	}
 
 	return nil
+}
+
+// GetUserSpentOnRaffle calcula cuánto ha gastado un usuario en un sorteo específico
+func (r *RaffleNumberRepositoryImpl) GetUserSpentOnRaffle(raffleID, userID int64) (string, int, error) {
+	var result struct {
+		TotalSpent string
+		Count      int
+	}
+
+	err := r.db.Raw(`
+		SELECT
+			COALESCE(SUM(price), 0)::text as total_spent,
+			COALESCE(COUNT(*), 0)::int as count
+		FROM raffle_numbers
+		WHERE raffle_id = ? AND user_id = ? AND status = ?
+	`, raffleID, userID, domain.RaffleNumberStatusSold).Scan(&result).Error
+
+	if err != nil {
+		return "0", 0, errors.Wrap(errors.ErrDatabaseError, err)
+	}
+
+	return result.TotalSpent, result.Count, nil
 }
