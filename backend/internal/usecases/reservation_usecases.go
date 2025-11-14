@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	dbadapter "github.com/sorteos-platform/backend/internal/adapters/db"
+	"github.com/sorteos-platform/backend/internal/domain"
 	"github.com/sorteos-platform/backend/internal/domain/entities"
 	"github.com/sorteos-platform/backend/internal/domain/repositories"
 	"github.com/sorteos-platform/backend/internal/infrastructure/redis"
@@ -26,6 +27,7 @@ type ReservationUseCases struct {
 	reservationRepo   repositories.ReservationRepository
 	raffleRepo        dbadapter.RaffleRepository
 	raffleNumberRepo  dbadapter.RaffleNumberRepository
+	userRepo          domain.UserRepository
 	lockService       *redis.LockService
 	wsHub             *websocket.Hub // WebSocket hub for real-time updates
 }
@@ -35,6 +37,7 @@ func NewReservationUseCases(
 	reservationRepo repositories.ReservationRepository,
 	raffleRepo dbadapter.RaffleRepository,
 	raffleNumberRepo dbadapter.RaffleNumberRepository,
+	userRepo domain.UserRepository,
 	lockService *redis.LockService,
 	wsHub *websocket.Hub,
 ) *ReservationUseCases {
@@ -42,6 +45,7 @@ func NewReservationUseCases(
 		reservationRepo:  reservationRepo,
 		raffleRepo:       raffleRepo,
 		raffleNumberRepo: raffleNumberRepo,
+		userRepo:         userRepo,
 		lockService:      lockService,
 		wsHub:            wsHub,
 	}
@@ -178,6 +182,12 @@ func (uc *ReservationUseCases) ConfirmReservation(ctx context.Context, reservati
 		return fmt.Errorf("error fetching raffle: %w", err)
 	}
 
+	// Get user to obtain integer user_id
+	user, err := uc.userRepo.FindByUUID(reservation.UserID.String())
+	if err != nil {
+		return fmt.Errorf("error fetching user: %w", err)
+	}
+
 	// Update raffle_numbers table to mark numbers as SOLD
 	for _, numberStr := range reservation.NumberIDs {
 		raffleNumber, err := uc.raffleNumberRepo.FindByRaffleAndNumber(raffle.ID, numberStr)
@@ -187,9 +197,8 @@ func (uc *ReservationUseCases) ConfirmReservation(ctx context.Context, reservati
 			continue
 		}
 
-		// Mark as sold (use placeholder user_id 1 since we don't have integer user IDs)
-		// TODO: Implement proper UUID to integer user_id conversion
-		if err := uc.raffleNumberRepo.MarkAsSold(raffleNumber.ID, 1, 0); err != nil {
+		// Mark as sold with the correct user_id
+		if err := uc.raffleNumberRepo.MarkAsSold(raffleNumber.ID, user.ID, int64(reservation.ID.ID())); err != nil {
 			// Log error but continue
 			fmt.Printf("[ConfirmReservation] Error marking number %s as sold: %v\n", numberStr, err)
 			continue

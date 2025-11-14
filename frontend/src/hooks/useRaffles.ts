@@ -13,6 +13,7 @@ export const raffleKeys = {
   list: (filters?: RaffleFilters) => [...raffleKeys.lists(), filters] as const,
   details: () => [...raffleKeys.all, 'detail'] as const,
   detail: (id: number | string) => [...raffleKeys.details(), id] as const,
+  myTickets: (page?: number) => [...raffleKeys.all, 'my-tickets', page] as const,
 };
 
 /**
@@ -113,5 +114,15 @@ export function useSuspendRaffle() {
       queryClient.invalidateQueries({ queryKey: raffleKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: raffleKeys.lists() });
     },
+  });
+}
+
+/**
+ * Hook para obtener tickets del usuario autenticado
+ */
+export function useMyTickets(page: number = 1, pageSize: number = 20) {
+  return useQuery({
+    queryKey: raffleKeys.myTickets(page),
+    queryFn: () => rafflesApi.getMyTickets(page, pageSize),
   });
 }

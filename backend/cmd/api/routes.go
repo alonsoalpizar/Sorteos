@@ -170,6 +170,7 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	updateRaffleUseCase := raffleuc.NewUpdateRaffleUseCase(raffleRepo, auditRepo)
 	suspendRaffleUseCase := raffleuc.NewSuspendRaffleUseCase(raffleRepo, auditRepo)
 	deleteRaffleUseCase := raffleuc.NewDeleteRaffleUseCase(raffleRepo, auditRepo)
+	getUserTicketsUseCase := raffleuc.NewGetUserTicketsUseCase(raffleNumberRepo, raffleRepo)
 
 	// Inicializar handlers
 	createRaffleHandler := raffleHandler.NewCreateRaffleHandler(createRaffleUseCase)
@@ -179,19 +180,22 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	updateRaffleHandler := raffleHandler.NewUpdateRaffleHandler(updateRaffleUseCase)
 	suspendRaffleHandler := raffleHandler.NewSuspendRaffleHandler(suspendRaffleUseCase)
 	deleteRaffleHandler := raffleHandler.NewDeleteRaffleHandler(deleteRaffleUseCase)
+	getUserTicketsHandler := raffleHandler.NewGetUserTicketsHandler(getUserTicketsUseCase)
 
 	// Grupo de rutas de sorteos
 	rafflesGroup := router.Group("/api/v1/raffles")
 	{
 		// Rutas públicas
 		rafflesGroup.GET("", listRafflesHandler.Handle)                          // Listar sorteos
-		rafflesGroup.GET("/:id", getRaffleDetailHandler.Handle)                  // Detalle de sorteo
 
 		// Rutas protegidas (requieren autenticación + email verificado)
 		protected := rafflesGroup.Group("")
 		protected.Use(authMiddleware.Authenticate())
 		protected.Use(authMiddleware.RequireMinKYC("email_verified"))
 		{
+			// IMPORTANTE: Rutas específicas ANTES de rutas con parámetros :id
+			protected.GET("/my-tickets", getUserTicketsHandler.Handle)  // Obtener tickets del usuario
+
 			protected.POST("",
 				rateLimiter.LimitByUser(10, time.Hour),  // Max 10 sorteos por hora
 				createRaffleHandler.Handle,
@@ -200,6 +204,9 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 			protected.POST("/:id/publish", publishRaffleHandler.Handle)  // Publicar sorteo
 			protected.DELETE("/:id", deleteRaffleHandler.Handle)      // Eliminar sorteo (soft delete)
 		}
+
+		// Detalle de sorteo - DESPUÉS de rutas específicas para evitar conflictos
+		rafflesGroup.GET("/:id", getRaffleDetailHandler.Handle)                  // Detalle de sorteo
 
 		// Rutas de admin
 		admin := rafflesGroup.Group("")

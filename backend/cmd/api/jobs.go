@@ -21,6 +21,7 @@ func startBackgroundJobs(gormDB *gorm.DB, rdb *redis.Client, wsHub *websocket.Hu
 	reservationRepo := db.NewReservationRepository(gormDB)
 	raffleRepo := db.NewRaffleRepository(gormDB)
 	raffleNumberRepo := db.NewRaffleNumberRepository(gormDB)
+	userRepo := db.NewUserRepository(gormDB)
 
 	// Inicializar lock service
 	lockService := redisinfra.NewLockService(rdb)
@@ -30,6 +31,7 @@ func startBackgroundJobs(gormDB *gorm.DB, rdb *redis.Client, wsHub *websocket.Hu
 		reservationRepo,
 		raffleRepo,
 		raffleNumberRepo,
+		userRepo,
 		lockService,
 		wsHub,
 	)

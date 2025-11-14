@@ -309,16 +309,20 @@ export function RaffleDetailPage() {
       // Confirmar reserva (marca como 'confirmed' y deja de contar timeout)
       await reservationService.confirm(activeReservation.id);
 
-      toast.success('¡Gracias por tu compra!', {
-        description: `Has comprado ${selectedNumbers.length} número(s)`,
-        duration: 5000,
-      });
-
       // Limpiar estado local
       setActiveReservation(null);
       setSelectedNumbers([]);
 
-      // NO navegar a ningún lado - quedarse en el sorteo
+      // Mostrar mensaje de éxito
+      toast.success('¡Gracias por tu compra!', {
+        description: `Has comprado ${selectedNumbers.length} número(s). Redirigiendo a tus tickets...`,
+        duration: 3000,
+      });
+
+      // Redirigir a /my-tickets después de 2 segundos
+      setTimeout(() => {
+        navigate('/my-tickets');
+      }, 2000);
     } catch (error) {
       console.error('Error al procesar pago:', error);
       toast.error('Error al procesar el pago');
@@ -354,12 +358,15 @@ export function RaffleDetailPage() {
   return (
     <div className="space-y-8">
       {/* Back button */}
-      <Link to="/raffles" className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors">
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors"
+      >
         <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         Volver al listado
-      </Link>
+      </button>
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-xl overflow-hidden">

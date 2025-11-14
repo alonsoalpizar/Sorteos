@@ -99,3 +99,29 @@ export interface RaffleFilters {
   page?: number;
   page_size?: number;
 }
+
+// Tipos para tickets del usuario
+export interface UserTicketNumber {
+  id: number;
+  number: string;
+  price: string;
+  sold_at: string;
+  payment_id?: number;
+}
+
+export interface TicketGroup {
+  raffle: Raffle;
+  numbers: UserTicketNumber[];
+  total_numbers: number;
+  total_spent: string;
+}
+
+export interface UserTicketsResponse {
+  tickets: TicketGroup[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
+}

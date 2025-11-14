@@ -73,6 +73,7 @@ func setupReservationAndPaymentRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *
 		reservationRepo,
 		raffleRepo,
 		raffleNumberRepo,
+		userRepo,
 		lockService,
 		wsHub,
 	)
