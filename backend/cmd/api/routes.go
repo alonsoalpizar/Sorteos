@@ -206,7 +206,8 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 		}
 
 		// Detalle de sorteo - DESPUÉS de rutas específicas para evitar conflictos
-		rafflesGroup.GET("/:id", getRaffleDetailHandler.Handle)                  // Detalle de sorteo
+		// Usa OptionalAuth para personalizar según si el usuario está logueado
+		rafflesGroup.GET("/:id", authMiddleware.OptionalAuth(), getRaffleDetailHandler.Handle)
 
 		// Rutas de admin
 		admin := rafflesGroup.Group("")

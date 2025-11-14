@@ -81,7 +81,9 @@ func (h *GetRaffleDetailHandler) Handle(c *gin.Context) {
 	// 4. Determinar el tipo de usuario y construir DTO apropiado
 	var raffleDTO interface{}
 
-	// Obtener user_id si está autenticado (opcional)
+	// Intentar obtener user_id del contexto (si está autenticado)
+	// Nota: Esta ruta es pública, pero si el usuario está logueado, el middleware opcional
+	// puede haber seteado el user_id
 	userID, isAuthenticated := c.Get("user_id")
 
 	if !isAuthenticated {
