@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/types/auth";
 import { setTokens, clearTokens } from "@/lib/api";
+import { logoutApi } from "@/features/auth/api/authApi";
 
 interface AuthState {
   user: User | null;
@@ -52,7 +53,16 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => {
+      logout: async () => {
+        // Call backend to invalidate tokens (add to blacklist)
+        try {
+          await logoutApi();
+        } catch (error) {
+          console.error('Error calling logout API:', error);
+          // Continue with local logout even if backend call fails
+        }
+
+        // Clear local tokens and state
         clearTokens();
         // Clear cart storage
         localStorage.removeItem('sorteos-cart-storage');

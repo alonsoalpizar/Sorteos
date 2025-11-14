@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifica tu cuenta</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f7fafc;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7fafc; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <!-- Contenedor principal -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #3B82F6; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">✅ Verifica tu cuenta</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">Hola <strong>{{.FirstName}}</strong>,</p>
+
+                            <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">
+                                Gracias por registrarte en <strong>Sorteos Platform</strong>.
+                            </p>
+
+                            <!-- Código de verificación -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td style="background-color: #EFF6FF; border-left: 4px solid #3B82F6; padding: 20px; margin: 20px 0;">
+                                        <p style="margin: 0 0 10px 0; font-size: 14px; color: #64748B;">Tu código de verificación es:</p>
+                                        <p style="margin: 0; font-size: 36px; font-weight: bold; color: #3B82F6; letter-spacing: 8px; text-align: center; font-family: 'Courier New', monospace;">
+                                            {{.Code}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 14px; color: #64748B; margin: 20px 0;">
+                                ⏱️ Este código expirará en <strong>15 minutos</strong>.
+                            </p>
+
+                            <p style="font-size: 14px; color: #64748B; margin: 20px 0;">
+                                Si no solicitaste este código, puedes ignorar este email de forma segura.
+                            </p>
+
+                            <!-- Botón opcional (si tienes link de verificación) -->
+                            <!--
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{.VerificationURL}}" style="background-color: #3B82F6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+                                            Verificar Email
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            -->
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                            <p style="margin: 0 0 10px 0; color: #94A3B8; font-size: 14px;">
+                                Saludos,<br>
+                                <strong>Equipo de Sorteos Platform</strong>
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #cbd5e1; font-size: 12px;">
+                                © 2025 Sorteos Platform. Todos los derechos reservados.
+                            </p>
+                            <p style="margin: 10px 0 0 0; font-size: 12px;">
+                                <a href="{{.FrontendURL}}" style="color: #3B82F6; text-decoration: none;">Inicio</a> |
+                                <a href="{{.FrontendURL}}/support" style="color: #3B82F6; text-decoration: none;">Soporte</a> |
+                                <a href="{{.FrontendURL}}/privacy" style="color: #3B82F6; text-decoration: none;">Privacidad</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

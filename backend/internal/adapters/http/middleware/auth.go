@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/sorteos-platform/backend/internal/adapters/redis"
+	redisinfra "github.com/sorteos-platform/backend/internal/infrastructure/redis"
 	"github.com/sorteos-platform/backend/internal/domain"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
@@ -14,15 +15,17 @@ import (
 
 // AuthMiddleware maneja la autenticación JWT
 type AuthMiddleware struct {
-	tokenMgr *redis.TokenManager
-	logger   *logger.Logger
+	tokenMgr         *redis.TokenManager
+	blacklistService *redisinfra.TokenBlacklistService
+	logger           *logger.Logger
 }
 
 // NewAuthMiddleware crea una nueva instancia del middleware
-func NewAuthMiddleware(tokenMgr *redis.TokenManager, logger *logger.Logger) *AuthMiddleware {
+func NewAuthMiddleware(tokenMgr *redis.TokenManager, blacklistService *redisinfra.TokenBlacklistService, logger *logger.Logger) *AuthMiddleware {
 	return &AuthMiddleware{
-		tokenMgr: tokenMgr,
-		logger:   logger,
+		tokenMgr:         tokenMgr,
+		blacklistService: blacklistService,
+		logger:           logger,
 	}
 }
 
@@ -45,16 +48,9 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// Validar token
-		claims, err := m.tokenMgr.ValidateAccessToken(tokenString)
-		if err != nil {
-			m.logger.Warn("Invalid token", logger.Error(err))
-			m.respondUnauthorized(c, "Token inválido o expirado")
-			return
-		}
-
-		// Verificar si el token está en blacklist
-		blacklisted, err := m.tokenMgr.IsTokenBlacklisted(claims.UserID)
+		// Verificar si el token está en blacklist ANTES de validarlo
+		// Esto es más eficiente y evita procesamiento innecesario
+		blacklisted, err := m.blacklistService.IsBlacklisted(c.Request.Context(), tokenString)
 		if err != nil {
 			m.logger.Error("Error checking token blacklist", logger.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -66,10 +62,16 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		}
 
 		if blacklisted {
-			m.logger.Warn("Blacklisted token used",
-				logger.Int64("user_id", claims.UserID),
-			)
+			m.logger.Warn("Blacklisted token used")
 			m.respondUnauthorized(c, "Token revocado")
+			return
+		}
+
+		// Validar token
+		claims, err := m.tokenMgr.ValidateAccessToken(tokenString)
+		if err != nil {
+			m.logger.Warn("Invalid token", logger.Error(err))
+			m.respondUnauthorized(c, "Token inválido o expirado")
 			return
 		}
 

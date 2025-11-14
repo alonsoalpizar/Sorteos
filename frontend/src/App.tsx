@@ -1,8 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { queryClient } from "@/lib/queryClient";
 import { UserModeProvider } from "@/contexts/UserModeContext";
+import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
+import { useAuthStore } from "@/store/authStore";
 
 // Layout
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -36,12 +38,33 @@ import { CheckoutPage } from "@/features/checkout/pages/CheckoutPage";
 import { PaymentSuccessPage } from "@/features/checkout/pages/PaymentSuccessPage";
 import { PaymentCancelPage } from "@/features/checkout/pages/PaymentCancelPage";
 
-function App() {
+// Componente interno para usar hooks que requieren Router context
+function AppRoutes() {
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+
+  // Timeout de inactividad: 30 minutos
+  useInactivityTimeout({
+    timeout: 30 * 60 * 1000, // 30 minutos
+    warningTime: 2 * 60 * 1000, // Advertir 2 minutos antes
+    onWarning: () => {
+      toast.warning('Tu sesión expirará pronto', {
+        description: 'Tienes 2 minutos de inactividad. Interactúa con la página para mantener tu sesión activa.',
+        duration: 10000,
+      });
+    },
+    onTimeout: async () => {
+      toast.error('Sesión expirada', {
+        description: 'Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente.',
+        duration: 5000,
+      });
+      // Call logout to invalidate tokens on the backend
+      await logout();
+      navigate('/login');
+    },
+  });
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserModeProvider>
-        <Toaster position="top-right" richColors closeButton />
-        <BrowserRouter>
           <Routes>
             {/* Public routes (no layout) */}
             <Route path="/" element={<LandingPage />} />
@@ -200,9 +223,19 @@ function App() {
           {/* 404 redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </UserModeProvider>
-  </QueryClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <UserModeProvider>
+        <Toaster position="top-right" richColors closeButton />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </UserModeProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -88,7 +88,8 @@ func setupReservationAndPaymentRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *
 
 	// Inicializar middlewares
 	tokenMgr := redisAdapter.NewTokenManager(rdb, &cfg.JWT)
-	authMiddleware := middleware.NewAuthMiddleware(tokenMgr, log)
+	blacklistService := redisinfra.NewTokenBlacklistService(rdb)
+	authMiddleware := middleware.NewAuthMiddleware(tokenMgr, blacklistService, log)
 	rateLimiter := middleware.NewRateLimiter(rdb, log)
 
 	// Grupo de rutas de reservas

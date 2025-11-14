@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compra Confirmada</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f7fafc;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7fafc; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #3B82F6; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">✅ ¡Compra Confirmada!</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">
+                                ¡Hola <strong>{{.FirstName}}</strong>!
+                            </p>
+
+                            <p style="font-size: 16px; color: #333; margin: 0 0 30px 0;">
+                                Tu compra ha sido <strong>confirmada exitosamente</strong>. Ya estás participando en el sorteo.
+                            </p>
+
+                            <!-- Raffle Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td style="background-color: #EFF6FF; border-left: 4px solid #3B82F6; padding: 25px; border-radius: 4px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1E40AF; font-size: 20px;">{{.RaffleTitle}}</h3>
+
+                                        <table width="100%" cellpadding="8" cellspacing="0" border="0">
+                                            <tr>
+                                                <td style="color: #64748B; font-size: 14px; width: 50%;">Tus números:</td>
+                                                <td style="font-weight: bold; font-size: 18px; color: #3B82F6; text-align: right;">
+                                                    {{range $i, $num := .Numbers}}{{if $i}}, {{end}}{{$num}}{{end}}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #64748B; font-size: 14px;">Monto pagado:</td>
+                                                <td style="font-weight: bold; font-size: 16px; text-align: right;">{{.TotalAmount}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #64748B; font-size: 14px;">Fecha del sorteo:</td>
+                                                <td style="font-weight: bold; text-align: right; color: #059669;">📅 {{.DrawDate}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Prize Info -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
+                                <tr>
+                                    <td style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; border-radius: 4px;">
+                                        <p style="margin: 0; color: #92400E; font-size: 14px;">
+                                            🏆 <strong>Premio:</strong> {{.Prize}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{.FrontendURL}}/raffles/{{.RaffleID}}" style="background-color: #3B82F6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+                                            Ver Sorteo en Vivo
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Info Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
+                                <tr>
+                                    <td style="background-color: #F0FDF4; border: 1px solid #BBF7D0; padding: 15px; border-radius: 4px;">
+                                        <p style="margin: 0; color: #065F46; font-size: 13px;">
+                                            💡 <strong>Tip:</strong> Te enviaremos un recordatorio 24 horas antes del sorteo. ¡Mantente atento!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin-top: 30px; color: #64748B; font-size: 14px; text-align: center;">
+                                ¡Te deseamos mucha suerte! 🍀
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                            <p style="margin: 0 0 10px 0; color: #94A3B8; font-size: 14px;">
+                                Saludos,<br>
+                                <strong>Equipo de Sorteos Platform</strong>
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #cbd5e1; font-size: 12px;">
+                                © 2025 Sorteos Platform. Todos los derechos reservados.
+                            </p>
+                            <p style="margin: 10px 0 0 0; font-size: 12px;">
+                                <a href="{{.FrontendURL}}" style="color: #3B82F6; text-decoration: none;">Inicio</a> |
+                                <a href="{{.FrontendURL}}/profile" style="color: #3B82F6; text-decoration: none;">Mi Cuenta</a> |
+                                <a href="{{.FrontendURL}}/support" style="color: #3B82F6; text-decoration: none;">Soporte</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

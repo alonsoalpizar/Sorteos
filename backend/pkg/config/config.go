@@ -16,9 +16,11 @@ type Config struct {
 	Payment               PaymentConfig
 	Stripe                StripeConfig
 	SendGrid              SendGridConfig
+	SMTP                  SMTPConfig
 	Twilio                TwilioConfig
 	Business              BusinessConfig
 	SkipEmailVerification bool
+	EmailProvider         string // "sendgrid" o "smtp"
 }
 
 // ServerConfig configuración del servidor HTTP
@@ -86,6 +88,21 @@ type SendGridConfig struct {
 	FromEmail    string
 	FromName     string
 	TemplatesDir string
+	FrontendURL  string // URL del frontend para links en emails
+}
+
+// SMTPConfig configuración de servidor SMTP propio
+type SMTPConfig struct {
+	Host         string
+	Port         int
+	Username     string
+	Password     string
+	FromEmail    string
+	FromName     string
+	UseTLS       bool // TLS directo (puerto 465)
+	UseSTARTTLS  bool // STARTTLS (puerto 587)
+	SkipVerify   bool // Solo para desarrollo - salta verificación de certificado
+	FrontendURL  string
 }
 
 // TwilioConfig configuración de Twilio (SMS)
@@ -172,6 +189,19 @@ func Load() (*Config, error) {
 			FromEmail:    viper.GetString("CONFIG_SENDGRID_FROM_EMAIL"),
 			FromName:     viper.GetString("CONFIG_SENDGRID_FROM_NAME"),
 			TemplatesDir: viper.GetString("CONFIG_SENDGRID_TEMPLATES_DIR"),
+			FrontendURL:  viper.GetString("CONFIG_FRONTEND_URL"),
+		},
+		SMTP: SMTPConfig{
+			Host:         viper.GetString("CONFIG_SMTP_HOST"),
+			Port:         viper.GetInt("CONFIG_SMTP_PORT"),
+			Username:     viper.GetString("CONFIG_SMTP_USERNAME"),
+			Password:     viper.GetString("CONFIG_SMTP_PASSWORD"),
+			FromEmail:    viper.GetString("CONFIG_SMTP_FROM_EMAIL"),
+			FromName:     viper.GetString("CONFIG_SMTP_FROM_NAME"),
+			UseTLS:       viper.GetBool("CONFIG_SMTP_USE_TLS"),
+			UseSTARTTLS:  viper.GetBool("CONFIG_SMTP_USE_STARTTLS"),
+			SkipVerify:   viper.GetBool("CONFIG_SMTP_SKIP_VERIFY"),
+			FrontendURL:  viper.GetString("CONFIG_FRONTEND_URL"),
 		},
 		Twilio: TwilioConfig{
 			AccountSID: viper.GetString("CONFIG_TWILIO_ACCOUNT_SID"),
@@ -190,6 +220,7 @@ func Load() (*Config, error) {
 			RateLimitPaymentPerMinute: viper.GetInt("CONFIG_RATE_LIMIT_PAYMENT_PER_MINUTE"),
 		},
 		SkipEmailVerification: viper.GetBool("CONFIG_SKIP_EMAIL_VERIFICATION"),
+		EmailProvider:         viper.GetString("CONFIG_EMAIL_PROVIDER"),
 	}
 
 	// Validar configuración crítica
@@ -245,9 +276,21 @@ func setDefaults() {
 	viper.SetDefault("CONFIG_RATE_LIMIT_RESERVE_PER_MINUTE", 10)
 	viper.SetDefault("CONFIG_RATE_LIMIT_PAYMENT_PER_MINUTE", 5)
 
+	// Email
+	viper.SetDefault("CONFIG_EMAIL_PROVIDER", "sendgrid") // "sendgrid" o "smtp"
+	viper.SetDefault("CONFIG_FRONTEND_URL", "http://localhost:5173")
+
 	// SendGrid
 	viper.SetDefault("CONFIG_SENDGRID_FROM_NAME", "Sorteos Platform")
 	viper.SetDefault("CONFIG_SENDGRID_TEMPLATES_DIR", "./templates/email")
+
+	// SMTP (valores por defecto para desarrollo)
+	viper.SetDefault("CONFIG_SMTP_HOST", "localhost")
+	viper.SetDefault("CONFIG_SMTP_PORT", 587)
+	viper.SetDefault("CONFIG_SMTP_FROM_NAME", "Sorteos Platform")
+	viper.SetDefault("CONFIG_SMTP_USE_TLS", false)
+	viper.SetDefault("CONFIG_SMTP_USE_STARTTLS", true)
+	viper.SetDefault("CONFIG_SMTP_SKIP_VERIFY", false)
 
 	// Development Features
 	viper.SetDefault("CONFIG_SKIP_EMAIL_VERIFICATION", false)
