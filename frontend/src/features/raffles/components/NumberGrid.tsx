@@ -26,7 +26,7 @@ export function NumberGrid({
     }
 
     if (isSelected) {
-      return 'bg-blue-600 text-white border-blue-600';
+      return 'bg-blue-600 text-white border-blue-600 cursor-pointer hover:bg-blue-700 hover:border-blue-700';
     }
 
     if (readonly) {
@@ -38,9 +38,18 @@ export function NumberGrid({
 
   const handleNumberClick = (number: RaffleNumber) => {
     if (readonly) return;
-    if (number.status !== 'available') return;
     if (!onNumberSelect) return;
 
+    const isSelected = selectedNumbers.includes(number.number);
+
+    // Permitir des-seleccionar si ya está seleccionado
+    if (isSelected) {
+      onNumberSelect(number.number);
+      return;
+    }
+
+    // Solo permitir seleccionar si está disponible
+    if (number.status !== 'available') return;
     onNumberSelect(number.number);
   };
 
@@ -68,27 +77,34 @@ export function NumberGrid({
 
       {/* Grid */}
       <div className="grid grid-cols-10 gap-2">
-        {numbers.map((number) => (
-          <button
-            key={number.id}
-            onClick={() => handleNumberClick(number)}
-            disabled={number.status !== 'available' || readonly}
-            className={cn(
-              'aspect-square rounded border-2 font-mono font-semibold text-sm transition-all',
-              'flex items-center justify-center',
-              getNumberStyle(number)
-            )}
-            title={`Número ${number.number} - ${
-              number.status === 'sold'
-                ? 'Vendido'
-                : number.status === 'reserved'
-                ? 'Reservado'
-                : 'Disponible'
-            }`}
-          >
-            {number.number}
-          </button>
-        ))}
+        {numbers.map((number) => {
+          const isSelected = selectedNumbers.includes(number.number);
+          const isDisabled = readonly || (number.status !== 'available' && !isSelected);
+
+          return (
+            <button
+              key={number.id}
+              onClick={() => handleNumberClick(number)}
+              disabled={isDisabled}
+              className={cn(
+                'aspect-square rounded border-2 font-mono font-semibold text-sm transition-all',
+                'flex items-center justify-center',
+                getNumberStyle(number)
+              )}
+              title={`Número ${number.number} - ${
+                number.status === 'sold'
+                  ? 'Vendido'
+                  : number.status === 'reserved'
+                  ? 'Reservado'
+                  : isSelected
+                  ? 'Seleccionado (clic para des-reservar)'
+                  : 'Disponible (clic para reservar)'
+              }`}
+            >
+              {number.number}
+            </button>
+          );
+        })}
       </div>
 
       {/* Selection summary */}

@@ -109,7 +109,7 @@ export function MyPurchasesPage() {
                           Monto total
                         </p>
                         <p className="text-xl font-bold text-slate-900 dark:text-white">
-                          ${parseFloat(purchase.total_amount).toLocaleString()}
+                          ₡{parseFloat(purchase.total_amount).toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                           Comprado el {new Date(purchase.purchase_date).toLocaleDateString()}
@@ -165,7 +165,7 @@ export function MyPurchasesPage() {
                 Total invertido
               </p>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                $
+                ₡
                 {purchases
                   .reduce((sum, p) => sum + parseFloat(p.total_amount), 0)
                   .toLocaleString()}

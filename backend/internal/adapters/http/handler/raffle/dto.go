@@ -26,6 +26,7 @@ type PublicRaffleDTO struct {
 	SoldCount     int            `json:"sold_count"`
 	ReservedCount int            `json:"reserved_count"`
 	AvailableCount int           `json:"available_count"`
+	CategoryID    *int64         `json:"category_id,omitempty"`
 	CreatedAt     string         `json:"created_at"`
 	PublishedAt   *string        `json:"published_at,omitempty"`
 }
@@ -65,6 +66,7 @@ func toPublicRaffleDTO(raffle *domain.Raffle) *PublicRaffleDTO {
 		SoldCount:      raffle.SoldCount,
 		ReservedCount:  raffle.ReservedCount,
 		AvailableCount: raffle.TotalNumbers - raffle.SoldCount - raffle.ReservedCount,
+		CategoryID:     raffle.CategoryID,
 		CreatedAt:      raffle.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		Organizer: &OrganizerInfo{
 			Name:     "Organizador", // TODO: Obtener nombre real del usuario

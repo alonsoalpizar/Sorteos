@@ -51,6 +51,7 @@ type Raffle struct {
 	Title       string
 	Description string
 	Status      RaffleStatus
+	CategoryID  *int64
 
 	// Pricing
 	PricePerNumber      decimal.Decimal

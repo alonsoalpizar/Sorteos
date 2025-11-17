@@ -26,6 +26,12 @@ type RaffleImage struct {
 	Height  *int
 	AltText string
 
+	// Image variants URLs
+	URLOriginal  *string
+	URLLarge     *string
+	URLMedium    *string
+	URLThumbnail *string
+
 	// Ordering
 	DisplayOrder int
 	IsPrimary    bool

@@ -115,6 +115,11 @@ var (
 		Message: "Sorteo no encontrado",
 		Status:  http.StatusNotFound,
 	}
+	ErrCategoryNotFound = &AppError{
+		Code:    "CATEGORY_NOT_FOUND",
+		Message: "Categoría no encontrada",
+		Status:  http.StatusNotFound,
+	}
 	ErrReservationNotFound = &AppError{
 		Code:    "RESERVATION_NOT_FOUND",
 		Message: "Reserva no encontrada",

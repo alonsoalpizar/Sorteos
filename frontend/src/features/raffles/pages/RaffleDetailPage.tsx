@@ -7,6 +7,7 @@ import { NumberGrid } from '../components/NumberGrid';
 import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { FloatingCheckoutButton } from '../../../components/ui/FloatingCheckoutButton';
+import { RaffleImageGallery } from '../../../components/RaffleImageGallery';
 import { reservationService, Reservation } from '../../../services/reservationService';
 import { toast } from 'sonner';
 import {
@@ -182,11 +183,21 @@ export function RaffleDetailPage() {
             setActiveReservation(null);
             setSelectedNumbers([]);
             toast.info('Reserva cancelada');
+            refetch(); // Refrescar datos del raffle
           } else {
-            // TODO: Implementar endpoint para remover número específico
-            // Por ahora, no permitimos remover números individuales
-            toast.warning('Por ahora no puedes desseleccionar números individuales. Usa "Limpiar selección"');
-            return;
+            // Remover número específico
+            const updatedReservation = await reservationService.removeNumber(
+              activeReservation.id,
+              numberStr
+            );
+
+            setActiveReservation(updatedReservation);
+            setSelectedNumbers(prev => prev.filter(n => n !== numberStr));
+
+            toast.success('Número liberado', {
+              description: `Has des-reservado el número ${numberStr}`,
+            });
+            refetch(); // Refrescar datos del raffle
           }
         } else {
           // Solo está en estado local
@@ -238,9 +249,17 @@ export function RaffleDetailPage() {
         toast.error('Número no disponible', {
           description: 'Este número ya está reservado por otro usuario',
         });
+      } else if (error.response?.status === 400 && error.response?.data?.code === 'CHECKOUT_PHASE') {
+        toast.error('No puedes des-reservar en fase de pago', {
+          description: 'Cancela la reserva completa o completa el pago',
+        });
+      } else if (error.response?.status === 400 && error.response?.data?.code === 'CANNOT_REMOVE_LAST') {
+        toast.info('Último número', {
+          description: 'No puedes remover el último número. La reserva se cancelará automáticamente',
+        });
       } else {
-        toast.error('Error al reservar', {
-          description: 'No se pudo reservar el número. Intenta de nuevo',
+        toast.error('Error al procesar', {
+          description: 'No se pudo procesar la acción. Intenta de nuevo',
         });
       }
     } finally {
@@ -249,13 +268,28 @@ export function RaffleDetailPage() {
   };
 
   const handlePublish = async () => {
-    if (!id || !confirm('¿Estás seguro de publicar este sorteo?')) return;
+    if (!id) return;
+
+    const confirmed = confirm(
+      '⚠️ IMPORTANTE: Una vez publicado, el sorteo estará visible para todos los usuarios y NO podrás:\n\n' +
+      '• Modificar el título\n' +
+      '• Cambiar el precio por número\n' +
+      '• Alterar la cantidad de números\n' +
+      '• Eliminar el sorteo (solo suspender si hay problemas)\n\n' +
+      'Solo podrás modificar la descripción y la fecha del sorteo.\n\n' +
+      '¿Estás seguro de publicar este sorteo?'
+    );
+
+    if (!confirmed) return;
 
     try {
       await publishMutation.mutateAsync(Number(id));
-      alert('Sorteo publicado exitosamente');
+      toast.success('Sorteo publicado exitosamente', {
+        description: 'Ahora es visible para todos los usuarios'
+      });
+      refetch();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al publicar sorteo');
+      toast.error(error instanceof Error ? error.message : 'Error al publicar sorteo');
     }
   };
 
@@ -265,10 +299,73 @@ export function RaffleDetailPage() {
 
     try {
       await deleteMutation.mutateAsync(Number(id));
-      alert('Sorteo eliminado exitosamente');
+      toast.success('Sorteo eliminado exitosamente');
       navigate('/raffles');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al eliminar sorteo');
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar sorteo');
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!id) return;
+
+    const reason = prompt('¿Por qué deseas suspender este sorteo?\n(Esta información será visible para los compradores)');
+    if (!reason) return;
+
+    try {
+      // TODO: Implementar useSuspendRaffle hook y API
+      toast.info('Funcionalidad de suspender sorteo en desarrollo');
+      // await suspendMutation.mutateAsync({ id: Number(id), reason });
+      // toast.success('Sorteo suspendido');
+      // refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al suspender sorteo');
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!id || !confirm('¿Deseas reactivar este sorteo?')) return;
+
+    try {
+      // TODO: Implementar reactivar sorteo en el backend
+      toast.info('Funcionalidad de reactivar sorteo en desarrollo');
+      // await reactivateMutation.mutateAsync(Number(id));
+      // toast.success('Sorteo reactivado');
+      // refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al reactivar sorteo');
+    }
+  };
+
+  const handleExtendDate = async () => {
+    if (!id) return;
+
+    const newDate = prompt('Ingresa la nueva fecha del sorteo (formato: YYYY-MM-DD HH:mm):');
+    if (!newDate) return;
+
+    try {
+      // TODO: Implementar extender fecha
+      toast.info('Funcionalidad de extender fecha en desarrollo');
+      // const isoDate = new Date(newDate).toISOString();
+      // await updateMutation.mutateAsync({ id: Number(id), input: { draw_date: isoDate } });
+      // toast.success('Fecha extendida exitosamente');
+      // refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al extender fecha');
+    }
+  };
+
+  const handleCloseDraw = async () => {
+    if (!id || !confirm('¿Estás seguro de cerrar este sorteo sin realizar el sorteo?\nEsta acción cancelará el sorteo y se devolverá el dinero a los compradores.')) return;
+
+    try {
+      // TODO: Implementar cerrar sorteo sin ganador
+      toast.info('Funcionalidad de cerrar sorteo en desarrollo');
+      // await closeMutation.mutateAsync(Number(id));
+      // toast.success('Sorteo cerrado. Se procesarán las devoluciones.');
+      // refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al cerrar sorteo');
     }
   };
 
@@ -452,29 +549,86 @@ export function RaffleDetailPage() {
             )}
 
             {/* Owner actions */}
-            {isOwner && raffle.status === 'draft' && (
+            {isOwner && (
               <div className="flex flex-col gap-2">
-                <Link to={`/raffles/${id}/edit`}>
-                  <Button variant="outline" className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20">
-                    Editar
-                  </Button>
-                </Link>
-                <Button
-                  onClick={handlePublish}
-                  disabled={publishMutation.isPending}
-                  className="w-full bg-white text-blue-600 hover:bg-blue-50"
-                >
-                  Publicar
-                </Button>
-                {raffle.sold_count === 0 && (
+                {/* Draft: Editar, Publicar, Eliminar */}
+                {raffle.status === 'draft' && (
+                  <>
+                    <Link to={`/raffles/${id}/edit`}>
+                      <Button variant="outline" className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20">
+                        Editar
+                      </Button>
+                    </Link>
+                    <Button
+                      onClick={handlePublish}
+                      disabled={publishMutation.isPending}
+                      className="w-full bg-white text-blue-600 hover:bg-blue-50"
+                    >
+                      {publishMutation.isPending ? 'Publicando...' : 'Publicar'}
+                    </Button>
+                    {raffle.sold_count === 0 && (
+                      <Button
+                        variant="outline"
+                        onClick={handleDelete}
+                        disabled={deleteMutation.isPending}
+                        className="w-full bg-red-600/10 border-red-400/20 text-red-100 hover:bg-red-600/20"
+                      >
+                        {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {/* Active: Solo suspender si hay problemas */}
+                {raffle.status === 'active' && (
                   <Button
                     variant="outline"
-                    onClick={handleDelete}
-                    disabled={deleteMutation.isPending}
-                    className="w-full bg-red-600/10 border-red-400/20 text-red-100 hover:bg-red-600/20"
+                    onClick={handleSuspend}
+                    className="w-full bg-yellow-600/10 border-yellow-400/20 text-yellow-100 hover:bg-yellow-600/20"
                   >
-                    Eliminar
+                    Suspender Sorteo
                   </Button>
+                )}
+
+                {/* Suspended: Reactivar o eliminar si no hay ventas */}
+                {raffle.status === 'suspended' && (
+                  <>
+                    <Button
+                      onClick={handleReactivate}
+                      className="w-full bg-green-600/10 border-green-400/20 text-green-100 hover:bg-green-600/20"
+                    >
+                      Reactivar Sorteo
+                    </Button>
+                    {raffle.sold_count === 0 && (
+                      <Button
+                        variant="outline"
+                        onClick={handleDelete}
+                        disabled={deleteMutation.isPending}
+                        className="w-full bg-red-600/10 border-red-400/20 text-red-100 hover:bg-red-600/20"
+                      >
+                        {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {/* Completed sin ganador: Extender o cerrar */}
+                {raffle.status === 'completed' && !raffle.winner_number && (
+                  <>
+                    <Button
+                      onClick={handleExtendDate}
+                      className="w-full bg-blue-600/10 border-blue-400/20 text-blue-100 hover:bg-blue-600/20"
+                    >
+                      Extender Fecha
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCloseDraw}
+                      className="w-full bg-slate-600/10 border-slate-400/20 text-slate-100 hover:bg-slate-600/20"
+                    >
+                      Cerrar Sorteo
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -565,6 +719,16 @@ export function RaffleDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Image Gallery */}
+      {data.images && data.images.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
+            Galería de Imágenes
+          </h2>
+          <RaffleImageGallery images={data.images} />
+        </div>
+      )}
 
       {/* Raffle Info */}
       <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">

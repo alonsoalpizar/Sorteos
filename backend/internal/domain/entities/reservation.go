@@ -46,6 +46,8 @@ var (
 	ErrMaxNumbersExceeded      = errors.New("maximum 10 numbers per reservation")
 	ErrCannotAddInCheckout     = errors.New("cannot add numbers during checkout phase")
 	ErrNotInSelectionPhase     = errors.New("reservation not in selection phase")
+	ErrNumberNotInReservation  = errors.New("number not found in reservation")
+	ErrCannotRemoveLastNumber  = errors.New("cannot remove last number, cancel reservation instead")
 )
 
 // Reservation represents a temporary hold on raffle numbers
@@ -139,6 +141,40 @@ func (r *Reservation) AddNumber(numberID string) error {
 	}
 
 	r.NumberIDs = append(r.NumberIDs, numberID)
+	r.UpdatedAt = time.Now()
+	return nil
+}
+
+// RemoveNumber removes a number from an existing reservation (only in selection phase)
+func (r *Reservation) RemoveNumber(numberID string) error {
+	if r.Phase != ReservationPhaseSelection {
+		return ErrCannotAddInCheckout
+	}
+
+	if r.IsExpired() {
+		return ErrReservationExpired
+	}
+
+	if len(r.NumberIDs) <= 1 {
+		return ErrCannotRemoveLastNumber
+	}
+
+	// Find and remove the number
+	found := false
+	newNumbers := make([]string, 0, len(r.NumberIDs)-1)
+	for _, n := range r.NumberIDs {
+		if n != numberID {
+			newNumbers = append(newNumbers, n)
+		} else {
+			found = true
+		}
+	}
+
+	if !found {
+		return ErrNumberNotInReservation
+	}
+
+	r.NumberIDs = newNumbers
 	r.UpdatedAt = time.Now()
 	return nil
 }

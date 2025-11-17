@@ -94,6 +94,16 @@ export const reservationService = {
   },
 
   /**
+   * Remover un número de una reserva existente
+   */
+  async removeNumber(id: string, numberId: string): Promise<Reservation> {
+    const response = await api.delete<{ success: boolean; reservation: Reservation }>(
+      `/reservations/${id}/numbers/${numberId}`
+    );
+    return response.data.reservation;
+  },
+
+  /**
    * Obtener reserva activa del usuario para un sorteo específico
    */
   async getActiveForRaffle(raffleId: string): Promise<Reservation | null> {

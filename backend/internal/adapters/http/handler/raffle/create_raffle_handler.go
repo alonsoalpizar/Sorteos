@@ -83,6 +83,8 @@ func (h *CreateRaffleHandler) Handle(c *gin.Context) {
 	// 2. Parsear request
 	var req CreateRaffleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		// Log el error para debugging
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":    "VALIDATION_FAILED",
 			"message": err.Error(),
@@ -93,9 +95,11 @@ func (h *CreateRaffleHandler) Handle(c *gin.Context) {
 	// 3. Parsear fecha
 	drawDate, err := time.Parse(time.RFC3339, req.DrawDate)
 	if err != nil {
+		// Log el error para debugging
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":    "INVALID_DATE_FORMAT",
-			"message": "La fecha debe estar en formato ISO 8601",
+			"message": "La fecha debe estar en formato ISO 8601. Recibido: " + req.DrawDate,
 		})
 		return
 	}

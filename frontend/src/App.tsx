@@ -30,6 +30,7 @@ import { OrganizerDashboardPage } from "@/features/organizer/pages/OrganizerDash
 import { RafflesListPage } from "@/features/raffles/pages/RafflesListPage";
 import { RaffleDetailPage } from "@/features/raffles/pages/RaffleDetailPage";
 import { CreateRafflePage } from "@/features/raffles/pages/CreateRafflePage";
+import { EditRafflePage } from "@/features/raffles/pages/EditRafflePage";
 import { MyRafflesPage } from "@/features/raffles/pages/MyRafflesPage";
 import { MyPurchasesPage } from "@/features/raffles/pages/MyPurchasesPage";
 
@@ -153,6 +154,16 @@ function AppRoutes() {
               <MainLayout>
                 <RaffleDetailPage />
               </MainLayout>
+            }
+          />
+          <Route
+            path="/raffles/:id/edit"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EditRafflePage />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route

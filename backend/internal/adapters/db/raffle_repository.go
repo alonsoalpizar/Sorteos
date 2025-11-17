@@ -128,6 +128,10 @@ func (r *RaffleRepositoryImpl) List(offset, limit int, filters map[string]interf
 		query = query.Where("user_id = ?", userID)
 	}
 
+	if categoryID, ok := filters["category_id"].(int64); ok {
+		query = query.Where("category_id = ?", categoryID)
+	}
+
 	if drawMethod, ok := filters["draw_method"].(domain.DrawMethod); ok {
 		query = query.Where("draw_method = ?", drawMethod)
 	}

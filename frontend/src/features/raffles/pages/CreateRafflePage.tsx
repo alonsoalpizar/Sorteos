@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCreateRaffle } from '../../../hooks/useRaffles';
+import { useCategories } from '../../../hooks/useCategories';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
@@ -10,6 +11,7 @@ import type { CreateRaffleInput, DrawMethod } from '../../../types/raffle';
 export function CreateRafflePage() {
   const navigate = useNavigate();
   const createMutation = useCreateRaffle();
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
 
   const [formData, setFormData] = useState<CreateRaffleInput>({
     title: '',
@@ -18,6 +20,7 @@ export function CreateRafflePage() {
     total_numbers: 100,
     draw_date: '',
     draw_method: 'loteria_nacional_cr',
+    category_id: undefined,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -61,7 +64,16 @@ export function CreateRafflePage() {
     if (!validate()) return;
 
     try {
-      const result = await createMutation.mutateAsync(formData);
+      // Convertir fecha local a ISO 8601 (RFC3339) con timezone
+      const drawDate = new Date(formData.draw_date);
+      const isoDate = drawDate.toISOString();
+
+      const payload = {
+        ...formData,
+        draw_date: isoDate,
+      };
+
+      const result = await createMutation.mutateAsync(payload);
       alert('Sorteo creado exitosamente');
       navigate(`/raffles/${result.raffle.id}`);
     } catch (error) {
@@ -71,7 +83,7 @@ export function CreateRafflePage() {
 
   const handleChange = (
     field: keyof CreateRaffleInput,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error for this field
@@ -141,6 +153,33 @@ export function CreateRafflePage() {
           )}
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Mínimo 20 caracteres
+          </p>
+        </div>
+
+        {/* Category */}
+        <div>
+          <Label htmlFor="category_id">
+            Categoría <span className="text-red-500">*</span>
+          </Label>
+          <select
+            id="category_id"
+            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData.category_id || ''}
+            onChange={(e) => handleChange('category_id', e.target.value ? Number(e.target.value) : undefined)}
+            disabled={categoriesLoading}
+          >
+            <option value="">Selecciona una categoría</option>
+            {categories?.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.icon} {cat.name}
+              </option>
+            ))}
+          </select>
+          {errors.category_id && (
+            <p className="text-sm text-red-500 mt-1">{errors.category_id}</p>
+          )}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Ayuda a los usuarios a encontrar tu sorteo
           </p>
         </div>
 

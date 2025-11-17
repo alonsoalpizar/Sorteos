@@ -92,19 +92,26 @@ func (uc *GetUserTicketsUseCase) Execute(ctx context.Context, input *GetUserTick
 
 		raffleNumbers := raffleMap[raffleID]
 
-		// Calcular total gastado usando decimal.Decimal
-		totalSpent := decimal.Zero
-		for _, num := range raffleNumbers {
-			if num.Price != nil {
-				totalSpent = totalSpent.Add(*num.Price)
+		// Calcular total gastado para TODOS los números del usuario en este sorteo
+		// No solo los de esta página, sino el total real
+		totalSpentStr, totalNumbersCount, err := uc.raffleNumberRepo.GetUserSpentOnRaffle(raffleID, input.UserID)
+		if err != nil {
+			// Si falla, usar cálculo local (solo esta página)
+			totalSpent := decimal.Zero
+			for _, num := range raffleNumbers {
+				if num.Price != nil {
+					totalSpent = totalSpent.Add(*num.Price)
+				}
 			}
+			totalSpentStr = totalSpent.String()
+			totalNumbersCount = len(raffleNumbers)
 		}
 
 		ticketGroups = append(ticketGroups, &TicketGroup{
 			Raffle:       raffle,
 			Numbers:      raffleNumbers,
-			TotalNumbers: len(raffleNumbers),
-			TotalSpent:   totalSpent.String(),
+			TotalNumbers: totalNumbersCount, // Total real, no solo esta página
+			TotalSpent:   totalSpentStr,     // Total real, no solo esta página
 		})
 	}
 

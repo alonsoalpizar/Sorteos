@@ -425,6 +425,67 @@ func (uc *ReservationUseCases) AddNumberToReservation(ctx context.Context, reser
 	return nil
 }
 
+// RemoveNumberFromReservation removes a specific number from a reservation (only in selection phase)
+func (uc *ReservationUseCases) RemoveNumberFromReservation(ctx context.Context, reservationID uuid.UUID, numberID string, userID uuid.UUID) error {
+	// 1. Get reservation
+	reservation, err := uc.reservationRepo.FindByID(ctx, reservationID)
+	if err != nil {
+		return fmt.Errorf("error fetching reservation: %w", err)
+	}
+	if reservation == nil {
+		return errors.New("reservation not found")
+	}
+
+	// 2. Validate ownership
+	if reservation.UserID != userID {
+		return errors.New("unauthorized: not your reservation")
+	}
+
+	// 3. Validate phase and expiration
+	if reservation.Phase != entities.ReservationPhaseSelection {
+		return entities.ErrCannotAddInCheckout
+	}
+	if reservation.IsExpired() {
+		return entities.ErrReservationExpired
+	}
+
+	// 4. Remove number from reservation
+	if err := reservation.RemoveNumber(numberID); err != nil {
+		return err
+	}
+
+	// 5. Update in database
+	if err := uc.reservationRepo.Update(ctx, reservation); err != nil {
+		return fmt.Errorf("error updating reservation: %w", err)
+	}
+
+	// 6. Get raffle to obtain integer ID
+	raffle, err := uc.raffleRepo.FindByUUID(reservation.RaffleID.String())
+	if err != nil {
+		return fmt.Errorf("error fetching raffle: %w", err)
+	}
+
+	// 7. Release number in raffle_numbers table (mark as available)
+	raffleNumber, err := uc.raffleNumberRepo.FindByRaffleAndNumber(raffle.ID, numberID)
+	if err == nil {
+		if err := uc.raffleNumberRepo.CancelReservation(raffleNumber.ID); err != nil {
+			fmt.Printf("[RemoveNumberFromReservation] Error releasing number %s: %v\n", numberID, err)
+		}
+	}
+
+	// 8. Notify via WebSocket
+	uc.wsHub.BroadcastNumberUpdate(
+		reservation.RaffleID.String(),
+		numberID,
+		"available",
+		nil,
+	)
+
+	// Note: Lock will expire automatically based on TTL, no need to manually release
+
+	return nil
+}
+
 // releaseLocks releases Redis locks for a reservation
 func (uc *ReservationUseCases) releaseLocks(ctx context.Context, reservation *entities.Reservation) error {
 	// Los locks ya tienen TTL automático, no necesitamos liberarlos manualmente

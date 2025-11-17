@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 
 	authHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/auth"
+	categoryHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/category"
+	imageHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/image"
 	raffleHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/raffle"
 	websocketHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/websocket"
 	"github.com/sorteos-platform/backend/internal/adapters/http/middleware"
@@ -16,6 +18,8 @@ import (
 	redisAdapter "github.com/sorteos-platform/backend/internal/adapters/redis"
 	"github.com/sorteos-platform/backend/internal/adapters/notifier"
 	"github.com/sorteos-platform/backend/internal/usecase/auth"
+	categoryuc "github.com/sorteos-platform/backend/internal/usecase/category"
+	imageuc "github.com/sorteos-platform/backend/internal/usecase/image"
 	raffleuc "github.com/sorteos-platform/backend/internal/usecase/raffle"
 	"github.com/sorteos-platform/backend/internal/infrastructure/websocket"
 	redisinfra "github.com/sorteos-platform/backend/internal/infrastructure/redis"
@@ -138,6 +142,7 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	raffleRepo := db.NewRaffleRepository(gormDB)
 	raffleNumberRepo := db.NewRaffleNumberRepository(gormDB)
 	raffleImageRepo := db.NewRaffleImageRepository(gormDB)
+	categoryRepo := db.NewCategoryRepository(gormDB, log)
 	userRepo := db.NewUserRepository(gormDB)
 	auditRepo := db.NewAuditLogRepository(gormDB)
 
@@ -172,6 +177,16 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	deleteRaffleUseCase := raffleuc.NewDeleteRaffleUseCase(raffleRepo, auditRepo)
 	getUserTicketsUseCase := raffleuc.NewGetUserTicketsUseCase(raffleNumberRepo, raffleRepo)
 
+	// Use case de categorías
+	listCategoriesUseCase := categoryuc.NewListCategoriesUseCase(categoryRepo, log)
+
+	// Use cases de imágenes
+	uploadDir := "/var/www/sorteos.club/uploads/raffles"
+	baseURL := "https://sorteos.club"
+	uploadImageUseCase := imageuc.NewUploadImageUseCase(raffleRepo, raffleImageRepo, log, uploadDir, baseURL)
+	deleteImageUseCase := imageuc.NewDeleteImageUseCase(raffleRepo, raffleImageRepo, log, uploadDir)
+	setPrimaryImageUseCase := imageuc.NewSetPrimaryImageUseCase(raffleRepo, raffleImageRepo, log)
+
 	// Inicializar handlers
 	createRaffleHandler := raffleHandler.NewCreateRaffleHandler(createRaffleUseCase)
 	listRafflesHandler := raffleHandler.NewListRafflesHandler(listRafflesUseCase)
@@ -182,11 +197,22 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	deleteRaffleHandler := raffleHandler.NewDeleteRaffleHandler(deleteRaffleUseCase)
 	getUserTicketsHandler := raffleHandler.NewGetUserTicketsHandler(getUserTicketsUseCase)
 
+	// Handler de categorías
+	listCategoriesHandler := categoryHandler.NewListCategoriesHandler(listCategoriesUseCase)
+
+	// Handlers de imágenes
+	uploadImageHandler := imageHandler.NewUploadImageHandler(uploadImageUseCase)
+	deleteImageHandler := imageHandler.NewDeleteImageHandler(deleteImageUseCase)
+	setPrimaryImageHandler := imageHandler.NewSetPrimaryImageHandler(setPrimaryImageUseCase)
+
+	// Ruta pública de categorías
+	router.GET("/api/v1/categories", listCategoriesHandler.Handle)
+
 	// Grupo de rutas de sorteos
 	rafflesGroup := router.Group("/api/v1/raffles")
 	{
-		// Rutas públicas
-		rafflesGroup.GET("", listRafflesHandler.Handle)                          // Listar sorteos
+		// Rutas con autenticación opcional (personaliza respuesta si está autenticado)
+		rafflesGroup.GET("", authMiddleware.OptionalAuth(), listRafflesHandler.Handle) // Listar sorteos
 
 		// Rutas protegidas (requieren autenticación + email verificado)
 		protected := rafflesGroup.Group("")
@@ -203,6 +229,11 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 			protected.PUT("/:id", updateRaffleHandler.Handle)        // Actualizar sorteo
 			protected.POST("/:id/publish", publishRaffleHandler.Handle)  // Publicar sorteo
 			protected.DELETE("/:id", deleteRaffleHandler.Handle)      // Eliminar sorteo (soft delete)
+
+			// Rutas de imágenes
+			protected.POST("/:id/images", uploadImageHandler.Handle)                    // Subir imagen
+			protected.DELETE("/:id/images/:image_id", deleteImageHandler.Handle)        // Eliminar imagen
+			protected.PUT("/:id/images/:image_id/primary", setPrimaryImageHandler.Handle) // Establecer primaria
 		}
 
 		// Detalle de sorteo - DESPUÉS de rutas específicas para evitar conflictos

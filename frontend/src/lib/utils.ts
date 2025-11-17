@@ -11,13 +11,15 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format currency to CRC (Costa Rican Colón)
+ * Usa el símbolo ₡ (colón costarricense)
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("es-CR", {
-    style: "currency",
-    currency: "CRC",
+  const formatted = new Intl.NumberFormat("es-CR", {
+    style: "decimal",
     minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
+  return `₡${formatted}`;
 }
 
 /**

@@ -288,6 +288,57 @@ func setupReservationAndPaymentRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *
 			c.JSON(http.StatusOK, gin.H{"reservation": updatedReservation})
 		})
 
+		// DELETE /api/v1/reservations/:id/numbers/:number - Remover número de reserva
+		reservationsGroup.DELETE("/:id/numbers/:number", func(c *gin.Context) {
+			reservationID, err := uuid.Parse(c.Param("id"))
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid reservation id"})
+				return
+			}
+
+			numberID := c.Param("number")
+			if numberID == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_NUMBER", "message": "number is required"})
+				return
+			}
+
+			userIDInt, _ := middleware.GetUserID(c)
+			userUUID, err := getUserUUID(userRepo, userIDInt)
+			if err != nil {
+				log.Error("Failed to get user UUID", logger.Error(err))
+				c.JSON(http.StatusInternalServerError, gin.H{"code": "USER_NOT_FOUND", "message": "user not found"})
+				return
+			}
+
+			// Remove number from reservation
+			if err := reservationUseCases.RemoveNumberFromReservation(c.Request.Context(), reservationID, numberID, userUUID); err != nil {
+				log.Error("Failed to remove number from reservation", logger.Error(err))
+
+				// Manejar errores específicos
+				if err.Error() == "cannot remove last number, cancel reservation instead" {
+					c.JSON(http.StatusBadRequest, gin.H{"code": "CANNOT_REMOVE_LAST", "message": "cannot remove last number, cancel reservation instead"})
+					return
+				}
+				if err.Error() == "cannot add numbers during checkout phase" {
+					c.JSON(http.StatusBadRequest, gin.H{"code": "CHECKOUT_PHASE", "message": "cannot remove numbers during checkout phase"})
+					return
+				}
+
+				c.JSON(http.StatusBadRequest, gin.H{"code": "REMOVE_NUMBER_FAILED", "message": err.Error()})
+				return
+			}
+
+			// Obtener la reserva actualizada
+			updatedReservation, err := reservationUseCases.GetReservation(c.Request.Context(), reservationID)
+			if err != nil {
+				log.Error("Failed to get updated reservation", logger.Error(err))
+				c.JSON(http.StatusInternalServerError, gin.H{"code": "FETCH_FAILED", "message": "failed to fetch updated reservation"})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"success": true, "reservation": updatedReservation})
+		})
+
 		// POST /api/v1/reservations/:id/confirm - Confirmar reserva (pago completado)
 		reservationsGroup.POST("/:id/confirm", func(c *gin.Context) {
 			reservationID, err := uuid.Parse(c.Param("id"))

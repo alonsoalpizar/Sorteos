@@ -217,7 +217,7 @@ func (uc *CreateRaffleUseCase) generateNumbers(raffle *domain.Raffle) ([]*domain
 
 	// Generar números del min al max
 	for i := raffle.MinNumber; i <= raffle.MaxNumber; i++ {
-		// Formatear número con ceros a la izquierda si es necesario
+		// Formatear número con ceros a la izquierda según el máximo
 		var numberStr string
 		if raffle.MaxNumber < 100 {
 			numberStr = fmt.Sprintf("%02d", i) // 00-99

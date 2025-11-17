@@ -27,6 +27,7 @@ export interface PublicRaffle {
   sold_count: number;
   reserved_count: number;
   available_count: number;
+  category_id?: number;
   created_at: string;
   published_at?: string;
 }
@@ -65,6 +66,7 @@ export interface Raffle {
   sold_count: number;
   reserved_count: number;
   available_count?: number;
+  category_id?: number;
   total_revenue?: string;
   platform_fee_percentage?: string;
   platform_fee_amount?: string;
@@ -98,13 +100,18 @@ export interface RaffleImage {
   id: number;
   raffle_id: number;
   filename: string;
+  original_filename: string;
+  url_original?: string;
+  url_large?: string;
+  url_medium?: string;
+  url_thumbnail?: string;
   file_size: number;
-  mime_type: string;
   width?: number;
   height?: number;
   alt_text?: string;
   display_order: number;
   is_primary: boolean;
+  created_at: string;
 }
 
 export interface RaffleDetail {
@@ -133,6 +140,7 @@ export interface CreateRaffleInput {
   total_numbers: number;
   draw_date: string;
   draw_method: DrawMethod;
+  category_id?: number;
 }
 
 export interface UpdateRaffleInput {
@@ -140,12 +148,14 @@ export interface UpdateRaffleInput {
   description?: string;
   draw_date?: string;
   draw_method?: DrawMethod;
+  category_id?: number;
 }
 
 export interface RaffleFilters {
   status?: RaffleStatus;
   search?: string;
   user_id?: number;
+  category_id?: number;
   page?: number;
   page_size?: number;
 }

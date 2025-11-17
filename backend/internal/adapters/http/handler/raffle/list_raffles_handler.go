@@ -10,10 +10,16 @@ import (
 	raffleuc "github.com/sorteos-platform/backend/internal/usecase/raffle"
 )
 
-// ListRafflesResponse respuesta del listado
+// ListRafflesResponse respuesta del listado público
 type ListRafflesResponse struct {
-	Raffles    []*PublicRaffleDTO `json:"raffles"` // Siempre retorna DTO público sin info financiera
+	Raffles    []*PublicRaffleDTO `json:"raffles"` // DTO público sin info financiera
 	Pagination Pagination         `json:"pagination"`
+}
+
+// OwnerListRafflesResponse respuesta del listado para el organizador
+type OwnerListRafflesResponse struct {
+	Raffles    []*OwnerRaffleDTO `json:"raffles"` // DTO con información financiera
+	Pagination Pagination        `json:"pagination"`
 }
 
 // Pagination información de paginación
@@ -42,7 +48,15 @@ func (h *ListRafflesHandler) Handle(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	// 2. Construir input
+	// 2. Obtener usuario autenticado (si existe)
+	var authenticatedUserID *int64
+	if userID, exists := c.Get("user_id"); exists {
+		if uid, ok := userID.(int64); ok {
+			authenticatedUserID = &uid
+		}
+	}
+
+	// 3. Construir input
 	input := &raffleuc.ListRafflesInput{
 		Page:          page,
 		PageSize:      pageSize,
@@ -58,34 +72,65 @@ func (h *ListRafflesHandler) Handle(c *gin.Context) {
 	}
 
 	// User ID filter (para "mis sorteos")
+	var requestedUserID *int64
 	if userIDStr := c.Query("user_id"); userIDStr != "" {
 		if userID, err := strconv.ParseInt(userIDStr, 10, 64); err == nil {
 			input.UserID = &userID
+			requestedUserID = &userID
 		}
 	}
 
-	// 3. Ejecutar use case
+	// Category ID filter (para filtrar por categoría)
+	if categoryIDStr := c.Query("category_id"); categoryIDStr != "" {
+		if categoryID, err := strconv.ParseInt(categoryIDStr, 10, 64); err == nil {
+			input.CategoryID = &categoryID
+		}
+	}
+
+	// 4. Ejecutar use case
 	output, err := h.useCase.Execute(c.Request.Context(), input)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	// 4. Construir response con DTOs públicos (sin información financiera)
-	raffles := make([]*PublicRaffleDTO, len(output.Raffles))
-	for i, r := range output.Raffles {
-		raffles[i] = toPublicRaffleDTO(r)
-	}
+	// 5. Determinar si el usuario está consultando sus propios sorteos
+	isOwnerQuery := authenticatedUserID != nil && requestedUserID != nil && *authenticatedUserID == *requestedUserID
 
-	response := &ListRafflesResponse{
-		Raffles: raffles,
-		Pagination: Pagination{
-			Page:       output.Page,
-			PageSize:   output.PageSize,
-			Total:      output.Total,
-			TotalPages: output.TotalPages,
-		},
-	}
+	// 6. Construir response con DTOs apropiados
+	if isOwnerQuery {
+		// Usuario consultando SUS propios sorteos - incluir información financiera
+		ownerRaffles := make([]*OwnerRaffleDTO, len(output.Raffles))
+		for i, r := range output.Raffles {
+			ownerRaffles[i] = toOwnerRaffleDTO(r)
+		}
 
-	c.JSON(http.StatusOK, response)
+		response := &OwnerListRafflesResponse{
+			Raffles: ownerRaffles,
+			Pagination: Pagination{
+				Page:       output.Page,
+				PageSize:   output.PageSize,
+				Total:      output.Total,
+				TotalPages: output.TotalPages,
+			},
+		}
+		c.JSON(http.StatusOK, response)
+	} else {
+		// Listado público o de otros usuarios - sin información financiera
+		raffles := make([]*PublicRaffleDTO, len(output.Raffles))
+		for i, r := range output.Raffles {
+			raffles[i] = toPublicRaffleDTO(r)
+		}
+
+		response := &ListRafflesResponse{
+			Raffles: raffles,
+			Pagination: Pagination{
+				Page:       output.Page,
+				PageSize:   output.PageSize,
+				Total:      output.Total,
+				TotalPages: output.TotalPages,
+			},
+		}
+		c.JSON(http.StatusOK, response)
+	}
 }

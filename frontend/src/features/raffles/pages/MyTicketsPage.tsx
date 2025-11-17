@@ -49,7 +49,7 @@ export const MyTicketsPage = () => {
   });
 
   // Calcular estadísticas
-  const totalTickets = tickets.reduce((sum, t) => sum + t.total_numbers, 0);
+  const totalTickets = tickets.reduce((sum, t) => sum + t.numbers.length, 0);
   const totalSpent = tickets.reduce((sum, t) => sum + parseFloat(t.total_spent || '0'), 0);
   const totalWon = tickets.filter(t => t.raffle.winner_user_id === user.id).length;
 
@@ -203,7 +203,7 @@ export const MyTicketsPage = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                       <Ticket className="w-4 h-4" />
-                      <span>{ticket.total_numbers} número(s)</span>
+                      <span>{ticket.numbers.length} número(s)</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                       <DollarSign className="w-4 h-4" />

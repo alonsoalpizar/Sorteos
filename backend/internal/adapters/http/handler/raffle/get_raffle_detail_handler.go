@@ -24,15 +24,21 @@ type GetRaffleDetailResponse struct {
 
 // RaffleImageDTO representa una imagen de sorteo
 type RaffleImageDTO struct {
-	ID           int64  `json:"id"`
-	Filename     string `json:"filename"`
-	FileSize     int64  `json:"file_size"`
-	MimeType     string `json:"mime_type"`
-	Width        *int   `json:"width,omitempty"`
-	Height       *int   `json:"height,omitempty"`
-	AltText      string `json:"alt_text,omitempty"`
-	DisplayOrder int    `json:"display_order"`
-	IsPrimary    bool   `json:"is_primary"`
+	ID               int64   `json:"id"`
+	RaffleID         int64   `json:"raffle_id"`
+	Filename         string  `json:"filename"`
+	OriginalFilename string  `json:"original_filename"`
+	URLOriginal      *string `json:"url_original,omitempty"`
+	URLLarge         *string `json:"url_large,omitempty"`
+	URLMedium        *string `json:"url_medium,omitempty"`
+	URLThumbnail     *string `json:"url_thumbnail,omitempty"`
+	FileSize         int64   `json:"file_size"`
+	Width            *int    `json:"width,omitempty"`
+	Height           *int    `json:"height,omitempty"`
+	AltText          string  `json:"alt_text,omitempty"`
+	DisplayOrder     int     `json:"display_order"`
+	IsPrimary        bool    `json:"is_primary"`
+	CreatedAt        string  `json:"created_at"`
 }
 
 // GetRaffleDetailHandler maneja la obtención de detalle de sorteo
@@ -133,15 +139,21 @@ func toRaffleImageDTOs(images []*domain.RaffleImage) []RaffleImageDTO {
 	dtos := make([]RaffleImageDTO, len(images))
 	for i, img := range images {
 		dtos[i] = RaffleImageDTO{
-			ID:           img.ID,
-			Filename:     img.Filename,
-			FileSize:     img.FileSize,
-			MimeType:     img.MimeType,
-			Width:        img.Width,
-			Height:       img.Height,
-			AltText:      img.AltText,
-			DisplayOrder: img.DisplayOrder,
-			IsPrimary:    img.IsPrimary,
+			ID:               img.ID,
+			RaffleID:         img.RaffleID,
+			Filename:         img.Filename,
+			OriginalFilename: img.OriginalFilename,
+			URLOriginal:      img.URLOriginal,
+			URLLarge:         img.URLLarge,
+			URLMedium:        img.URLMedium,
+			URLThumbnail:     img.URLThumbnail,
+			FileSize:         img.FileSize,
+			Width:            img.Width,
+			Height:           img.Height,
+			AltText:          img.AltText,
+			DisplayOrder:     img.DisplayOrder,
+			IsPrimary:        img.IsPrimary,
+			CreatedAt:        img.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
 	}
 	return dtos
