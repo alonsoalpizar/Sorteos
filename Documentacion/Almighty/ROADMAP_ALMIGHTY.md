@@ -74,13 +74,13 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 |-----------|-------|-------------|----------|
 | **Migraciones DB** | 7 | 7 | ██████████ 100% ✅ |
 | **Repositorios** | 7 | 5 | ███████░░░ 71% |
-| **Casos de Uso** | 47 | 20 | ████░░░░░░ 43% |
+| **Casos de Uso** | 47 | 25 | █████░░░░░ 53% |
 | **Endpoints API** | 52 | 0 | ░░░░░░░░░░ 0% |
 | **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **185** | **32** | **███░░░░░░░ 17%** |
+| **TOTAL** | **185** | **37** | **███░░░░░░░ 20%** |
 
-**Última actualización:** 2025-11-18 (Fase 5 completada)
+**Última actualización:** 2025-11-18 (Fase 6 completada)
 
 ---
 
@@ -624,7 +624,7 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Logging de auditoría
 
 #### internal/usecase/admin/settlement/approve_settlement.go
-- [ ] Crear `ApproveSettlementUseCase`
+- [x] Crear `ApproveSettlementUseCase`
 - [ ] Validar settlement status = pending
 - [ ] Cambiar status a approved
 - [ ] Guardar approved_by (admin_id), approved_at
@@ -632,7 +632,7 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Logging de auditoría
 
 #### internal/usecase/admin/settlement/reject_settlement.go
-- [ ] Crear `RejectSettlementUseCase`
+- [x] Crear `RejectSettlementUseCase`
 - [ ] Cambiar status a rejected
 - [ ] Guardar rejection reason en notes
 - [ ] Enviar email al organizador
@@ -649,8 +649,8 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Logging de auditoría
 
 #### internal/usecase/admin/settlement/list_settlements.go
-- [ ] Crear `ListSettlementsUseCase`
-- [ ] Filtros: status, organizer_id, date_range
+- [x] Crear `ListSettlementsUseCase`
+- [x] Filtros: status, organizer_id, date_range, KYC level, search
 - [ ] Incluir info de organizador y rifa
 - [ ] Paginación y ordenamiento
 - [ ] Calcular totales por status
