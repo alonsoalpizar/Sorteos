@@ -107,19 +107,6 @@ func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg
 		}
 	}
 
-	// Grupo de ejemplo de rutas protegidas por rol
-	adminGroup := router.Group("/api/v1/admin")
-	adminGroup.Use(authMiddleware.Authenticate())
-	adminGroup.Use(authMiddleware.RequireRole("admin", "super_admin"))
-	{
-		// TODO: Implementar endpoints de admin
-		adminGroup.GET("/users", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Admin endpoint - lista de usuarios",
-			})
-		})
-	}
-
 	// Ruta de ejemplo protegida por KYC
 	router.GET("/api/v1/profile",
 		authMiddleware.Authenticate(),
