@@ -51,6 +51,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== RAFFLE MANAGEMENT ====================
 	setupRaffleRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== NOTIFICATIONS ====================
+	setupNotificationRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -209,4 +212,24 @@ func setupRaffleRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.L
 	log.Info("Admin raffle routes registered",
 		logger.Int("endpoints", 6),
 		logger.String("base_path", "/api/v1/admin/raffles"))
+}
+
+// setupNotificationRoutesV2 configura rutas de notificaciones
+func setupNotificationRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewNotificationHandler(db, log)
+
+	// Configurar rutas
+	notifications := adminGroup.Group("/notifications")
+	{
+		notifications.POST("/email", handler.SendEmail)                  // POST /api/v1/admin/notifications/email
+		notifications.POST("/bulk", handler.SendBulkEmail)               // POST /api/v1/admin/notifications/bulk
+		notifications.POST("/templates", handler.ManageTemplates)        // POST /api/v1/admin/notifications/templates
+		notifications.POST("/announcements", handler.CreateAnnouncement) // POST /api/v1/admin/notifications/announcements
+		notifications.GET("/history", handler.ViewHistory)               // GET /api/v1/admin/notifications/history
+	}
+
+	log.Info("Admin notification routes registered",
+		logger.Int("endpoints", 5),
+		logger.String("base_path", "/api/v1/admin/notifications"))
 }
