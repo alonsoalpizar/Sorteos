@@ -78,17 +78,17 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 | **HTTP Handlers (compilables)** | 7 | 7 | ██████████ 100% ✅ |
 | **HTTP Handlers (funcionales)** | 7 | 6 | ████████░░ 86% 🟢 |
 | **Routes & Middleware** | 1 | 1 | ██████████ 100% ✅ |
-| **Endpoints API** | 52 | 27 | █████░░░░░ 52% 🟡 |
+| **Endpoints API** | 52 | 33 | ██████░░░░ 63% 🟡 |
 | **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **200** | **98** | **█████░░░░░ 49%** |
+| **TOTAL** | **200** | **104** | **█████░░░░░ 52%** |
 
-**Última actualización:** 2025-11-18 (Backend 100% + 27 endpoints activos + Fase 8.8: 4/6 handlers)
+**Última actualización:** 2025-11-18 (Backend 100% + 33 endpoints activos + Fase 8.8: 5/6 handlers)
 
 **Estado actual:**
 - ✅ Backend use cases 100% completos
-- 🟡 27/52 endpoints activos (52%)
-- 🔄 Fase 8.8 en curso: 4/6 handlers completados (settlement ✅, user ✅, organizer ✅, payment ✅)
+- 🟡 33/52 endpoints activos (63%)
+- 🔄 Fase 8.8 en curso: 5/6 handlers completados (settlement ✅, user ✅, organizer ✅, payment ✅, raffle ✅)
 
 ---
 
@@ -1009,9 +1009,9 @@ go build -o /tmp/sorteos-api ./cmd/api
 **Estado del Backend Almighty:**
 - ✅ 47/47 use cases (100%)
 - ✅ 7/7 handlers (100% compilables)
-- ✅ 27/52 endpoints activos (52%)
+- ✅ 33/52 endpoints activos (63%)
 - ✅ Middleware completo
-- 🟡 Pending: Reescribir 2 handlers restantes (raffle, notification)
+- 🟡 Pending: Reescribir 1 handler restante (notification)
 
 **Siguiente paso:** Ver Fase 8.8 - Corrección de Handlers.
 
@@ -1019,7 +1019,7 @@ go build -o /tmp/sorteos-api ./cmd/api
 
 ## 8.8 Fase Correctiva: Reescritura de Handlers (Semana 7) 🔄
 **Estado:** 🟡 EN PROCESO
-**Progreso:** ██████░░░░ 67% (4/6 handlers)
+**Progreso:** ████████░░ 83% (5/6 handlers)
 
 **Objetivo:** Reescribir handlers backed up para que coincidan exactamente con las firmas de los use cases existentes.
 
@@ -1070,9 +1070,9 @@ Los siguientes handlers fueron respaldados como `.bak` y requieren reescritura:
 | user_handler.go | 5 | ✅ Completado | 41a7c42 |
 | organizer_handler.go | 4 | ✅ Completado | 7eef950 |
 | payment_handler.go | 4 | ✅ Completado | a311573 |
-| raffle_handler.go.bak | 6 | ⏳ Pendiente | - |
+| raffle_handler.go | 6 | ✅ Completado | ebac6a7 |
 | notification_handler.go.bak | 5 | ⏳ Pendiente | - |
-| **TOTAL** | **31** | **65% completo (20/31)** |
+| **TOTAL** | **31** | **84% completo (26/31)** |
 
 ### Plan de Reescritura
 
@@ -1183,27 +1183,25 @@ POST /api/v1/admin/payments/:id/refund   → Process refund
 POST /api/v1/admin/payments/:id/dispute  → Manage dispute
 ```
 
-#### 8.8.5 raffle_handler.go (6 endpoints)
-- [ ] Leer use cases: ListRafflesAdmin, ViewRaffleTransactions, ForceStatusChange, ManualDrawWinner, AddAdminNotes, CancelRaffleWithRefund
-- [ ] Cambiar `ListRafflesInput` → `ListRafflesAdminInput`
-- [ ] Cambiar `ViewRaffleDetailInput` → `ViewRaffleTransactionsInput`
-- [ ] Cambiar `UpdateRaffleStatusInput` → `ForceStatusChangeInput`
-- [ ] Cambiar `DeleteRaffleInput` → `CancelRaffleWithRefundInput`
-- [ ] Crear nuevo raffle_handler.go
-- [ ] Compilar - 0 errores
-- [ ] Probar con cURL
-- [ ] Actualizar tests
-- [ ] Activar rutas
-- [ ] Git commit
+#### 8.8.5 raffle_handler.go (6 endpoints) ✅ COMPLETADO
+- [x] Leer use cases: ListRafflesAdmin, ViewRaffleTransactions, ForceStatusChange, ManualDrawWinner, AddAdminNotes, CancelRaffleWithRefund
+- [x] Crear nuevo raffle_handler.go desde cero (374 lines)
+- [x] Implementar 6 funciones handler
+- [x] Verificar inputs coinciden exactamente con use cases
+- [x] Compilar backend - 0 errores, binary 27MB
+- [ ] Probar con cURL todos los endpoints
+- [ ] Actualizar test_admin_endpoints.sh
+- [x] Activar rutas en admin_routes_v2.go
+- [x] Git commit (ebac6a7) + push ✅
 
-**Endpoints a activar:**
+**Endpoints activados:**
 ```
-GET    /api/v1/admin/raffles               → List raffles
-GET    /api/v1/admin/raffles/:id           → Get raffle transactions
-PUT    /api/v1/admin/raffles/:id/status    → Force status change
-POST   /api/v1/admin/raffles/:id/draw      → Manual draw winner
-PUT    /api/v1/admin/raffles/:id/notes     → Add admin notes
-DELETE /api/v1/admin/raffles/:id           → Cancel with refund
+GET  /api/v1/admin/raffles                    → List raffles
+GET  /api/v1/admin/raffles/:id/transactions   → Get raffle transactions
+PUT  /api/v1/admin/raffles/:id/status         → Force status change
+POST /api/v1/admin/raffles/:id/draw           → Manual draw winner
+POST /api/v1/admin/raffles/:id/notes          → Add admin notes
+POST /api/v1/admin/raffles/:id/cancel         → Cancel with refund
 ```
 
 #### 8.8.6 notification_handler.go (5 endpoints)
