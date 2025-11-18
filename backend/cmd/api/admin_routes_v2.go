@@ -36,6 +36,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== SYSTEM CONFIG ====================
 	setupConfigRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== SETTLEMENTS ====================
+	setupSettlementRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -93,4 +96,26 @@ func setupConfigRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.L
 	log.Info("Admin config routes registered",
 		logger.Int("endpoints", 3),
 		logger.String("base_path", "/api/v1/admin/config"))
+}
+
+// setupSettlementRoutesV2 configura rutas de liquidaciones (settlements)
+func setupSettlementRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewSettlementHandler(db, log)
+
+	// Configurar rutas
+	settlements := adminGroup.Group("/settlements")
+	{
+		settlements.GET("", handler.List)                       // GET /api/v1/admin/settlements
+		settlements.GET("/:id", handler.GetByID)                // GET /api/v1/admin/settlements/:id
+		settlements.POST("", handler.Create)                    // POST /api/v1/admin/settlements
+		settlements.PUT("/:id/approve", handler.Approve)        // PUT /api/v1/admin/settlements/:id/approve
+		settlements.PUT("/:id/reject", handler.Reject)          // PUT /api/v1/admin/settlements/:id/reject
+		settlements.PUT("/:id/payout", handler.MarkPaid)        // PUT /api/v1/admin/settlements/:id/payout
+		settlements.POST("/auto-create", handler.AutoCreate)    // POST /api/v1/admin/settlements/auto-create
+	}
+
+	log.Info("Admin settlement routes registered",
+		logger.Int("endpoints", 7),
+		logger.String("base_path", "/api/v1/admin/settlements"))
 }
