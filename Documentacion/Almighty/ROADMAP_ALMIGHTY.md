@@ -78,17 +78,17 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 | **HTTP Handlers (compilables)** | 7 | 7 | ██████████ 100% ✅ |
 | **HTTP Handlers (funcionales)** | 7 | 6 | ████████░░ 86% 🟢 |
 | **Routes & Middleware** | 1 | 1 | ██████████ 100% ✅ |
-| **Endpoints API** | 52 | 23 | ████░░░░░░ 44% 🟡 |
+| **Endpoints API** | 52 | 27 | █████░░░░░ 52% 🟡 |
 | **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **200** | **94** | **█████░░░░░ 47%** |
+| **TOTAL** | **200** | **98** | **█████░░░░░ 49%** |
 
-**Última actualización:** 2025-11-18 (Backend 100% + 23 endpoints activos + Fase 8.8: 3/6 handlers)
+**Última actualización:** 2025-11-18 (Backend 100% + 27 endpoints activos + Fase 8.8: 4/6 handlers)
 
 **Estado actual:**
 - ✅ Backend use cases 100% completos
-- 🟡 23/52 endpoints activos (44%)
-- 🔄 Fase 8.8 en curso: 3/6 handlers completados (settlement ✅, user ✅, organizer ✅)
+- 🟡 27/52 endpoints activos (52%)
+- 🔄 Fase 8.8 en curso: 4/6 handlers completados (settlement ✅, user ✅, organizer ✅, payment ✅)
 
 ---
 
@@ -1009,9 +1009,9 @@ go build -o /tmp/sorteos-api ./cmd/api
 **Estado del Backend Almighty:**
 - ✅ 47/47 use cases (100%)
 - ✅ 7/7 handlers (100% compilables)
-- ✅ 23/52 endpoints activos (44%)
+- ✅ 27/52 endpoints activos (52%)
 - ✅ Middleware completo
-- 🟡 Pending: Reescribir 3 handlers restantes (payment, raffle, notification)
+- 🟡 Pending: Reescribir 2 handlers restantes (raffle, notification)
 
 **Siguiente paso:** Ver Fase 8.8 - Corrección de Handlers.
 
@@ -1019,7 +1019,7 @@ go build -o /tmp/sorteos-api ./cmd/api
 
 ## 8.8 Fase Correctiva: Reescritura de Handlers (Semana 7) 🔄
 **Estado:** 🟡 EN PROCESO
-**Progreso:** █████░░░░░ 50% (3/6 handlers)
+**Progreso:** ██████░░░░ 67% (4/6 handlers)
 
 **Objetivo:** Reescribir handlers backed up para que coincidan exactamente con las firmas de los use cases existentes.
 
@@ -1069,10 +1069,10 @@ Los siguientes handlers fueron respaldados como `.bak` y requieren reescritura:
 | settlement_handler.go | 7 | ✅ Completado | 588953e |
 | user_handler.go | 5 | ✅ Completado | 41a7c42 |
 | organizer_handler.go | 4 | ✅ Completado | 7eef950 |
-| payment_handler.go.bak | 4 | ⏳ Pendiente | - |
+| payment_handler.go | 4 | ✅ Completado | a311573 |
 | raffle_handler.go.bak | 6 | ⏳ Pendiente | - |
 | notification_handler.go.bak | 5 | ⏳ Pendiente | - |
-| **TOTAL** | **31** | **52% completo (16/31)** |
+| **TOTAL** | **31** | **65% completo (20/31)** |
 
 ### Plan de Reescritura
 
@@ -1164,41 +1164,23 @@ PUT    /api/v1/admin/organizers/:id/commission → Update commission
 PUT    /api/v1/admin/organizers/:id/verify     → Verify organizer
 ```
 
-#### 8.8.4 payment_handler.go (4 endpoints) ⏳ PENDIENTE
-- [ ] Leer use cases: ListPayments, GetPaymentDetail, ProcessRefund, ManageDispute
-- [ ] Crear nuevo payment_handler.go
-- [ ] Compilar - 0 errores
-- [ ] Probar con cURL
-- [ ] Actualizar tests
-- [ ] Activar rutas
-- [ ] Git commit
+#### 8.8.4 payment_handler.go (4 endpoints) ✅ COMPLETADO
+- [x] Leer use cases: ListPaymentsAdmin, ViewPaymentDetails, ProcessRefund, ManageDispute
+- [x] Crear nuevo payment_handler.go desde cero (271 lines)
+- [x] Implementar 4 funciones handler
+- [x] Verificar inputs coinciden exactamente con use cases
+- [x] Compilar backend - 0 errores, binary 27MB
+- [ ] Probar con cURL todos los endpoints
+- [ ] Actualizar test_admin_endpoints.sh
+- [x] Activar rutas en admin_routes_v2.go
+- [x] Git commit (a311573) + push ✅
 
-**Endpoints a activar:**
+**Endpoints activados:**
 ```
-GET    /api/v1/admin/organizers            → List organizers
-GET    /api/v1/admin/organizers/:id        → Get organizer detail
-PUT    /api/v1/admin/organizers/:id/commission → Update commission
-PUT    /api/v1/admin/organizers/:id/verify → Verify organizer
-```
-
-#### 8.8.4 payment_handler.go (4 endpoints)
-- [ ] Leer use cases: ListPaymentsAdmin, ViewPaymentDetails, ProcessRefund, ManageDispute
-- [ ] Cambiar `ListPaymentsInput` → `ListPaymentsAdminInput`
-- [ ] Ajustar filtros y paginación
-- [ ] Verificar `ProcessRefundInput` y `ManageDisputeInput`
-- [ ] Crear nuevo payment_handler.go
-- [ ] Compilar - 0 errores
-- [ ] Probar con cURL
-- [ ] Actualizar tests
-- [ ] Activar rutas
-- [ ] Git commit
-
-**Endpoints a activar:**
-```
-GET    /api/v1/admin/payments              → List payments
-GET    /api/v1/admin/payments/:id          → Get payment detail
-POST   /api/v1/admin/payments/:id/refund   → Process refund
-PUT    /api/v1/admin/payments/:id/dispute  → Manage dispute
+GET  /api/v1/admin/payments              → List payments
+GET  /api/v1/admin/payments/:id          → Get payment detail
+POST /api/v1/admin/payments/:id/refund   → Process refund
+POST /api/v1/admin/payments/:id/dispute  → Manage dispute
 ```
 
 #### 8.8.5 raffle_handler.go (6 endpoints)
