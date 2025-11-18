@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recordatorio de Sorteo Próximo</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f7fafc;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f7fafc; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">⏰ ¡El Sorteo es Pronto!</h1>
+                            <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px;">No te lo pierdas</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">
+                                Hola <strong>{{.FirstName}}</strong>,
+                            </p>
+
+                            <p style="margin: 0 0 25px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                                Te recordamos que el sorteo <strong>{{.RaffleTitle}}</strong> se llevará a cabo muy pronto.
+                            </p>
+
+                            <!-- Countdown Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 30px 0; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 12px; padding: 30px; text-align: center;">
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0 0 10px 0; color: #92400E; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Sorteo en</p>
+                                        <p style="margin: 0; color: #B45309; font-size: 36px; font-weight: bold;">{{.TimeRemaining}}</p>
+                                        <p style="margin: 10px 0 0 0; color: #92400E; font-size: 16px;">{{.DrawDate}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Detalles de participación -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 30px 0; background-color: #f8f9fa; border-radius: 8px; padding: 20px;">
+                                <tr>
+                                    <td style="padding-bottom: 15px;">
+                                        <p style="margin: 0; color: #999999; font-size: 13px;">TUS NÚMEROS</p>
+                                        <p style="margin: 5px 0 0 0; color: #F97316; font-size: 20px; font-weight: bold;">{{.YourNumbers}}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 15px;">
+                                        <p style="margin: 0; color: #999999; font-size: 13px;">PREMIO</p>
+                                        <p style="margin: 5px 0 0 0; color: #333333; font-size: 16px; font-weight: bold;">{{.Prize}}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0; color: #999999; font-size: 13px;">TOTAL DE PARTICIPANTES</p>
+                                        <p style="margin: 5px 0 0 0; color: #333333; font-size: 16px; font-weight: bold;">{{.TotalParticipants}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Info Box -->
+                            <div style="background-color: #DBEAFE; border-left: 4px solid #3B82F6; padding: 20px; margin: 0 0 25px 0;">
+                                <p style="margin: 0; color: #1E40AF; font-size: 15px; line-height: 1.6;">
+                                    💡 <strong>Tip:</strong> Te notificaremos por email en cuanto se realice el sorteo y se anuncien los resultados.
+                                </p>
+                            </div>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{.FrontendURL}}/sorteo/{{.RaffleID}}" style="background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+                                            Ver Detalles del Sorteo
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 15px; color: #64748B; margin-top: 30px; text-align: center;">
+                                ¡Mucha suerte! 🍀
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                            <p style="margin: 0 0 10px 0; color: #94A3B8; font-size: 14px;">
+                                Saludos,<br>
+                                <strong>Equipo de Sorteos.club</strong>
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #cbd5e1; font-size: 12px;">
+                                © 2025 Sorteos.club. Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

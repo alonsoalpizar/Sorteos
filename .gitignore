@@ -63,3 +63,13 @@ bin/
 
 # OS
 Thumbs.db
+
+# Archivos sensibles con credenciales
+mail-server-docs/*credentials*.txt
+mail-server-docs/admin-*.txt
+scripts/*password*
+scripts/*credentials*
+
+# Configuraciones de servidor de correo (pueden contener secrets)
+mail-server-docs/*.conf
+mail-server-docs/dkim-backup/
