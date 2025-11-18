@@ -76,19 +76,19 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 | **Repositorios** | 7 | 7 | ██████████ 100% ✅ |
 | **Casos de Uso** | 47 | 47 | ██████████ 100% ✅ |
 | **HTTP Handlers (compilables)** | 7 | 7 | ██████████ 100% ✅ |
-| **HTTP Handlers (funcionales)** | 7 | 3 | ████░░░░░░ 43% 🟡 |
+| **HTTP Handlers (funcionales)** | 7 | 6 | ████████░░ 86% 🟢 |
 | **Routes & Middleware** | 1 | 1 | ██████████ 100% ✅ |
-| **Endpoints API** | 52 | 14 | ██░░░░░░░░ 27% 🟡 |
+| **Endpoints API** | 52 | 23 | ████░░░░░░ 44% 🟡 |
 | **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **200** | **85** | **████░░░░░░ 43%** |
+| **TOTAL** | **200** | **94** | **█████░░░░░ 47%** |
 
-**Última actualización:** 2025-11-18 (Backend 100% + 14 endpoints activos + Fase 8.8: 1/6 handlers)
+**Última actualización:** 2025-11-18 (Backend 100% + 23 endpoints activos + Fase 8.8: 3/6 handlers)
 
 **Estado actual:**
 - ✅ Backend use cases 100% completos
-- 🟡 14/52 endpoints activos (27%)
-- 🔄 Fase 8.8 en curso: 1/6 handlers completados (settlement_handler ✅)
+- 🟡 23/52 endpoints activos (44%)
+- 🔄 Fase 8.8 en curso: 3/6 handlers completados (settlement ✅, user ✅, organizer ✅)
 
 ---
 
@@ -1009,9 +1009,9 @@ go build -o /tmp/sorteos-api ./cmd/api
 **Estado del Backend Almighty:**
 - ✅ 47/47 use cases (100%)
 - ✅ 7/7 handlers (100% compilables)
-- ✅ 7/52 endpoints activos (13%)
+- ✅ 23/52 endpoints activos (44%)
 - ✅ Middleware completo
-- ⚠️ Pending: Reescribir 6 handlers para coincidir con use cases
+- 🟡 Pending: Reescribir 3 handlers restantes (payment, raffle, notification)
 
 **Siguiente paso:** Ver Fase 8.8 - Corrección de Handlers.
 
@@ -1019,7 +1019,7 @@ go build -o /tmp/sorteos-api ./cmd/api
 
 ## 8.8 Fase Correctiva: Reescritura de Handlers (Semana 7) 🔄
 **Estado:** 🟡 EN PROCESO
-**Progreso:** █░░░░░░░░░ 17% (1/6 handlers)
+**Progreso:** █████░░░░░ 50% (3/6 handlers)
 
 **Objetivo:** Reescribir handlers backed up para que coincidan exactamente con las firmas de los use cases existentes.
 
@@ -1064,15 +1064,15 @@ Durante la implementación de la Fase 8 (Routes Setup), se descubrió que 6 de l
 
 Los siguientes handlers fueron respaldados como `.bak` y requieren reescritura:
 
-| Handler | Endpoints | Status |
-|---------|-----------|--------|
-| settlement_handler.go | 7 | ✅ Completado |
-| user_handler.go.bak | 5 | ⏳ Pendiente |
-| organizer_handler.go.bak | 4 | ⏳ Pendiente |
-| payment_handler.go.bak | 4 | ⏳ Pendiente |
-| raffle_handler.go.bak | 6 | ⏳ Pendiente |
-| notification_handler.go.bak | 5 | ⏳ Pendiente |
-| **TOTAL** | **31** | **23% completo (7/31)** |
+| Handler | Endpoints | Status | Commit |
+|---------|-----------|--------|--------|
+| settlement_handler.go | 7 | ✅ Completado | 588953e |
+| user_handler.go | 5 | ✅ Completado | 41a7c42 |
+| organizer_handler.go | 4 | ✅ Completado | 7eef950 |
+| payment_handler.go.bak | 4 | ⏳ Pendiente | - |
+| raffle_handler.go.bak | 6 | ⏳ Pendiente | - |
+| notification_handler.go.bak | 5 | ⏳ Pendiente | - |
+| **TOTAL** | **31** | **52% completo (16/31)** |
 
 ### Plan de Reescritura
 
@@ -1125,17 +1125,16 @@ PUT    /api/v1/admin/settlements/:id/payout     → Mark as paid
 POST   /api/v1/admin/settlements/auto-create    → Auto-create batch
 ```
 
-#### 8.8.2 user_handler.go (5 endpoints)
-- [ ] Leer use cases: ListUsers, GetUserDetail, UpdateUserStatus, UpdateUserKYC, DeleteUser
-- [ ] Ajustar inputs: Search y OrderBy como `string` (no `*string`)
-- [ ] Cambiar `ViewUserDetailsInput` → `GetUserDetailInput`
-- [ ] Ajustar `UpdateUserStatusInput`: campo `Status` → `NewStatus`
-- [ ] Crear nuevo user_handler.go
-- [ ] Compilar backend - 0 errores
-- [ ] Probar con cURL
-- [ ] Actualizar tests
-- [ ] Activar rutas
-- [ ] Git commit
+#### 8.8.2 user_handler.go (5 endpoints) ✅ COMPLETADO
+- [x] Leer use cases: ListUsers, GetUserDetail, UpdateUserStatus, UpdateUserKYC, DeleteUser
+- [x] Crear nuevo user_handler.go desde cero (305 lines)
+- [x] Implementar 5 funciones handler
+- [x] Verificar inputs coinciden exactamente con use cases
+- [x] Compilar backend - 0 errores, binary 27MB
+- [ ] Probar con cURL todos los endpoints
+- [ ] Actualizar test_admin_endpoints.sh
+- [x] Activar rutas en admin_routes_v2.go
+- [x] Git commit (41a7c42) + push ✅
 
 **Endpoints a activar:**
 ```
@@ -1146,12 +1145,28 @@ PUT    /api/v1/admin/users/:id/kyc         → Update KYC
 DELETE /api/v1/admin/users/:id             → Delete user
 ```
 
-#### 8.8.3 organizer_handler.go (4 endpoints)
-- [ ] Leer use cases: ListOrganizers, GetOrganizerDetail, UpdateOrganizerCommission, VerifyOrganizer
-- [ ] Cambiar `ViewOrganizerDetailsInput` → `GetOrganizerDetailInput`
-- [ ] Cambiar `UpdateCommissionInput` → `UpdateOrganizerCommissionInput`
-- [ ] Ajustar filtros de listado
-- [ ] Crear nuevo organizer_handler.go
+#### 8.8.3 organizer_handler.go (4 endpoints) ✅ COMPLETADO
+- [x] Leer use cases: ListOrganizers, GetOrganizerDetail, UpdateOrganizerCommission, VerifyOrganizer
+- [x] Crear nuevo organizer_handler.go desde cero (231 lines)
+- [x] Implementar 4 funciones handler
+- [x] Verificar inputs coinciden exactamente con use cases
+- [x] Compilar backend - 0 errores, binary 27MB
+- [ ] Probar con cURL todos los endpoints
+- [ ] Actualizar test_admin_endpoints.sh
+- [x] Activar rutas en admin_routes_v2.go
+- [x] Git commit (7eef950) + push ✅
+
+**Endpoints activados:**
+```
+GET    /api/v1/admin/organizers                → List organizers
+GET    /api/v1/admin/organizers/:id            → Get organizer detail
+PUT    /api/v1/admin/organizers/:id/commission → Update commission
+PUT    /api/v1/admin/organizers/:id/verify     → Verify organizer
+```
+
+#### 8.8.4 payment_handler.go (4 endpoints) ⏳ PENDIENTE
+- [ ] Leer use cases: ListPayments, GetPaymentDetail, ProcessRefund, ManageDispute
+- [ ] Crear nuevo payment_handler.go
 - [ ] Compilar - 0 errores
 - [ ] Probar con cURL
 - [ ] Actualizar tests
