@@ -12,15 +12,15 @@ import (
 
 // ViewNotificationHistoryInput datos de entrada
 type ViewNotificationHistoryInput struct {
-	Type       *string    `json:"type,omitempty"`       // email, sms, push, announcement
-	Status     *string    `json:"status,omitempty"`     // queued, sent, failed, scheduled
-	Priority   *string    `json:"priority,omitempty"`   // low, normal, high, critical
-	AdminID    *int64     `json:"admin_id,omitempty"`   // Filtrar por admin que envió
-	DateFrom   *string    `json:"date_from,omitempty"`  // Filtro de fecha
-	DateTo     *string    `json:"date_to,omitempty"`
-	Search     *string    `json:"search,omitempty"`     // Buscar en subject/body
-	Limit      int        `json:"limit"`
-	Offset     int        `json:"offset"`
+	Type       *string `json:"type,omitempty"`       // email, sms, push, announcement
+	Status     *string `json:"status,omitempty"`     // queued, sent, failed, scheduled
+	Priority   *string `json:"priority,omitempty"`   // low, normal, high, critical
+	AdminID    *int64  `json:"admin_id,omitempty"`   // Filtrar por admin que envió
+	DateFrom   *string `json:"date_from,omitempty"`  // Filtro de fecha
+	DateTo     *string `json:"date_to,omitempty"`
+	Search     *string `json:"search,omitempty"` // Buscar en subject/body
+	Limit      int     `json:"limit"`
+	Offset     int     `json:"offset"`
 }
 
 // ViewNotificationHistoryOutput resultado
@@ -51,13 +51,13 @@ type NotificationHistoryItem struct {
 
 // NotificationStatistics estadísticas del historial
 type NotificationStatistics struct {
-	TotalSent       int     `json:"total_sent"`
-	TotalFailed     int     `json:"total_failed"`
-	TotalQueued     int     `json:"total_queued"`
-	TotalScheduled  int     `json:"total_scheduled"`
-	SuccessRate     float64 `json:"success_rate"`
-	AveragePerDay   float64 `json:"average_per_day"`
-	LastSentAt      string  `json:"last_sent_at,omitempty"`
+	TotalSent      int     `json:"total_sent"`
+	TotalFailed    int     `json:"total_failed"`
+	TotalQueued    int     `json:"total_queued"`
+	TotalScheduled int     `json:"total_scheduled"`
+	SuccessRate    float64 `json:"success_rate"`
+	AveragePerDay  float64 `json:"average_per_day"`
+	LastSentAt     string  `json:"last_sent_at,omitempty"`
 }
 
 // ViewNotificationHistoryUseCase caso de uso para ver historial de notificaciones
@@ -116,83 +116,81 @@ func (uc *ViewNotificationHistoryUseCase) Execute(ctx context.Context, input *Vi
 	// Aplicar paginación
 	query = query.Order("created_at DESC").Limit(input.Limit).Offset(input.Offset)
 
-	// Ejecutar query con JOIN a users para obtener email del admin
-	rows, err := query.
+	// Ejecutar query - usar struct para mapeo directo
+	var results []struct {
+		ID             int64            `gorm:"column:id"`
+		AdminID        int64            `gorm:"column:admin_id"`
+		Type           string           `gorm:"column:type"`
+		Recipients     json.RawMessage  `gorm:"column:recipients;type:jsonb"`
+		Subject        *string          `gorm:"column:subject"`
+		Body           string           `gorm:"column:body"`
+		TemplateID     *int64           `gorm:"column:template_id"`
+		Variables      *json.RawMessage `gorm:"column:variables;type:jsonb"`
+		Priority       string           `gorm:"column:priority"`
+		Status         string           `gorm:"column:status"`
+		SentAt         *time.Time       `gorm:"column:sent_at"`
+		ScheduledAt    *time.Time       `gorm:"column:scheduled_at"`
+		ProviderID     *string          `gorm:"column:provider_id"`
+		ProviderStatus *string          `gorm:"column:provider_status"`
+		Error          *string          `gorm:"column:error"`
+		Metadata       *json.RawMessage `gorm:"column:metadata;type:jsonb"`
+		CreatedAt      time.Time        `gorm:"column:created_at"`
+		UpdatedAt      time.Time        `gorm:"column:updated_at"`
+		AdminEmail     string           `gorm:"column:admin_email"`
+	}
+
+	err := query.
 		Select("email_notifications.*, users.email as admin_email").
 		Joins("LEFT JOIN users ON users.id = email_notifications.admin_id").
-		Rows()
+		Find(&results).Error
+
 	if err != nil {
 		uc.log.Error("Error querying notification history", logger.Error(err))
 		return nil, errors.Wrap(errors.ErrDatabaseError, err)
 	}
-	defer rows.Close()
 
 	// Parsear resultados
-	notifications := make([]*NotificationHistoryItem, 0)
-	for rows.Next() {
-		var notification EmailNotification
-		var adminEmail string
-		var subject, recipients, providerStatus, errorMsg *string
-
-		err := rows.Scan(
-			&notification.ID,
-			&notification.AdminID,
-			&notification.Type,
-			&recipients,
-			&subject,
-			&notification.Body,
-			&notification.TemplateID,
-			&notification.Variables,
-			&notification.Priority,
-			&notification.Status,
-			&notification.SentAt,
-			&notification.ScheduledAt,
-			&notification.ProviderID,
-			&providerStatus,
-			&errorMsg,
-			&notification.CreatedAt,
-			&notification.UpdatedAt,
-			&adminEmail,
-		)
-		if err != nil {
-			uc.log.Error("Error scanning notification row", logger.Error(err))
-			continue
-		}
-
-		// Deserializar recipients
+	notifications := make([]*NotificationHistoryItem, 0, len(results))
+	for _, r := range results {
+		// Deserializar recipients de JSONB
 		var recipientsList []EmailRecipient
-		if recipients != nil {
-			json.Unmarshal([]byte(*recipients), &recipientsList)
+		if r.Recipients != nil {
+			json.Unmarshal(r.Recipients, &recipientsList)
 		}
 
 		// Construir item
 		item := &NotificationHistoryItem{
-			ID:             notification.ID,
-			Type:           notification.Type,
+			ID:             r.ID,
+			Type:           r.Type,
 			Subject:        "",
 			Recipients:     recipientsList,
 			RecipientCount: len(recipientsList),
-			Priority:       notification.Priority,
-			Status:         notification.Status,
-			AdminID:        notification.AdminID,
-			AdminEmail:     adminEmail,
-			CreatedAt:      notification.CreatedAt.Format(time.RFC3339),
+			Priority:       r.Priority,
+			Status:         r.Status,
+			AdminID:        r.AdminID,
+			AdminEmail:     r.AdminEmail,
+			CreatedAt:      r.CreatedAt.Format(time.RFC3339),
 		}
 
-		if subject != nil {
-			item.Subject = *subject
+		if r.Subject != nil {
+			item.Subject = *r.Subject
 		}
-		if notification.SentAt != nil {
-			item.SentAt = notification.SentAt.Format(time.RFC3339)
+		if r.SentAt != nil {
+			item.SentAt = r.SentAt.Format(time.RFC3339)
 		}
-		if notification.ScheduledAt != nil {
-			item.ScheduledAt = notification.ScheduledAt.Format(time.RFC3339)
+		if r.ScheduledAt != nil {
+			item.ScheduledAt = r.ScheduledAt.Format(time.RFC3339)
 		}
-		if providerStatus != nil {
-			item.ProviderStatus = *providerStatus
+		if r.ProviderStatus != nil {
+			item.ProviderStatus = *r.ProviderStatus
 		}
-		if errorMsg != nil {
-			item.Error = *errorMsg
+		if r.Error != nil {
+			item.Error = *r.Error
+		}
+		if r.Metadata != nil {
+			var metadata map[string]interface{}
+			json.Unmarshal(*r.Metadata, &metadata)
+			item.Metadata = metadata
 		}
 
 		notifications = append(notifications, item)

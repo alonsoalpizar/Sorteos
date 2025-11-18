@@ -1,6 +1,9 @@
 package notifications
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // EmailRecipient destinatario del email
 type EmailRecipient struct {
@@ -13,11 +16,11 @@ type EmailNotification struct {
 	ID             int64
 	AdminID        int64
 	Type           string // email, sms, push
-	Recipients     string // JSON array
+	Recipients     json.RawMessage // JSONB array
 	Subject        *string
 	Body           string
 	TemplateID     *int64
-	Variables      *string // JSON object
+	Variables      *json.RawMessage // JSONB object
 	Priority       string
 	Status         string // queued, scheduled, sent, failed
 	SentAt         *time.Time
@@ -25,6 +28,7 @@ type EmailNotification struct {
 	ProviderID     *string // Email ID del proveedor (SendGrid, Mailgun, etc.)
 	ProviderStatus *string
 	Error          *string
+	Metadata       *json.RawMessage // JSONB object
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

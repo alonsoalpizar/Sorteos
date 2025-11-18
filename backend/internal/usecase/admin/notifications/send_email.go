@@ -84,16 +84,27 @@ func (uc *SendEmailUseCase) Execute(ctx context.Context, input *SendEmailInput, 
 	}
 
 	// Serializar variables
-	var variablesJSON *string
+	var variablesJSON *json.RawMessage
 	if input.Variables != nil {
 		varsBytes, err := json.Marshal(input.Variables)
 		if err != nil {
 			uc.log.Error("Error marshaling variables", logger.Error(err))
 			return nil, errors.Wrap(errors.ErrInternalServer, err)
 		}
-		varsStr := string(varsBytes)
-		variablesJSON = &varsStr
+		rawMsg := json.RawMessage(varsBytes)
+		variablesJSON = &rawMsg
 	}
+
+
+
+
+
+
+
+
+
+
+
 
 	// Determinar status inicial
 	status := "queued"
@@ -105,7 +116,7 @@ func (uc *SendEmailUseCase) Execute(ctx context.Context, input *SendEmailInput, 
 	notification := &EmailNotification{
 		AdminID:     adminID,
 		Type:        "email",
-		Recipients:  string(recipientsJSON),
+		Recipients:  json.RawMessage(recipientsJSON),
 		Subject:     &finalSubject,
 		Body:        finalBody,
 		TemplateID:  input.TemplateID,
