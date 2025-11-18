@@ -74,11 +74,11 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 |-----------|-------|-------------|----------|
 | **Migraciones DB** | 7 | 7 | ██████████ 100% ✅ |
 | **Repositorios** | 7 | 7 | ██████████ 100% ✅ |
-| **Casos de Uso** | 47 | 42 | ████████░░ 89% ✅ |
+| **Casos de Uso** | 47 | 47 | ██████████ 100% ✅ |
 | **Endpoints API** | 52 | 0 | ░░░░░░░░░░ 0% |
 | **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **185** | **56** | **███░░░░░░░ 30%** |
+| **TOTAL** | **185** | **61** | **███░░░░░░░ 33%** |
 
 **Última actualización:** 2025-11-18 (Fases 2, 3, 4, 5, 6, 7, 8 completadas - 8/8 fases backend)
 
@@ -321,11 +321,11 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [x] Logging de auditoría (severity: warning)
 - [ ] Escribir tests unitarios
 
-#### internal/usecase/admin/organizer/calculate_organizer_revenue.go
-- [ ] Crear `CalculateOrganizerRevenueUseCase`
-- [ ] Calcular: gross_revenue, platform_fees, net_revenue, pending_payout
-- [ ] Filtrar por date_range
-- [ ] Agrupar por mes/año si se requiere
+#### internal/usecase/admin/organizer/calculate_organizer_revenue.go ✅
+- [x] Crear `CalculateOrganizerRevenueUseCase` (321 lines)
+- [x] Calcular: gross_revenue, platform_fees, net_revenue, pending_payout
+- [x] Filtrar por date_range
+- [x] Agrupar por mes/año si se requiere
 - [ ] Escribir tests unitarios
 
 ### 4.3 API Handlers - Usuarios
@@ -505,12 +505,12 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Enviar email de confirmación
 - [ ] Logging de auditoría (severity: warning)
 
-#### internal/usecase/admin/payment/manage_dispute.go
-- [ ] Crear `ManageDisputeUseCase`
-- [ ] Marcar payment con dispute flag
-- [ ] Guardar metadata de disputa
-- [ ] Notificar al organizador
-- [ ] Logging de auditoría
+#### internal/usecase/admin/payment/manage_dispute.go ✅
+- [x] Crear `ManageDisputeUseCase` (298 lines)
+- [x] Marcar payment con dispute flag
+- [x] Guardar metadata de disputa
+- [x] Notificar al organizador
+- [x] Logging de auditoría
 
 #### internal/usecase/admin/payment/view_payment_detail.go
 - [x] Crear `ViewPaymentDetailsUseCase`
@@ -614,14 +614,14 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 
 ### 6.1 Casos de Uso - Settlements
 
-#### internal/usecase/admin/settlement/create_settlement.go
-- [ ] Crear `CreateSettlementUseCase`
-- [ ] Modalidad individual: para 1 rifa completada
-- [ ] Modalidad batch: para múltiples rifas de un organizador
-- [ ] Calcular: gross_revenue, platform_fee (de raffle o override de organizer), net_payout
-- [ ] Crear registro en settlements table
-- [ ] Status inicial: pending
-- [ ] Logging de auditoría
+#### internal/usecase/admin/settlement/create_settlement.go ✅
+- [x] Crear `CreateSettlementUseCase` (207 lines)
+- [x] Modalidad individual: para 1 rifa completada
+- [x] Modalidad batch: para múltiples rifas de un organizador
+- [x] Calcular: gross_revenue, platform_fee (de raffle o override de organizer), net_payout
+- [x] Crear registro en settlements table
+- [x] Status inicial: pending
+- [x] Logging de auditoría
 
 #### internal/usecase/admin/settlement/approve_settlement.go
 - [x] Crear `ApproveSettlementUseCase`
@@ -638,15 +638,15 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Enviar email al organizador
 - [ ] Logging de auditoría
 
-#### internal/usecase/admin/settlement/mark_settlement_paid.go
-- [ ] Crear `MarkSettlementPaidUseCase`
-- [ ] Validar settlement status = approved
-- [ ] Cambiar status a paid
-- [ ] Guardar payment_method, payment_reference, paid_at
-- [ ] Actualizar organizer_profile.total_payouts
-- [ ] Reducir organizer_profile.pending_payout
-- [ ] Enviar email de confirmación
-- [ ] Logging de auditoría
+#### internal/usecase/admin/settlement/mark_settlement_paid.go ✅
+- [x] Crear `MarkSettlementPaidUseCase` (227 lines)
+- [x] Validar settlement status = approved
+- [x] Cambiar status a paid
+- [x] Guardar payment_method, payment_reference, paid_at
+- [x] Actualizar organizer_profile.total_payouts
+- [x] Reducir organizer_profile.pending_payout
+- [x] Enviar email de confirmación
+- [x] Logging de auditoría
 
 #### internal/usecase/admin/settlement/list_settlements.go
 - [x] Crear `ListSettlementsUseCase`
@@ -655,12 +655,12 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Paginación y ordenamiento
 - [ ] Calcular totales por status
 
-#### internal/usecase/admin/settlement/auto_create_settlements.go
-- [ ] Crear `AutoCreateSettlementsUseCase` (batch job)
-- [ ] Buscar rifas completed sin settlement
-- [ ] Crear settlements automáticamente
-- [ ] Logging de auditoría
-- [ ] Retornar count de settlements creados
+#### internal/usecase/admin/settlement/auto_create_settlements.go ✅
+- [x] Crear `AutoCreateSettlementsUseCase` (319 lines - batch job)
+- [x] Buscar rifas completed sin settlement
+- [x] Crear settlements automáticamente
+- [x] Logging de auditoría
+- [x] Retornar count de settlements creados
 
 ### 6.2 API Handlers - Settlements
 
