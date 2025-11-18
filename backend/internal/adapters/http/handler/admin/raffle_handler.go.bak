@@ -11,18 +11,18 @@ import (
 
 // RaffleHandler maneja todas las operaciones de administración de rifas
 type RaffleHandler struct {
-	listRaffles      *raffle.ListRafflesUseCase
-	viewRaffleDetail *raffle.ViewRaffleDetailUseCase
-	updateStatus     *raffle.UpdateRaffleStatusUseCase
-	deleteRaffle     *raffle.DeleteRaffleUseCase
+	listRaffles      *raffle.ListRafflesAdminUseCase
+	viewRaffleDetail *raffle.ViewRaffleTransactionsUseCase
+	updateStatus     *raffle.ForceStatusChangeUseCase
+	deleteRaffle     *raffle.CancelRaffleWithRefundUseCase
 }
 
 // NewRaffleHandler crea una nueva instancia
 func NewRaffleHandler(
-	listRaffles *raffle.ListRafflesUseCase,
-	viewRaffleDetail *raffle.ViewRaffleDetailUseCase,
-	updateStatus *raffle.UpdateRaffleStatusUseCase,
-	deleteRaffle *raffle.DeleteRaffleUseCase,
+	listRaffles *raffle.ListRafflesAdminUseCase,
+	viewRaffleDetail *raffle.ViewRaffleTransactionsUseCase,
+	updateStatus *raffle.ForceStatusChangeUseCase,
+	deleteRaffle *raffle.CancelRaffleWithRefundUseCase,
 ) *RaffleHandler {
 	return &RaffleHandler{
 		listRaffles:      listRaffles,
@@ -43,7 +43,7 @@ func (h *RaffleHandler) ListRaffles(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	input := &raffle.ListRafflesInput{
+	input := &raffle.ListRafflesAdminInput{
 		Page:     page,
 		PageSize: pageSize,
 		Search:   stringPtr(c.Query("search")),
@@ -97,7 +97,7 @@ func (h *RaffleHandler) GetRaffleByID(c *gin.Context) {
 		return
 	}
 
-	input := &raffle.ViewRaffleDetailInput{
+	input := &raffle.ViewRaffleTransactionsInput{
 		RaffleID: raffleID,
 	}
 
@@ -134,7 +134,7 @@ func (h *RaffleHandler) UpdateRaffleStatus(c *gin.Context) {
 		return
 	}
 
-	input := &raffle.UpdateRaffleStatusInput{
+	input := &raffle.ForceStatusChangeInput{
 		RaffleID:  raffleID,
 		NewStatus: req.NewStatus,
 		Reason:    req.Reason,
@@ -169,7 +169,7 @@ func (h *RaffleHandler) DeleteRaffle(c *gin.Context) {
 	}
 	c.ShouldBindJSON(&req)
 
-	input := &raffle.DeleteRaffleInput{
+	input := &raffle.CancelRaffleWithRefundInput{
 		RaffleID: raffleID,
 		Reason:   req.Reason,
 	}

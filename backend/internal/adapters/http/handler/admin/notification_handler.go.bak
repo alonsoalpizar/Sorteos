@@ -11,18 +11,18 @@ import (
 
 // NotificationHandler maneja todas las operaciones de notificaciones
 type NotificationHandler struct {
-	sendEmail      *notifications.SendEmailNotificationUseCase
-	sendBulk       *notifications.SendBulkNotificationUseCase
+	sendEmail      *notifications.SendEmailUseCase
+	sendBulk       *notifications.SendBulkEmailUseCase
 	testEmail      *notifications.TestEmailDeliveryUseCase
-	listTemplates  *notifications.ListEmailTemplatesUseCase
+	listTemplates  *notifications.ManageEmailTemplatesUseCase
 }
 
 // NewNotificationHandler crea una nueva instancia
 func NewNotificationHandler(
-	sendEmail *notifications.SendEmailNotificationUseCase,
-	sendBulk *notifications.SendBulkNotificationUseCase,
+	sendEmail *notifications.SendEmailUseCase,
+	sendBulk *notifications.SendBulkEmailUseCase,
 	testEmail *notifications.TestEmailDeliveryUseCase,
-	listTemplates *notifications.ListEmailTemplatesUseCase,
+	listTemplates *notifications.ManageEmailTemplatesUseCase,
 ) *NotificationHandler {
 	return &NotificationHandler{
 		sendEmail:     sendEmail,
@@ -54,7 +54,7 @@ func (h *NotificationHandler) SendEmail(c *gin.Context) {
 		return
 	}
 
-	input := &notifications.SendEmailNotificationInput{
+	input := &notifications.SendEmailInput{
 		RecipientEmail: req.RecipientEmail,
 		Subject:        req.Subject,
 		Body:           req.Body,
@@ -106,7 +106,7 @@ func (h *NotificationHandler) SendBulk(c *gin.Context) {
 		}
 	}
 
-	input := &notifications.SendBulkNotificationInput{
+	input := &notifications.SendBulkEmailInput{
 		Recipients: recipients,
 		Subject:    req.Subject,
 		Body:       req.Body,

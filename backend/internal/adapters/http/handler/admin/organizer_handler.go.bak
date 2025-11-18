@@ -12,16 +12,16 @@ import (
 // OrganizerHandler maneja todas las operaciones de administración de organizadores
 type OrganizerHandler struct {
 	listOrganizers        *organizer.ListOrganizersUseCase
-	viewOrganizerDetails  *organizer.ViewOrganizerDetailsUseCase
-	updateCommission      *organizer.UpdateCommissionUseCase
+	viewOrganizerDetails  *organizer.GetOrganizerDetailUseCase
+	updateCommission      *organizer.UpdateOrganizerCommissionUseCase
 	calculateRevenue      *organizer.CalculateOrganizerRevenueUseCase
 }
 
 // NewOrganizerHandler crea una nueva instancia
 func NewOrganizerHandler(
 	listOrganizers *organizer.ListOrganizersUseCase,
-	viewOrganizerDetails *organizer.ViewOrganizerDetailsUseCase,
-	updateCommission *organizer.UpdateCommissionUseCase,
+	viewOrganizerDetails *organizer.GetOrganizerDetailUseCase,
+	updateCommission *organizer.UpdateOrganizerCommissionUseCase,
 	calculateRevenue *organizer.CalculateOrganizerRevenueUseCase,
 ) *OrganizerHandler {
 	return &OrganizerHandler{
@@ -96,7 +96,7 @@ func (h *OrganizerHandler) GetOrganizerByID(c *gin.Context) {
 		return
 	}
 
-	input := &organizer.ViewOrganizerDetailsInput{
+	input := &organizer.GetOrganizerDetailInput{
 		OrganizerID: organizerID,
 	}
 
@@ -133,7 +133,7 @@ func (h *OrganizerHandler) UpdateCommission(c *gin.Context) {
 		return
 	}
 
-	input := &organizer.UpdateCommissionInput{
+	input := &organizer.UpdateOrganizerCommissionInput{
 		OrganizerID:   organizerID,
 		NewCommission: req.NewCommission,
 		Reason:        req.Reason,

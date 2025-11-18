@@ -1,0 +1,231 @@
+package admin
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sorteos-platform/backend/internal/usecase/admin/user"
+	"github.com/sorteos-platform/backend/pkg/errors"
+)
+
+// UserHandler maneja todas las operaciones de administración de usuarios
+type UserHandler struct {
+	listUsers    *user.ListUsersUseCase
+	getUserDetail *user.GetUserDetailUseCase
+	updateStatus *user.UpdateUserStatusUseCase
+	updateKYC    *user.UpdateUserKYCUseCase
+	deleteUser   *user.DeleteUserUseCase
+}
+
+// NewUserHandler crea una nueva instancia
+func NewUserHandler(
+	listUsers *user.ListUsersUseCase,
+	getUserDetail *user.GetUserDetailUseCase,
+	updateStatus *user.UpdateUserStatusUseCase,
+	updateKYC *user.UpdateUserKYCUseCase,
+	deleteUser *user.DeleteUserUseCase,
+) *UserHandler {
+	return &UserHandler{
+		listUsers:     listUsers,
+		getUserDetail: getUserDetail,
+		updateStatus:  updateStatus,
+		updateKYC:     updateKYC,
+		deleteUser:    deleteUser,
+	}
+}
+
+// ListUsers maneja GET /api/v1/admin/users
+func (h *UserHandler) ListUsers(c *gin.Context) {
+	// Obtener admin ID del contexto (del middleware de autenticación)
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// Parsear query params
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	// Construir input
+	input := &user.ListUsersInput{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   stringPtr(c.Query("search")),
+		OrderBy:  stringPtr(c.Query("order_by")),
+	}
+
+	// Filtros opcionales
+	if roleStr := c.Query("role"); roleStr != "" {
+		input.Role = stringPtr(roleStr)
+	}
+	if statusStr := c.Query("status"); statusStr != "" {
+		input.Status = stringPtr(statusStr)
+	}
+	if kycLevelStr := c.Query("kyc_level"); kycLevelStr != "" {
+		input.KYCLevel = stringPtr(kycLevelStr)
+	}
+	if dateFrom := c.Query("date_from"); dateFrom != "" {
+		input.DateFrom = stringPtr(dateFrom)
+	}
+	if dateTo := c.Query("date_to"); dateTo != "" {
+		input.DateTo = stringPtr(dateTo)
+	}
+
+	// Ejecutar use case
+	output, err := h.listUsers.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// GetUserByID maneja GET /api/v1/admin/users/:id
+func (h *UserHandler) GetUserByID(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// Parsear user ID del path
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_USER_ID", "invalid user ID format", 400, err))
+		return
+	}
+
+	// Construir input
+	input := &user.GetUserDetailInput{
+		UserID: userID,
+	}
+
+	// Ejecutar use case
+	output, err := h.getUserDetail.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// UpdateUserStatus maneja PUT /api/v1/admin/users/:id/status
+func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_USER_ID", "invalid user ID format", 400, err))
+		return
+	}
+
+	// Parsear body
+	var req struct {
+		Status string  `json:"status" binding:"required"`
+		Reason *string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, errors.New("INVALID_INPUT", "invalid request body", 400, err))
+		return
+	}
+
+	// Construir input
+	input := &user.UpdateUserStatusInput{
+		UserID: userID,
+		Status: req.Status,
+		Reason: req.Reason,
+	}
+
+	// Ejecutar use case
+	output, err := h.updateStatus.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// UpdateUserKYC maneja PUT /api/v1/admin/users/:id/kyc
+func (h *UserHandler) UpdateUserKYC(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_USER_ID", "invalid user ID format", 400, err))
+		return
+	}
+
+	var req struct {
+		NewKYCLevel string  `json:"new_kyc_level" binding:"required"`
+		Reason      *string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, errors.New("INVALID_INPUT", "invalid request body", 400, err))
+		return
+	}
+
+	input := &user.UpdateUserKYCInput{
+		UserID:      userID,
+		NewKYCLevel: req.NewKYCLevel,
+		Reason:      req.Reason,
+	}
+
+	output, err := h.updateKYC.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// DeleteUser maneja DELETE /api/v1/admin/users/:id
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_USER_ID", "invalid user ID format", 400, err))
+		return
+	}
+
+	var req struct {
+		Reason *string `json:"reason"`
+	}
+	// El body es opcional para DELETE
+	c.ShouldBindJSON(&req)
+
+	input := &user.DeleteUserInput{
+		UserID: userID,
+		Reason: req.Reason,
+	}
+
+	output, err := h.deleteUser.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
