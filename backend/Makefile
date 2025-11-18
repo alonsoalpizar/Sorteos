@@ -13,11 +13,11 @@ help: ## Mostrar ayuda
 
 run: ## Ejecutar aplicación en desarrollo
 	@echo "🚀 Ejecutando $(APP_NAME)..."
-	go run cmd/api/main.go
+	go run ./cmd/api
 
 build: ## Compilar aplicación
 	@echo "🔨 Compilando $(APP_NAME)..."
-	go build -o bin/$(APP_NAME) cmd/api/main.go
+	go build -o bin/$(APP_NAME) ./cmd/api
 	@echo "✅ Binario creado en bin/$(APP_NAME)"
 
 test: ## Ejecutar tests
