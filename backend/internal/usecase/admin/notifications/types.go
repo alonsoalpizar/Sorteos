@@ -1,0 +1,30 @@
+package notifications
+
+import "time"
+
+// EmailRecipient destinatario del email
+type EmailRecipient struct {
+	Email string `json:"email"`
+	Name  string `json:"name,omitempty"`
+}
+
+// EmailNotification registro de notificación en DB
+type EmailNotification struct {
+	ID             int64
+	AdminID        int64
+	Type           string // email, sms, push
+	Recipients     string // JSON array
+	Subject        *string
+	Body           string
+	TemplateID     *int64
+	Variables      *string // JSON object
+	Priority       string
+	Status         string // queued, scheduled, sent, failed
+	SentAt         *time.Time
+	ScheduledAt    *time.Time
+	ProviderID     *string // Email ID del proveedor (SendGrid, Mailgun, etc.)
+	ProviderStatus *string
+	Error          *string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
