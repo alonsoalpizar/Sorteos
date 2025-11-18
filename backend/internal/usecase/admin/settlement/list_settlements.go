@@ -19,7 +19,7 @@ type SettlementWithDetails struct {
 	PlatformFee       float64    `json:"platform_fee"`
 	NetAmount         float64    `json:"net_amount"`
 	Status            string     `json:"status"`
-	CalculatedAt      time.Time  `json:"calculated_at"`
+	CalculatedAt      time.Time  `json:"created_at"`
 	ApprovedAt        *time.Time `json:"approved_at,omitempty"`
 	ApprovedBy        *int64     `json:"approved_by,omitempty"`
 	RejectedAt        *time.Time `json:"rejected_at,omitempty"`
@@ -126,11 +126,11 @@ func (uc *ListSettlementsUseCase) Execute(ctx context.Context, input *ListSettle
 	}
 
 	if input.DateFrom != nil && *input.DateFrom != "" {
-		query = query.Where("settlements.calculated_at >= ?", *input.DateFrom)
+		query = query.Where("settlements.created_at >= ?", *input.DateFrom)
 	}
 
 	if input.DateTo != nil && *input.DateTo != "" {
-		query = query.Where("settlements.calculated_at <= ?", *input.DateTo)
+		query = query.Where("settlements.created_at <= ?", *input.DateTo)
 	}
 
 	if input.MinAmount != nil {
@@ -160,7 +160,7 @@ func (uc *ListSettlementsUseCase) Execute(ctx context.Context, input *ListSettle
 	}
 
 	// Aplicar ordenamiento
-	orderBy := "settlements.calculated_at DESC"
+	orderBy := "settlements.created_at DESC"
 	if input.OrderBy != "" {
 		orderBy = input.OrderBy
 	}
@@ -199,10 +199,10 @@ func (uc *ListSettlementsUseCase) Execute(ctx context.Context, input *ListSettle
 		statsQuery = statsQuery.Where("raffle_id = ?", *input.RaffleID)
 	}
 	if input.DateFrom != nil && *input.DateFrom != "" {
-		statsQuery = statsQuery.Where("calculated_at >= ?", *input.DateFrom)
+		statsQuery = statsQuery.Where("created_at >= ?", *input.DateFrom)
 	}
 	if input.DateTo != nil && *input.DateTo != "" {
-		statsQuery = statsQuery.Where("calculated_at <= ?", *input.DateTo)
+		statsQuery = statsQuery.Where("created_at <= ?", *input.DateTo)
 	}
 
 	if err := statsQuery.Scan(&stats).Error; err != nil {

@@ -107,8 +107,8 @@ func (uc *ListPaymentsAdminUseCase) Execute(ctx context.Context, input *ListPaym
 			users.email as user_email,
 			raffles.title as raffle_title,
 			COALESCE(organizers.first_name || ' ' || organizers.last_name, organizers.email) as organizer_name`).
-		Joins("LEFT JOIN users ON users.uuid::text = payments.user_id").
-		Joins("LEFT JOIN raffles ON raffles.uuid::text = payments.raffle_id").
+		Joins("LEFT JOIN users ON users.uuid = payments.user_id").
+		Joins("LEFT JOIN raffles ON raffles.uuid = payments.raffle_id").
 		Joins("LEFT JOIN users AS organizers ON organizers.id = raffles.user_id")
 
 	// Aplicar filtros

@@ -172,7 +172,6 @@ func (uc *AutoCreateSettlementsUseCase) Execute(ctx context.Context, input *Auto
 				"platform_fee":  platformFee,
 				"net_amount":    netAmount,
 				"status":        "pending",
-				"calculated_at": now,
 				"created_at":    now,
 				"updated_at":    now,
 			}

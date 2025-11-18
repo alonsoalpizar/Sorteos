@@ -79,10 +79,10 @@ func (uc *ViewRaffleTransactionsUseCase) Execute(ctx context.Context, raffleID i
 	}
 
 	if err := uc.db.Table("reservations").
-		Select("reservations.user_id, users.name as user_name, reservations.created_at, COUNT(*) as count").
+		Select("reservations.user_id, CONCAT(users.first_name, ' ', users.last_name) as user_name, reservations.created_at, COUNT(*) as count").
 		Joins("LEFT JOIN users ON users.id = reservations.user_id").
 		Where("reservations.raffle_id = ?", raffleID).
-		Group("reservations.user_id, users.name, reservations.created_at").
+		Group("reservations.user_id, CONCAT(users.first_name, ' ', users.last_name), reservations.created_at").
 		Find(&reservations).Error; err != nil {
 		uc.log.Error("Error getting reservations", logger.Error(err))
 		// No fallar por esto
@@ -109,7 +109,7 @@ func (uc *ViewRaffleTransactionsUseCase) Execute(ctx context.Context, raffleID i
 	}
 
 	if err := uc.db.Table("payments").
-		Select("payments.id, payments.user_id, users.name as user_name, payments.amount, payments.status, payments.created_at").
+		Select("payments.id, payments.user_id, CONCAT(users.first_name, ' ', users.last_name) as user_name, payments.amount, payments.status, payments.created_at").
 		Joins("LEFT JOIN users ON users.id = payments.user_id").
 		Where("payments.raffle_id = ?", raffleID).
 		Find(&payments).Error; err != nil {
@@ -144,7 +144,7 @@ func (uc *ViewRaffleTransactionsUseCase) Execute(ctx context.Context, raffleID i
 	}
 
 	if err := uc.db.Table("audit_logs").
-		Select("audit_logs.user_id, users.name as user_name, audit_logs.action, audit_logs.details, audit_logs.created_at").
+		Select("audit_logs.user_id, CONCAT(users.first_name, ' ', users.last_name) as user_name, audit_logs.action, audit_logs.details, audit_logs.created_at").
 		Joins("LEFT JOIN users ON users.id = audit_logs.user_id").
 		Where("audit_logs.entity_type = ? AND audit_logs.entity_id = ?", "raffle", raffleID).
 		Find(&auditLogs).Error; err == nil {

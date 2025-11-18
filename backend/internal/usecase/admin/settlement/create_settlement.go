@@ -87,7 +87,6 @@ func (uc *CreateSettlementUseCase) Execute(ctx context.Context, input *CreateSet
 			"platform_fee":  platformFee,
 			"net_amount":    netAmount,
 			"status":        "pending",
-			"calculated_at": time.Now(),
 			"created_at":    time.Now(),
 			"updated_at":    time.Now(),
 		}

@@ -20,7 +20,7 @@ type SystemConfig struct {
 
 // TableName especifica el nombre de la tabla
 func (SystemConfig) TableName() string {
-	return "system_config"
+	return "system_parameters"
 }
 
 // SystemConfigRepository interfaz para el repositorio de configuración del sistema

@@ -68,7 +68,7 @@ func (uc *MarkSettlementPaidUseCase) Execute(ctx context.Context, input *MarkSet
 
 	result := uc.db.WithContext(ctx).
 		Table("settlements").
-		Select("id, organizer_id, raffle_id, total_revenue, platform_fee, net_amount, status, approved_by, approved_at, calculated_at").
+		Select("id, organizer_id, raffle_id, total_revenue, platform_fee, net_amount, status, approved_by, approved_at, created_at").
 		Where("id = ?", input.SettlementID).
 		First(&settlement)
 

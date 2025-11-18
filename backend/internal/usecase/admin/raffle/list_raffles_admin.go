@@ -76,7 +76,7 @@ func (uc *ListRafflesAdminUseCase) Execute(ctx context.Context, input *ListRaffl
 	// Construir query base con JOIN a users para obtener info del organizador
 	query := uc.db.Model(&domain.Raffle{}).
 		Select(`raffles.*,
-			users.name as organizer_name,
+			CONCAT(users.first_name, ' ', users.last_name) as organizer_name,
 			users.email as organizer_email`).
 		Joins("LEFT JOIN users ON users.id = raffles.user_id")
 
