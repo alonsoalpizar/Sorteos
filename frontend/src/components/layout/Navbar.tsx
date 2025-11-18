@@ -76,6 +76,12 @@ export function Navbar() {
                     >
                       Mis Números
                     </Link>
+                    <Link
+                      to="/wallet"
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      💰 Billetera
+                    </Link>
                   </>
                 ) : (
                   <>
@@ -90,6 +96,12 @@ export function Navbar() {
                       className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     >
                       Sorteos
+                    </Link>
+                    <Link
+                      to="/wallet"
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      💰 Billetera
                     </Link>
                     <Link
                       to="/organizer/raffles/new"

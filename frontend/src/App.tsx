@@ -39,6 +39,9 @@ import { CheckoutPage } from "@/features/checkout/pages/CheckoutPage";
 import { PaymentSuccessPage } from "@/features/checkout/pages/PaymentSuccessPage";
 import { PaymentCancelPage } from "@/features/checkout/pages/PaymentCancelPage";
 
+// Wallet pages
+import { WalletPage } from "@/features/wallet/pages/WalletPage";
+
 // Componente interno para usar hooks que requieren Router context
 function AppRoutes() {
   const navigate = useNavigate();
@@ -194,6 +197,18 @@ function AppRoutes() {
               <ProtectedRoute>
                 <MainLayout>
                   <MyPurchasesPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Wallet routes (protected, with layout) */}
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <WalletPage />
                 </MainLayout>
               </ProtectedRoute>
             }

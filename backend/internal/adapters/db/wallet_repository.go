@@ -9,6 +9,7 @@ import (
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // PostgresWalletRepository implementación de WalletRepository con PostgreSQL
@@ -132,7 +133,7 @@ func (r *PostgresWalletRepository) Update(wallet *domain.Wallet) error {
 
 	r.log.Info("Billetera actualizada",
 		logger.Int64("wallet_id", wallet.ID),
-		logger.String("balance", wallet.Balance.String()))
+		logger.String("balance_available", wallet.BalanceAvailable.String()))
 
 	return nil
 }
@@ -165,7 +166,7 @@ func (r *PostgresWalletRepository) UpdateBalance(walletID int64, balance decimal
 func (r *PostgresWalletRepository) Lock(walletID int64) error {
 	// Usar SELECT ... FOR UPDATE para lock pesimista
 	var wallet domain.Wallet
-	if err := r.db.Clauses(gorm.Locking{Strength: "UPDATE"}).
+	if err := r.db.Clauses(clause.Locking{Strength: "UPDATE"}).
 		First(&wallet, walletID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrNotFound

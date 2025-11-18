@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"github.com/sorteos-platform/backend/internal/domain"
 	"github.com/sorteos-platform/backend/pkg/crypto"
@@ -33,6 +34,7 @@ type RegisterOutput struct {
 // RegisterUseCase maneja el registro de usuarios
 type RegisterUseCase struct {
 	userRepo              domain.UserRepository
+	walletRepo            domain.WalletRepository
 	consentRepo           domain.UserConsentRepository
 	auditRepo             domain.AuditLogRepository
 	tokenMgr              TokenManager
@@ -55,6 +57,7 @@ type Notifier interface {
 // NewRegisterUseCase crea una nueva instancia del use case
 func NewRegisterUseCase(
 	userRepo domain.UserRepository,
+	walletRepo domain.WalletRepository,
 	consentRepo domain.UserConsentRepository,
 	auditRepo domain.AuditLogRepository,
 	tokenMgr TokenManager,
@@ -64,6 +67,7 @@ func NewRegisterUseCase(
 ) *RegisterUseCase {
 	return &RegisterUseCase{
 		userRepo:              userRepo,
+		walletRepo:            walletRepo,
 		consentRepo:           consentRepo,
 		auditRepo:             auditRepo,
 		tokenMgr:              tokenMgr,
@@ -153,6 +157,29 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, input *RegisterInput, ip
 	if err := uc.userRepo.Create(user); err != nil {
 		uc.logger.Error("Error creating user", logger.Error(err))
 		return nil, err
+	}
+
+	// Auto-crear billetera para el usuario
+	wallet := &domain.Wallet{
+		UUID:             uuid.New().String(),
+		UserID:           user.ID,
+		BalanceAvailable: decimal.Zero,
+		EarningsBalance:  decimal.Zero,
+		PendingBalance:   decimal.Zero,
+		Currency:         "CRC", // Colón costarricense (moneda local)
+		Status:           domain.WalletStatusActive,
+	}
+
+	if err := uc.walletRepo.Create(wallet); err != nil {
+		uc.logger.Error("Error creating wallet for user",
+			logger.Int64("user_id", user.ID),
+			logger.Error(err))
+		// No fallar el registro si la billetera no se crea
+		// Se puede crear después manualmente o automáticamente en el primer uso
+	} else {
+		uc.logger.Info("Wallet created for user",
+			logger.Int64("user_id", user.ID),
+			logger.Int64("wallet_id", wallet.ID))
 	}
 
 	// Crear consentimientos GDPR

@@ -31,6 +31,7 @@ import (
 func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg *config.Config, log *logger.Logger) notifier.Notifier {
 	// Inicializar repositorios
 	userRepo := db.NewUserRepository(gormDB)
+	walletRepo := db.NewWalletRepository(gormDB, log)
 	consentRepo := db.NewUserConsentRepository(gormDB)
 	auditRepo := db.NewAuditLogRepository(gormDB)
 
@@ -61,7 +62,7 @@ func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg
 	rateLimiter := middleware.NewRateLimiter(rdb, log)
 
 	// Inicializar use cases
-	registerUseCase := auth.NewRegisterUseCase(userRepo, consentRepo, auditRepo, tokenMgr, emailNotifier, log, cfg.SkipEmailVerification)
+	registerUseCase := auth.NewRegisterUseCase(userRepo, walletRepo, consentRepo, auditRepo, tokenMgr, emailNotifier, log, cfg.SkipEmailVerification)
 	loginUseCase := auth.NewLoginUseCase(userRepo, auditRepo, tokenMgr, log)
 	refreshTokenUseCase := auth.NewRefreshTokenUseCase(userRepo, tokenMgr, log)
 	verifyEmailUseCase := auth.NewVerifyEmailUseCase(userRepo, auditRepo, tokenMgr, log)

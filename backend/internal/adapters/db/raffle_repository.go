@@ -25,6 +25,10 @@ type RaffleRepository interface {
 	SetWinner(id int64, winnerNumber string, winnerUserID *int64) error
 	IncrementSoldCount(id int64) error
 	DecrementSoldCount(id int64) error
+
+	// Earnings methods
+	GetUserEarningsSummary(userID int64) (*domain.UserEarnings, error)
+	GetUserCompletedRaffles(userID int64, limit, offset int) ([]domain.RaffleEarning, error)
 }
 
 // RaffleRepositoryImpl implementa RaffleRepository
@@ -253,4 +257,78 @@ func (r *RaffleRepositoryImpl) DecrementSoldCount(id int64) error {
 		return errors.Wrap(errors.ErrDatabaseError, err)
 	}
 	return nil
+}
+
+// GetUserEarningsSummary obtiene el resumen total de ganancias de un usuario
+func (r *RaffleRepositoryImpl) GetUserEarningsSummary(userID int64) (*domain.UserEarnings, error) {
+	type Summary struct {
+		TotalCollected     float64
+		PlatformCommission float64
+		NetEarnings        float64
+		CompletedRaffles   int64
+	}
+
+	var summary Summary
+	err := r.db.Model(&domain.Raffle{}).
+		Select(`
+			COALESCE(SUM(total_revenue), 0) as total_collected,
+			COALESCE(SUM(platform_fee_amount), 0) as platform_commission,
+			COALESCE(SUM(net_amount), 0) as net_earnings,
+			COUNT(*) as completed_raffles
+		`).
+		Where("user_id = ? AND status = ? AND deleted_at IS NULL",
+			userID, domain.RaffleStatusActive).
+		Scan(&summary).Error
+
+	if err != nil {
+		return nil, errors.Wrap(errors.ErrDatabaseError, err)
+	}
+
+	// Convertir a UserEarnings domain
+	earnings := &domain.UserEarnings{
+		TotalCollected:     domain.NewDecimalFromFloat(summary.TotalCollected),
+		PlatformCommission: domain.NewDecimalFromFloat(summary.PlatformCommission),
+		NetEarnings:        domain.NewDecimalFromFloat(summary.NetEarnings),
+		CompletedRaffles:   int(summary.CompletedRaffles),
+		Raffles:            []domain.RaffleEarning{},
+	}
+
+	return earnings, nil
+}
+
+// GetUserCompletedRaffles obtiene los sorteos completados con desglose
+func (r *RaffleRepositoryImpl) GetUserCompletedRaffles(userID int64, limit, offset int) ([]domain.RaffleEarning, error) {
+	var raffles []domain.Raffle
+
+	query := r.db.Where("user_id = ? AND status = ? AND deleted_at IS NULL",
+		userID, domain.RaffleStatusActive).
+		Order("created_at DESC")
+
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	if err := query.Find(&raffles).Error; err != nil {
+		return nil, errors.Wrap(errors.ErrDatabaseError, err)
+	}
+
+	// Convertir a RaffleEarning
+	earnings := make([]domain.RaffleEarning, 0, len(raffles))
+	for _, r := range raffles {
+		earnings = append(earnings, domain.RaffleEarning{
+			RaffleID:           r.ID,
+			RaffleUUID:         r.UUID.String(),
+			Title:              r.Title,
+			DrawDate:           r.DrawDate,
+			CompletedAt:        r.CompletedAt,
+			TotalRevenue:       r.TotalRevenue,
+			PlatformFeePercent: r.PlatformFeePercentage,
+			PlatformFeeAmount:  r.PlatformFeeAmount,
+			NetAmount:          r.NetAmount,
+			SettlementStatus:   string(r.SettlementStatus),
+			SettledAt:          r.SettledAt,
+		})
+	}
+
+	return earnings, nil
 }

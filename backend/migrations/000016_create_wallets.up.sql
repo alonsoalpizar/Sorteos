@@ -7,8 +7,8 @@ CREATE TYPE wallet_status AS ENUM (
 );
 
 CREATE TYPE transaction_type AS ENUM (
-    'deposit',           -- Compra de créditos vía procesador (Stripe)
-    'withdrawal',        -- Retiro a cuenta bancaria
+    'deposit',           -- Compra de créditos vía procesador de pagos local
+    'withdrawal',        -- Retiro a cuenta bancaria (SINPE/transferencia)
     'purchase',          -- Pago de sorteo con saldo
     'refund',            -- Devolución de compra
     'prize_claim',       -- Premio ganado (organizador)
@@ -29,7 +29,7 @@ CREATE TABLE wallets (
     -- Saldos
     balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     pending_balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    currency VARCHAR(3) NOT NULL DEFAULT 'CRC',
 
     -- Estado
     status wallet_status NOT NULL DEFAULT 'active',

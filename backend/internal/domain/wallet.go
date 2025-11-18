@@ -23,9 +23,10 @@ type Wallet struct {
 	UserID int64  `json:"user_id" gorm:"uniqueIndex;not null"`
 
 	// Saldos
-	Balance        decimal.Decimal `json:"balance" gorm:"type:decimal(12,2);not null;default:0.00"`
-	PendingBalance decimal.Decimal `json:"pending_balance" gorm:"type:decimal(12,2);not null;default:0.00"`
-	Currency       string          `json:"currency" gorm:"type:varchar(3);default:'USD';not null"`
+	BalanceAvailable decimal.Decimal `json:"balance_available" gorm:"type:decimal(12,2);not null;default:0.00"` // Saldo de recargas (NO retirable)
+	EarningsBalance  decimal.Decimal `json:"earnings_balance" gorm:"type:decimal(12,2);not null;default:0.00"`  // Saldo de ganancias (retirable via IBAN)
+	PendingBalance   decimal.Decimal `json:"pending_balance" gorm:"type:decimal(12,2);not null;default:0.00"`
+	Currency         string          `json:"currency" gorm:"type:varchar(3);default:'CRC';not null"`
 
 	// Estado
 	Status WalletStatus `json:"status" gorm:"type:wallet_status;default:'active';not null"`
@@ -45,9 +46,9 @@ func (w *Wallet) IsActive() bool {
 	return w.Status == WalletStatusActive
 }
 
-// HasSufficientBalance verifica si hay saldo suficiente
+// HasSufficientBalance verifica si hay saldo suficiente (solo balance_available)
 func (w *Wallet) HasSufficientBalance(amount decimal.Decimal) bool {
-	return w.Balance.GreaterThanOrEqual(amount)
+	return w.BalanceAvailable.GreaterThanOrEqual(amount)
 }
 
 // CanDebit verifica si se puede debitar un monto
@@ -61,7 +62,7 @@ func (w *Wallet) CanDebit(amount decimal.Decimal) error {
 	}
 
 	if !w.HasSufficientBalance(amount) {
-		return fmt.Errorf("saldo insuficiente (disponible: %s, requerido: %s)", w.Balance.String(), amount.String())
+		return fmt.Errorf("saldo insuficiente (disponible: %s, requerido: %s)", w.BalanceAvailable.String(), amount.String())
 	}
 
 	return nil
@@ -80,24 +81,58 @@ func (w *Wallet) CanCredit(amount decimal.Decimal) error {
 	return nil
 }
 
-// Debit debita un monto del saldo
+// Debit debita un monto del saldo disponible (recargas)
 func (w *Wallet) Debit(amount decimal.Decimal) error {
 	if err := w.CanDebit(amount); err != nil {
 		return err
 	}
 
-	w.Balance = w.Balance.Sub(amount)
+	w.BalanceAvailable = w.BalanceAvailable.Sub(amount)
 	w.UpdatedAt = time.Now()
 	return nil
 }
 
-// Credit acredita un monto al saldo
+// Credit acredita un monto al saldo disponible (recargas)
 func (w *Wallet) Credit(amount decimal.Decimal) error {
 	if err := w.CanCredit(amount); err != nil {
 		return err
 	}
 
-	w.Balance = w.Balance.Add(amount)
+	w.BalanceAvailable = w.BalanceAvailable.Add(amount)
+	w.UpdatedAt = time.Now()
+	return nil
+}
+
+// CreditEarnings acredita un monto al saldo de ganancias (retirable)
+func (w *Wallet) CreditEarnings(amount decimal.Decimal) error {
+	if !w.IsActive() {
+		return fmt.Errorf("billetera no está activa")
+	}
+
+	if amount.LessThanOrEqual(decimal.Zero) {
+		return fmt.Errorf("el monto debe ser mayor a cero")
+	}
+
+	w.EarningsBalance = w.EarningsBalance.Add(amount)
+	w.UpdatedAt = time.Now()
+	return nil
+}
+
+// DebitEarnings debita un monto del saldo de ganancias (retiros via IBAN)
+func (w *Wallet) DebitEarnings(amount decimal.Decimal) error {
+	if !w.IsActive() {
+		return fmt.Errorf("billetera no está activa")
+	}
+
+	if amount.LessThanOrEqual(decimal.Zero) {
+		return fmt.Errorf("el monto debe ser mayor a cero")
+	}
+
+	if w.EarningsBalance.LessThan(amount) {
+		return fmt.Errorf("saldo de ganancias insuficiente (disponible: %s, requerido: %s)", w.EarningsBalance.String(), amount.String())
+	}
+
+	w.EarningsBalance = w.EarningsBalance.Sub(amount)
 	w.UpdatedAt = time.Now()
 	return nil
 }
@@ -117,14 +152,14 @@ func (w *Wallet) CreditPending(amount decimal.Decimal) error {
 	return nil
 }
 
-// ConfirmPending mueve saldo pendiente a saldo disponible
+// ConfirmPending mueve saldo pendiente a saldo disponible (recargas)
 func (w *Wallet) ConfirmPending(amount decimal.Decimal) error {
 	if amount.GreaterThan(w.PendingBalance) {
 		return fmt.Errorf("saldo pendiente insuficiente")
 	}
 
 	w.PendingBalance = w.PendingBalance.Sub(amount)
-	w.Balance = w.Balance.Add(amount)
+	w.BalanceAvailable = w.BalanceAvailable.Add(amount)
 	w.UpdatedAt = time.Now()
 	return nil
 }
@@ -153,7 +188,7 @@ func (w *Wallet) Unfreeze() error {
 
 // Close cierra la billetera
 func (w *Wallet) Close() error {
-	if !w.Balance.IsZero() || !w.PendingBalance.IsZero() {
+	if !w.BalanceAvailable.IsZero() || !w.EarningsBalance.IsZero() || !w.PendingBalance.IsZero() {
 		return fmt.Errorf("no se puede cerrar una billetera con saldo")
 	}
 
@@ -168,8 +203,12 @@ func (w *Wallet) Validate() error {
 		return fmt.Errorf("user_id es requerido")
 	}
 
-	if w.Balance.LessThan(decimal.Zero) {
-		return fmt.Errorf("el saldo no puede ser negativo")
+	if w.BalanceAvailable.LessThan(decimal.Zero) {
+		return fmt.Errorf("el saldo disponible no puede ser negativo")
+	}
+
+	if w.EarningsBalance.LessThan(decimal.Zero) {
+		return fmt.Errorf("el saldo de ganancias no puede ser negativo")
 	}
 
 	if w.PendingBalance.LessThan(decimal.Zero) {

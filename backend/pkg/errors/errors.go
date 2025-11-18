@@ -174,6 +174,45 @@ var (
 	}
 )
 
+// Errores predefinidos - Wallet
+var (
+	ErrWalletNotFound = &AppError{
+		Code:    "WALLET_NOT_FOUND",
+		Message: "Billetera no encontrada",
+		Status:  http.StatusNotFound,
+	}
+	ErrInsufficientBalance = &AppError{
+		Code:    "INSUFFICIENT_BALANCE",
+		Message: "Saldo insuficiente",
+		Status:  http.StatusBadRequest,
+	}
+	ErrWalletFrozen = &AppError{
+		Code:    "WALLET_FROZEN",
+		Message: "Billetera congelada",
+		Status:  http.StatusForbidden,
+	}
+	ErrWalletClosed = &AppError{
+		Code:    "WALLET_CLOSED",
+		Message: "Billetera cerrada",
+		Status:  http.StatusForbidden,
+	}
+	ErrTransactionNotFound = &AppError{
+		Code:    "TRANSACTION_NOT_FOUND",
+		Message: "Transacción no encontrada",
+		Status:  http.StatusNotFound,
+	}
+	ErrDuplicateTransaction = &AppError{
+		Code:    "DUPLICATE_TRANSACTION",
+		Message: "Transacción duplicada",
+		Status:  http.StatusConflict,
+	}
+	ErrConflict = &AppError{
+		Code:    "CONFLICT",
+		Message: "Conflicto de recursos",
+		Status:  http.StatusConflict,
+	}
+)
+
 // Errores predefinidos - Sistema
 var (
 	ErrInternalServer = &AppError{
@@ -189,6 +228,11 @@ var (
 	ErrRedisError = &AppError{
 		Code:    "REDIS_ERROR",
 		Message: "Error de Redis",
+		Status:  http.StatusInternalServerError,
+	}
+	ErrInvalidConfiguration = &AppError{
+		Code:    "INVALID_CONFIGURATION",
+		Message: "Configuración inválida",
 		Status:  http.StatusInternalServerError,
 	}
 )
