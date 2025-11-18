@@ -42,6 +42,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== USER MANAGEMENT ====================
 	setupUserRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== ORGANIZER MANAGEMENT ====================
+	setupOrganizerRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -141,4 +144,23 @@ func setupUserRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Log
 	log.Info("Admin user routes registered",
 		logger.Int("endpoints", 5),
 		logger.String("base_path", "/api/v1/admin/users"))
+}
+
+// setupOrganizerRoutesV2 configura rutas de gestión de organizadores
+func setupOrganizerRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewOrganizerHandler(db, log)
+
+	// Configurar rutas
+	organizers := adminGroup.Group("/organizers")
+	{
+		organizers.GET("", handler.List)                           // GET /api/v1/admin/organizers
+		organizers.GET("/:id", handler.GetByID)                    // GET /api/v1/admin/organizers/:id
+		organizers.PUT("/:id/commission", handler.UpdateCommission) // PUT /api/v1/admin/organizers/:id/commission
+		organizers.PUT("/:id/verify", handler.Verify)              // PUT /api/v1/admin/organizers/:id/verify
+	}
+
+	log.Info("Admin organizer routes registered",
+		logger.Int("endpoints", 4),
+		logger.String("base_path", "/api/v1/admin/organizers"))
 }
