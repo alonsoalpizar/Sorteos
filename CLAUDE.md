@@ -4,12 +4,63 @@
 **Propietario:** Ing. Alonso Alpízar
 **Stack:** Go + React + PostgreSQL + Redis
 **Estado:** Documentación técnica completa (100%)
+**Skill:** sorteos-context (instalado en `/opt/.claude/skills/`)
 
 ---
 
 ## 🎯 Propósito de este Archivo
 
 Este archivo proporciona contexto rápido a Claude AI para trabajar eficientemente en el proyecto sin necesidad de leer toda la documentación cada vez.
+
+---
+
+## ⚡ SKILL: sorteos-context
+
+### 🚨 ACTIVAR SIEMPRE
+
+**IMPORTANTE:** Este proyecto tiene un skill dedicado que DEBE activarse:
+
+```bash
+# Al INICIO de CADA sesión, cargar:
+cat /opt/.claude/skills/sorteos-context/SKILL.md
+```
+
+**El skill contiene las 7 REGLAS CRÍTICAS que Claude debe respetar SIEMPRE:**
+
+1. ❌ **COLORES PROHIBIDOS** - NUNCA morado/rosa, SOLO azul/gris
+2. 🏛️ **Arquitectura Hexagonal** - domain NO importa GORM/Gin
+3. 🔒 **Locks Distribuidos** - Redis SETNX obligatorio en reservas
+4. 🔑 **Idempotencia** - Header Idempotency-Key en pagos
+5. 🖥️ **Instalación Nativa** - NO Docker, usar systemd
+6. 📝 **Naming** - snake_case Go, PascalCase React
+7. ✅ **Validación Dual** - Backend + Frontend
+
+### Cuándo Activar el Skill
+
+**SIEMPRE activar en:**
+- ✅ Inicio de sesión nueva
+- ✅ Cuando necesites contexto del proyecto
+- ✅ Antes de sugerir código de UI (colores)
+- ✅ Antes de crear nuevos archivos (estructura)
+- ✅ Antes de implementar reservas o pagos
+- ✅ Cuando no recuerdes las convenciones
+
+**Cargar referencias adicionales (bajo demanda):**
+```bash
+# Arquitectura hexagonal
+cat /opt/.claude/skills/sorteos-context/references/architecture.md
+
+# Reglas de negocio
+cat /opt/.claude/skills/sorteos-context/references/business-rules.md
+
+# Estado actual
+cat /opt/.claude/skills/sorteos-context/references/current-status.md
+```
+
+**Validar proyecto:**
+```bash
+/opt/.claude/skills/sorteos-context/scripts/validate-structure.sh
+```
 
 ---
 
@@ -711,7 +762,32 @@ Cuando agregues features importantes:
 
 ---
 
-**Última actualización:** 2025-11-13 06:45 UTC
-**Versión:** 2.0 - Migración a instalación local completada
+## 🚨 RECORDATORIO FINAL: ACTIVAR SKILL
+
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ⚠️  AL INICIO DE CADA SESIÓN, EJECUTAR:                      ┃
+┃                                                                ┃
+┃  cat /opt/.claude/skills/sorteos-context/SKILL.md             ┃
+┃                                                                ┃
+┃  ✅ Esto carga las 7 REGLAS CRÍTICAS del proyecto             ┃
+┃  ✅ Evita errores comunes (colores, arquitectura, locks)      ┃
+┃  ✅ Mantiene consistencia en el código                        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
+
+**TOP 3 Reglas Más Violadas:**
+1. 🎨 **Colores:** Claude sugiere morado/rosa → Debe ser azul/gris
+2. 🏛️ **Imports:** domain/ importa GORM/Gin → Prohibido
+3. 🔒 **Locks:** Reservas sin Redis SETNX → Obligatorio
+
+**Documentación Completa del Skill:**
+- `/opt/.claude/skills/INSTALACION_SKILL.md` - Guía completa
+- `/opt/Sorteos/SKILL_QUICK_REFERENCE.md` - Referencia rápida
+
+---
+
+**Última actualización:** 2025-11-18 (Skill instalado)
+**Versión:** 2.1 - Skill sorteos-context integrado
 **Contacto:** Ing. Alonso Alpízar
 **Despliegue:** https://sorteos.club
