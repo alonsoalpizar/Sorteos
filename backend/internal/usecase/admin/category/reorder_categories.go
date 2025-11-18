@@ -46,7 +46,6 @@ func (uc *ReorderCategoriesUseCase) Execute(ctx context.Context, input *ReorderC
 	if err := uc.db.WithContext(ctx).
 		Table("categories").
 		Where("id IN ?", input.CategoryIDs).
-		Where("deleted_at IS NULL").
 		Count(&count).Error; err != nil {
 		uc.log.Error("Error counting categories", logger.Error(err))
 		return nil, errors.Wrap(errors.ErrDatabaseError, err)

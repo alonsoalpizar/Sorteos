@@ -124,7 +124,6 @@ func (uc *OrganizerPayoutsReportUseCase) Execute(ctx context.Context, input *Org
 			Where("user_id = ?", org.ID).
 			Where("created_at >= ?", input.DateFrom).
 			Where("created_at <= ?", input.DateTo+" 23:59:59").
-			Where("deleted_at IS NULL").
 			Count(&totalRaffles)
 
 		uc.db.Table("raffles").

@@ -51,9 +51,11 @@ type User struct {
 	PasswordHash       string     `json:"-" gorm:"not null"` // Never serialize password
 
 	// Información personal
-	FirstName *string `json:"first_name,omitempty"`
-	LastName  *string `json:"last_name,omitempty"`
-	Cedula    *string `json:"cedula,omitempty" gorm:"uniqueIndex"`
+	FirstName       *string    `json:"first_name,omitempty"`
+	LastName        *string    `json:"last_name,omitempty"`
+	Cedula          *string    `json:"cedula,omitempty" gorm:"uniqueIndex"`
+	DateOfBirth     *time.Time `json:"date_of_birth,omitempty"` // Fecha de nacimiento
+	ProfilePhotoURL *string    `json:"profile_photo_url,omitempty"`
 
 	// Dirección
 	AddressLine1 *string `json:"address_line1,omitempty"`
@@ -62,6 +64,9 @@ type User struct {
 	State        *string `json:"state,omitempty"`
 	PostalCode   *string `json:"postal_code,omitempty"`
 	Country      string  `json:"country" gorm:"type:char(2);default:'CR'"`
+
+	// Información bancaria (encriptado en app layer)
+	IBAN *string `json:"iban,omitempty"`
 
 	// Roles y verificación
 	Role     UserRole   `json:"role" gorm:"type:user_role;default:'user';not null"`
@@ -231,6 +236,64 @@ func (u *User) GetFullName() string {
 		return *u.FirstName
 	}
 	return u.Email
+}
+
+// CanWithdraw verifica si el usuario puede retirar ganancias
+// Requisitos: full_kyc + IBAN configurado
+func (u *User) CanWithdraw() bool {
+	return u.IsActive() &&
+		u.KYCLevel == KYCLevelFullKYC &&
+		u.IBAN != nil &&
+		*u.IBAN != ""
+}
+
+// ValidateIBAN valida el formato IBAN costarricense
+func ValidateIBAN(iban string) error {
+	if iban == "" {
+		return fmt.Errorf("IBAN is required")
+	}
+
+	// IBAN costarricense: CR + 22 dígitos (total 24 caracteres)
+	if len(iban) != 24 {
+		return fmt.Errorf("IBAN must be exactly 24 characters (CR + 22 digits)")
+	}
+
+	if iban[0:2] != "CR" {
+		return fmt.Errorf("IBAN must start with 'CR' for Costa Rica")
+	}
+
+	// Verificar que el resto sean dígitos
+	for i := 2; i < len(iban); i++ {
+		if iban[i] < '0' || iban[i] > '9' {
+			return fmt.Errorf("IBAN digits (positions 3-24) must be numeric")
+		}
+	}
+
+	return nil
+}
+
+// ValidateDateOfBirth valida que la fecha de nacimiento sea razonable
+func ValidateDateOfBirth(dob time.Time) error {
+	now := time.Now()
+
+	// No puede ser fecha futura
+	if dob.After(now) {
+		return fmt.Errorf("date of birth cannot be in the future")
+	}
+
+	// Edad mínima 18 años
+	minAge := now.AddDate(-18, 0, 0)
+	if dob.After(minAge) {
+		return fmt.Errorf("user must be at least 18 years old")
+	}
+
+	// Edad máxima 120 años (validación de cordura)
+	maxAge := now.AddDate(-120, 0, 0)
+	if dob.Before(maxAge) {
+		return fmt.Errorf("date of birth is not reasonable (max 120 years old)")
+	}
+
+	return nil
 }
 
 // UserRepository define el contrato para el repositorio de usuarios

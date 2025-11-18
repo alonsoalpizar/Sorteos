@@ -151,7 +151,6 @@ func (uc *GlobalDashboardUseCase) Execute(ctx context.Context, adminID int64) (*
 	}
 
 	uc.db.Table("raffles").
-		Where("deleted_at IS NULL").
 		Select(`
 			COUNT(*) as total,
 			COUNT(CASE WHEN status = 'active' THEN 1 END) as active,

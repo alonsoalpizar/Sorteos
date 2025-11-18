@@ -59,7 +59,7 @@ func (uc *ListUsersUseCase) Execute(ctx context.Context, input *ListUsersInput, 
 	offset := (input.Page - 1) * input.PageSize
 
 	// Construir query
-	query := uc.db.Model(&domain.User{}).Where("deleted_at IS NULL")
+	query := uc.db.Model(&domain.User{})
 
 	// Aplicar filtros
 	if input.Role != nil {

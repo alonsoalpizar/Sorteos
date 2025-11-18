@@ -52,9 +52,9 @@ func (uc *UpdateSystemConfigUseCase) Execute(ctx context.Context, input *UpdateS
 	}
 
 	result := uc.db.WithContext(ctx).
-		Table("system_config").
-		Select("config_key, config_value").
-		Where("config_key = ?", input.ConfigKey).
+		Table("system_parameters").
+		Select("key as config_key, value as config_value").
+		Where("key = ?", input.ConfigKey).
 		First(&currentConfig)
 
 	if result.Error != nil {
@@ -75,10 +75,10 @@ func (uc *UpdateSystemConfigUseCase) Execute(ctx context.Context, input *UpdateS
 	// Actualizar configuración
 	now := time.Now()
 	result = uc.db.WithContext(ctx).
-		Table("system_config").
-		Where("config_key = ?", input.ConfigKey).
+		Table("system_parameters").
+		Where("key = ?", input.ConfigKey).
 		Updates(map[string]interface{}{
-			"config_value": input.ConfigValue,
+			"value": input.ConfigValue,
 			"updated_at":   now,
 		})
 

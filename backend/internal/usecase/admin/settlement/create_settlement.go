@@ -176,8 +176,7 @@ func (uc *CreateSettlementUseCase) getEligibleRaffles(ctx context.Context, input
 		Table("raffles").
 		Select("id, title, user_id, price_per_number, sold_count, completed_at").
 		Where("user_id = ?", input.OrganizerID).
-		Where("status = ?", "completed").
-		Where("deleted_at IS NULL")
+		Where("status = ?", "completed")
 
 	// Filtro: que no tengan settlement ya creado
 	query = query.Where("id NOT IN (SELECT raffle_id FROM settlements WHERE raffle_id IS NOT NULL)")

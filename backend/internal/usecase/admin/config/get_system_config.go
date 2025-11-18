@@ -53,9 +53,9 @@ func (uc *GetSystemConfigUseCase) Execute(ctx context.Context, input *GetSystemC
 	}
 
 	result := uc.db.WithContext(ctx).
-		Table("system_config").
-		Select("config_key, config_value, category, description, updated_at").
-		Where("config_key = ?", input.ConfigKey).
+		Table("system_parameters").
+		Select("key as config_key, value as config_value, category, description, updated_at").
+		Where("key = ?", input.ConfigKey).
 		First(&config)
 
 	if result.Error != nil {

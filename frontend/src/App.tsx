@@ -42,6 +42,9 @@ import { PaymentCancelPage } from "@/features/checkout/pages/PaymentCancelPage";
 // Wallet pages
 import { WalletPage } from "@/features/wallet/pages/WalletPage";
 
+// Profile pages
+import { ProfilePage } from "@/features/profile/components/ProfilePage";
+
 // Componente interno para usar hooks que requieren Router context
 function AppRoutes() {
   const navigate = useNavigate();
@@ -209,6 +212,18 @@ function AppRoutes() {
               <ProtectedRoute>
                 <MainLayout>
                   <WalletPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Profile routes (protected, with layout) */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProfilePage />
                 </MainLayout>
               </ProtectedRoute>
             }

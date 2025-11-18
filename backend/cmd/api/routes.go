@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +10,7 @@ import (
 	authHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/auth"
 	categoryHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/category"
 	imageHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/image"
+	profileHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/profile"
 	raffleHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/raffle"
 	websocketHandler "github.com/sorteos-platform/backend/internal/adapters/http/handler/websocket"
 	"github.com/sorteos-platform/backend/internal/adapters/http/middleware"
@@ -20,6 +20,7 @@ import (
 	"github.com/sorteos-platform/backend/internal/usecase/auth"
 	categoryuc "github.com/sorteos-platform/backend/internal/usecase/category"
 	imageuc "github.com/sorteos-platform/backend/internal/usecase/image"
+	profileuc "github.com/sorteos-platform/backend/internal/usecase/profile"
 	raffleuc "github.com/sorteos-platform/backend/internal/usecase/raffle"
 	"github.com/sorteos-platform/backend/internal/infrastructure/websocket"
 	redisinfra "github.com/sorteos-platform/backend/internal/infrastructure/redis"
@@ -106,19 +107,6 @@ func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg
 			protected.POST("/logout", logoutHandler.Handle)
 		}
 	}
-
-	// Ruta de ejemplo protegida por KYC
-	router.GET("/api/v1/profile",
-		authMiddleware.Authenticate(),
-		authMiddleware.RequireMinKYC("email_verified"),
-		func(c *gin.Context) {
-			userID, _ := middleware.GetUserID(c)
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Perfil de usuario",
-				"user_id": userID,
-			})
-		},
-	)
 
 	// Retornar el email notifier para uso en testing
 	return emailNotifier
@@ -271,5 +259,58 @@ func setupWebSocketRoutes(router *gin.Engine, wsHub *websocket.Hub, rdb *redis.C
 	adminGroup.Use(authMiddleware.RequireRole("admin", "super_admin"))
 	{
 		adminGroup.GET("/websocket/stats", wsHandler.GetGlobalStats)
+	}
+}
+
+// setupProfileRoutes configura las rutas de perfil de usuario
+func setupProfileRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg *config.Config, log *logger.Logger) {
+	// Inicializar repositorios
+	userRepo := db.NewUserRepository(gormDB)
+	kycDocumentRepo := db.NewKYCDocumentRepository(gormDB)
+	walletRepo := db.NewWalletRepository(gormDB, log)
+
+	// Inicializar token manager y middlewares
+	tokenMgr := redisAdapter.NewTokenManager(rdb, &cfg.JWT)
+	blacklistService := redisinfra.NewTokenBlacklistService(rdb)
+	authMiddleware := middleware.NewAuthMiddleware(tokenMgr, blacklistService, log)
+
+	// Inicializar use cases
+	getProfileUC := profileuc.NewGetProfileUseCase(userRepo, kycDocumentRepo, walletRepo)
+	updateProfileUC := profileuc.NewUpdateProfileUseCase(userRepo)
+	uploadPhotoUC := profileuc.NewUploadProfilePhotoUseCase(userRepo)
+	configureIBANUC := profileuc.NewConfigureIBANUseCase(userRepo)
+	uploadKYCDocumentUC := profileuc.NewUploadKYCDocumentUseCase(userRepo, kycDocumentRepo)
+
+	// Inicializar handler
+	profileHdlr := profileHandler.NewProfileHandler(
+		getProfileUC,
+		updateProfileUC,
+		uploadPhotoUC,
+		configureIBANUC,
+		uploadKYCDocumentUC,
+	)
+
+	// Grupo de rutas de perfil (todas requieren autenticación)
+	profileGroup := router.Group("/api/v1/profile")
+	profileGroup.Use(authMiddleware.Authenticate())
+	{
+		// GET /api/v1/profile - Obtener perfil completo
+		profileGroup.GET("", profileHdlr.GetProfile)
+
+		// PUT /api/v1/profile - Actualizar información personal
+		profileGroup.PUT("", profileHdlr.UpdateProfile)
+
+		// POST /api/v1/profile/photo - Subir foto de perfil
+		profileGroup.POST("/photo", profileHdlr.UploadProfilePhoto)
+
+		// POST /api/v1/profile/iban - Configurar IBAN (requiere cedula_verified)
+		profileGroup.POST("/iban",
+			authMiddleware.RequireMinKYC("cedula_verified"),
+			profileHdlr.ConfigureIBAN,
+		)
+
+		// POST /api/v1/profile/kyc/:document_type - Subir documento KYC
+		// Parámetros: cedula_front, cedula_back, selfie
+		profileGroup.POST("/kyc/:document_type", profileHdlr.UploadKYCDocument)
 	}
 }

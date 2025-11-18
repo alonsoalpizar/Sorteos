@@ -60,8 +60,7 @@ func (uc *ListCategoriesUseCase) Execute(ctx context.Context, input *ListCategor
 
 	// Construir query base
 	query := uc.db.WithContext(ctx).
-		Table("categories").
-		Where("deleted_at IS NULL")
+		Table("categories")
 
 	// Aplicar filtros
 	if input.Search != nil && *input.Search != "" {
@@ -113,7 +112,7 @@ func (uc *ListCategoriesUseCase) Execute(ctx context.Context, input *ListCategor
 	}
 
 	result = query.
-		Select("id, name, description, icon_url, is_active, created_at").
+		Select("id, name, description, icon as icon_url, is_active, created_at").
 		Find(&categories)
 
 	if result.Error != nil {
@@ -131,7 +130,6 @@ func (uc *ListCategoriesUseCase) Execute(ctx context.Context, input *ListCategor
 	uc.db.WithContext(ctx).
 		Table("raffles").
 		Select("category_id, COUNT(*) as count").
-		Where("deleted_at IS NULL").
 		Group("category_id").
 		Find(&raffleCountResults)
 

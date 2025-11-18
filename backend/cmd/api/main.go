@@ -344,6 +344,9 @@ func setupRoutes(router *gin.Engine, db *gorm.DB, rdb *redis.Client, wsHub *webs
 	// Setup wallet routes
 	setupWalletRoutes(router, db, rdb, cfg, log)
 
+	// Setup profile routes
+	setupProfileRoutes(router, db, rdb, cfg, log)
+
 	// API v1 - Ruta de prueba
 	v1 := router.Group("/api/v1")
 	{

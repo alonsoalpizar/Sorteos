@@ -99,7 +99,6 @@ func (uc *AutoCreateSettlementsUseCase) Execute(ctx context.Context, input *Auto
 		Where("completed_at IS NOT NULL").
 		Where("completed_at <= ?", cutoffDate).
 		Where("sold_count > 0").
-		Where("deleted_at IS NULL").
 		Where("id NOT IN (SELECT raffle_id FROM settlements WHERE raffle_id IS NOT NULL)").
 		Find(&eligibleRaffles)
 

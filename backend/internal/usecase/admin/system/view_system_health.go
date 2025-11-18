@@ -171,12 +171,10 @@ func (uc *ViewSystemHealthUseCase) getSystemMetrics(ctx context.Context) *System
 	uc.db.WithContext(ctx).Table("users").Count(&metrics.TotalUsers)
 
 	// Total raffles
-	uc.db.WithContext(ctx).Table("raffles").Where("deleted_at IS NULL").Count(&metrics.TotalRaffles)
 
 	// Active raffles
 	uc.db.WithContext(ctx).Table("raffles").
 		Where("status = ?", "active").
-		Where("deleted_at IS NULL").
 		Count(&metrics.ActiveRaffles)
 
 	// Total payments

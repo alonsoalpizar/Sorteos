@@ -341,7 +341,7 @@ func (uc *ManageEmailTemplatesUseCase) getTemplate(ctx context.Context, input *M
 
 // listTemplates lista todas las plantillas
 func (uc *ManageEmailTemplatesUseCase) listTemplates(ctx context.Context, input *ManageEmailTemplatesInput, adminID int64) (*ManageEmailTemplatesOutput, error) {
-	query := uc.db.WithContext(ctx).Table("email_templates").Where("deleted_at IS NULL")
+	query := uc.db.WithContext(ctx).Table("email_templates")
 
 	// Filtrar por category si se proporciona
 	if input.Category != "" {

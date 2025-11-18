@@ -46,7 +46,7 @@ func NewListSystemConfigsUseCase(db *gorm.DB, log *logger.Logger) *ListSystemCon
 func (uc *ListSystemConfigsUseCase) Execute(ctx context.Context, input *ListSystemConfigsInput, adminID int64) (*ListSystemConfigsOutput, error) {
 	// Construir query base
 	query := uc.db.WithContext(ctx).
-		Table("system_config")
+		Table("system_parameters")
 
 	// Aplicar filtros
 	if input.Category != nil && *input.Category != "" {
@@ -63,8 +63,8 @@ func (uc *ListSystemConfigsUseCase) Execute(ctx context.Context, input *ListSyst
 	}
 
 	result := query.
-		Select("config_key, config_value, category, description, updated_at").
-		Order("category ASC, config_key ASC").
+		Select("key as config_key, value as config_value, category, description, updated_at").
+		Order("category ASC, key ASC").
 		Find(&configs)
 
 	if result.Error != nil {

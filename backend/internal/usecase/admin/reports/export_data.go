@@ -233,7 +233,7 @@ func (uc *ExportDataUseCase) exportRaffles(writer *csv.Writer, input *ExportData
 	}
 
 	// Query raffles
-	query := uc.db.Table("raffles").Where("deleted_at IS NULL")
+	query := uc.db.Table("raffles")
 
 	if input.DateFrom != nil && *input.DateFrom != "" {
 		query = query.Where("created_at >= ?", *input.DateFrom)

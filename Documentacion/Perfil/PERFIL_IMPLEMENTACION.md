@@ -248,6 +248,11 @@ frontend/src/features/profile/
   - Verificar validaciones (IBAN inválido, fecha nacimiento futura, etc.)
   - Probar actualización de `kyc_level` al subir documentos completos
   - Verificar encriptación de IBAN en DB
+*******Único ajuste sugerido:
+ Testing, cuando pruebes la integración, podrás usar los endpoints admin que implementé para:
+Aprobar/rechazar documentos KYC desde el panel admin
+Ver el perfil completo del usuario desde perspectiva admin
+Actualizar KYC level manualmente si es necesario
 
 - [ ] **Testing Frontend**:
   - Flujo completo: Usuario nuevo → Completar perfil → Subir documentos → Configurar IBAN
