@@ -1,0 +1,139 @@
+═══════════════════════════════════════════════════════════════
+  ✅ ESTADO DEL WEBMAIL - sorteos.club
+═══════════════════════════════════════════════════════════════
+
+📅 Última actualización: $(date '+%Y-%m-%d %H:%M:%S')
+
+──────────────────────────────────────────────────────────────
+🔐 PANEL DE ADMINISTRACIÓN
+──────────────────────────────────────────────────────────────
+URL: https://webmail.sorteos.club/?admin
+Usuario: admin
+Contraseña actual: CitvsK+Py3Y5
+
+✅ Hash actualizado en application.ini
+✅ Cache limpiado
+✅ Permisos correctos (www-data:www-data)
+
+NOTA IMPORTANTE: SnappyMail regenera la contraseña del admin
+automáticamente cuando se instala o actualiza. El archivo
+/var/www/webmail/data/_data_/_default_/admin_password.txt
+contiene SIEMPRE la contraseña actual válida.
+
+Si el panel no funciona, revisa ese archivo:
+  cat /var/www/webmail/data/_data_/_default_/admin_password.txt
+
+──────────────────────────────────────────────────────────────
+📧 WEBMAIL USUARIO
+──────────────────────────────────────────────────────────────
+URL: https://webmail.sorteos.club/
+
+Configuración IMAP:
+  ✅ Host: 127.0.0.1
+  ✅ Puerto: 143
+  ✅ Tipo: 0 (sin TLS para localhost)
+  ✅ Autenticación: PLAIN/LOGIN
+
+Configuración SMTP:
+  ✅ Host: 127.0.0.1
+  ✅ Puerto: 587
+  ✅ Tipo: 0 (sin TLS para localhost)
+  ✅ Autenticación: Activada
+
+Estado:
+  ✅ Login funciona correctamente
+  ✅ Lectura de emails funciona
+  ✅ Puerto SMTP 587 accesible
+  ✅ Configuración actualizada a type=0
+
+──────────────────────────────────────────────────────────────
+📬 SOBRE EL SPAM - ¿Está "sucio" el servidor?
+──────────────────────────────────────────────────────────────
+
+🎯 RESPUESTA: ¡NO! Tu servidor NO está "sucio". Es completamente
+normal que los emails de un servidor NUEVO caigan en spam al
+principio.
+
+🔍 RAZONES:
+
+1. **Reputación de IP Nueva**
+   - Tu IP 62.171.188.255 es nueva para enviar emails
+   - Gmail, Outlook, etc. no la conocen todavía
+   - Necesitan "aprender" que eres un remitente legítimo
+
+2. **Configuración Técnica PERFECTA** ✅
+   Tu email a Gmail mostró:
+   ✅ SPF: PASS
+   ✅ DKIM: PASS
+   ✅ DMARC: PASS
+
+   Esto significa que TÉCNICAMENTE todo está perfecto!
+
+3. **Falta de Historial**
+   - Los servidores no tienen historial de emails tuyos
+   - No hay "warm-up" (calentamiento de IP)
+   - No hay volumen de emails previos para analizar
+
+📊 LO QUE VA A PASAR:
+
+Semana 1-2: Emails van a spam (NORMAL) 👈 Estás aquí
+Semana 2-4: Mejora gradual de deliverability
+Semana 4-8: La mayoría llegan a inbox
+Mes 2-3: Reputación consolidada
+
+🚀 ACELERADORES DE REPUTACIÓN:
+
+✅ Hiciste bien al rescatar el email del spam en Gmail
+✅ Marcarlo como "No es spam" ayuda MUCHO
+✅ Responder al email también suma puntos
+✅ Enviar a gente que te responda (engagement positivo)
+
+──────────────────────────────────────────────────────────────
+🧪 TEST DE DELIVERABILITY RECOMENDADO
+──────────────────────────────────────────────────────────────
+
+Usa mail-tester.com para obtener un score profesional:
+
+1. Ve a: https://www.mail-tester.com/
+2. Copia el email temporal que te dan (ej: test-xxxxx@mail-tester.com)
+3. Envía un correo desde webmail a esa dirección
+4. Haz clic en "Then check your score" en la web
+5. Deberías obtener 8/10 o más
+
+El script está en: /tmp/test-mail-tester.sh
+
+──────────────────────────────────────────────────────────────
+💡 BUENAS PRÁCTICAS PARA MEJORAR REPUTACIÓN
+──────────────────────────────────────────────────────────────
+
+✅ Envía emails relevantes (sorteos legítimos)
+✅ Mantén tasa de quejas <0.1%
+✅ Evita enviar a listas compradas
+✅ Incluye link de unsubscribe
+✅ No envíes en masa al principio
+✅ Empieza con 10-20 emails/día
+✅ Aumenta gradualmente cada semana
+✅ Monitorea bounces y elimina emails inválidos
+
+──────────────────────────────────────────────────────────────
+📈 WARM-UP PLAN RECOMENDADO
+──────────────────────────────────────────────────────────────
+
+Día 1-3:    10-20 emails/día
+Día 4-7:    20-50 emails/día
+Día 8-14:   50-100 emails/día
+Día 15-21:  100-250 emails/día
+Día 22-30:  250-500 emails/día
+Mes 2+:     Volumen normal
+
+──────────────────────────────────────────────────────────────
+🎯 CONCLUSIÓN
+──────────────────────────────────────────────────────────────
+
+Tu servidor está LIMPIO y BIEN CONFIGURADO. El spam es temporal
+y completamente normal. Con uso consistente y buenas prácticas,
+en 4-8 semanas tendrás excelente deliverability.
+
+No estás "sucio" - ¡estás NUEVO! 🆕✨
+
+═══════════════════════════════════════════════════════════════

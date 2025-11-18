@@ -1,0 +1,170 @@
+=================================================================
+REGISTROS DNS PARA sorteos.club - SERVIDOR DE CORREO
+=================================================================
+Fecha: 2025-11-17
+Servidor: mail.sorteos.club (62.171.188.255)
+=================================================================
+
+IMPORTANTE: Configura estos registros en tu panel DNS de Contabo.
+           La propagación puede tardar 1-24 horas.
+
+=================================================================
+1. REGISTRO A - Apuntar mail.sorteos.club a la IP del VPS
+=================================================================
+Tipo: A
+Nombre: mail.sorteos.club
+Valor: 62.171.188.255
+TTL: 3600 (1 hora)
+
+Propósito: Permite que mail.sorteos.club resuelva a tu VPS
+
+=================================================================
+2. REGISTRO MX - Servidor de correo para sorteos.club
+=================================================================
+Tipo: MX
+Nombre: sorteos.club  (o @ si tu panel lo requiere)
+Prioridad: 10
+Valor: mail.sorteos.club
+TTL: 3600
+
+Propósito: Indica que mail.sorteos.club maneja correos entrantes
+
+=================================================================
+3. REGISTRO SPF - Política de remitentes autorizados
+=================================================================
+Tipo: TXT
+Nombre: sorteos.club  (o @ si tu panel lo requiere)
+Valor: v=spf1 +a +mx +ip4:62.171.188.255 ~all
+TTL: 3600
+
+Propósito: Autoriza tu servidor para enviar correos desde sorteos.club
+
+Explicación del valor:
+  v=spf1         = Versión SPF
+  +a             = Autoriza la IP del registro A de sorteos.club
+  +mx            = Autoriza la IP del registro MX
+  +ip4:...       = Autoriza explícitamente esta IP
+  ~all           = Softfail para otros (marca como sospechoso)
+
+=================================================================
+4. REGISTRO SPF para mail.sorteos.club (HELO/EHLO)
+=================================================================
+Tipo: TXT
+Nombre: mail.sorteos.club
+Valor: v=spf1 a mx ip4:62.171.188.255 ~all
+TTL: 3600
+
+Propósito: Evita SPF_HELO_NONE cuando el servidor se presenta
+          con HELO mail.sorteos.club
+
+=================================================================
+5. REGISTRO DKIM - Firma digital de correos
+=================================================================
+Tipo: TXT
+Nombre: default._domainkey.sorteos.club
+Valor: v=DKIM1; h=sha256; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiqaV9Wm6KvBfAJo3IW0IPbUGEF3YiCWSdqYbcS61aoFPzmUd9T4nBP6X5ERCtnis3aqN8aHoh7vIDAUhOV+UX1qSrbhq3DhFZfKogKf8Ym97PwOLe1akdW6vZ6WSaUYt7Qj9uNLN4lr40EOaWgoWv8siZCdD73tvH0KZevv3W3vODKzq5YFAjyDtnnIccfLixTVPzlG8uVGnCc9Mgl9u8LiVjSYDDW0iDM4OkpItgHQuL6VK2DecZNOVTl/AF3TaXbWfMAj7JVLFWP+qOt2jFDmDcWrKs+vAmoaJyXE0uOoryaRDh5w8vKx4628jB8l4gkVUMFtkFGnk8MUB47UOjwIDAQAB
+TTL: 3600
+
+Propósito: Clave pública para verificar firmas DKIM
+
+NOTA: Esta es la clave generada específicamente para tu servidor.
+      Está respaldada en /root/dkim-keys-backup-20251117/
+
+=================================================================
+6. REGISTRO DMARC - Política de autenticación
+=================================================================
+Tipo: TXT
+Nombre: _dmarc.sorteos.club
+Valor: v=DMARC1; p=none; rua=mailto:postmaster@sorteos.club; pct=100; adkim=r; aspf=r; fo=1
+TTL: 3600
+
+Propósito: Define qué hacer con correos que fallan SPF/DKIM
+
+Explicación del valor:
+  v=DMARC1           = Versión DMARC
+  p=none             = Política: no rechazar (solo monitorear)
+  rua=mailto:...     = Enviar reportes agregados aquí
+  pct=100            = Aplicar política al 100% de correos
+  adkim=r            = DKIM en modo relajado (relaxed)
+  aspf=r             = SPF en modo relajado (relaxed)
+  fo=1               = Reportar si SPF o DKIM fallan
+
+IMPORTANTE: Después de 1-2 semanas con todo OK:
+  - Cambiar a p=quarantine (enviar a spam)
+  - Luego a p=reject (rechazar directamente)
+
+=================================================================
+7. OPCIONAL: TLS-RPT - Reportes de problemas TLS
+=================================================================
+Tipo: TXT
+Nombre: _smtp._tls.sorteos.club
+Valor: v=TLSRPTv1; rua=mailto:postmaster@sorteos.club
+TTL: 3600
+
+Propósito: Recibir reportes de problemas con TLS en tránsito
+
+=================================================================
+8. OPCIONAL: MTA-STS - Forzar TLS en conexiones SMTP
+=================================================================
+A. Crear registro DNS:
+Tipo: TXT
+Nombre: _mta-sts.sorteos.club
+Valor: v=STSv1; id=20251117
+TTL: 3600
+
+B. Crear archivo de política (requiere webserver en mta-sts.sorteos.club):
+URL: https://mta-sts.sorteos.club/.well-known/mta-sts.txt
+Contenido:
+version: STSv1
+mode: testing
+mx: mail.sorteos.club
+max_age: 86400
+
+NOTA: MTA-STS es opcional pero mejora la seguridad. Implementar
+      después de validar que todo funciona correctamente.
+
+=================================================================
+ORDEN DE CONFIGURACIÓN RECOMENDADO:
+=================================================================
+
+1. Primero: Bajar TTL actual de todos los registros existentes
+   a 300-600 segundos (si están en 3600 o más).
+   Esperar 24h para que se propague el TTL bajo.
+
+2. Segundo: Configurar registros en este orden:
+   a) Registro A (mail.sorteos.club)
+   b) Registro SPF raíz
+   c) Registro SPF de mail.sorteos.club
+   d) Registro DKIM
+   e) Registro DMARC (con p=none)
+
+3. Tercero: Esperar 1-2 horas y verificar propagación:
+   dig TXT sorteos.club
+   dig TXT default._domainkey.sorteos.club
+   dig TXT _dmarc.sorteos.club
+   dig A mail.sorteos.club
+
+4. Cuarto: Hacer pruebas de envío externo (Gmail/Outlook)
+
+5. Quinto: Cuando todo funcione, cambiar MX:
+   Tipo: MX
+   Nombre: sorteos.club
+   Prioridad: 10
+   Valor: mail.sorteos.club
+
+6. Sexto: Subir TTL a valores normales (3600 o más)
+
+7. Séptimo: Monitorear durante 48h y ajustar DMARC gradualmente:
+   p=none → p=quarantine → p=reject
+
+=================================================================
+HERRAMIENTAS DE VERIFICACIÓN:
+=================================================================
+
+1. SPF: https://mxtoolbox.com/spf.aspx
+2. DKIM: https://mxtoolbox.com/dkim.aspx
+3. DMARC: https://mxtoolbox.com/dmarc.aspx
+4. Mail Tester: https://www.mail-tester.com/
+5. Google Admin Toolbox: https://toolbox.googleapps.com/apps/checkmx/
+
+=================================================================

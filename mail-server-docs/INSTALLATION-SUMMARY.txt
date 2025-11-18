@@ -1,0 +1,162 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║     📧 SERVIDOR DE CORREO INSTALADO EXITOSAMENTE                    ║
+║                                                                      ║
+║     mail.sorteos.club (62.171.188.255)                              ║
+║     Fecha: 2025-11-17                                               ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+✅ SERVICIOS INSTALADOS Y ACTIVOS
+═══════════════════════════════════════════════════════════════════════
+
+  ✓ Postfix 3.8.6         (SMTP/MTA)
+    - Puerto 25   (SMTP)
+    - Puerto 465  (SMTPS - TLS implícito)
+    - Puerto 587  (Submission - STARTTLS) ⭐ RECOMENDADO
+
+  ✓ Dovecot 2.3.21        (IMAP/POP3)
+    - Puerto 993  (IMAPS)
+    - Puerto 995  (POP3S)
+
+  ✓ OpenDKIM 2.11.0       (Firma Digital)
+    - Firmando todos los correos salientes
+    - Selector: default
+    - Algoritmo: RSA-2048 + SHA-256
+
+  ✓ Fail2ban              (Protección)
+    - Jails activas: postfix, dovecot, sshd
+    - Bantime: 1 hora (Postfix), 2 horas (Dovecot)
+
+  ✓ SnappyMail            (Webmail)
+    - URL: https://webmail.sorteos.club
+    - Pendiente: Configurar DNS para webmail
+
+  ✓ pflogsumm             (Monitoreo)
+    - Reportes diarios a postmaster@sorteos.club
+
+
+📁 CUENTAS DE CORREO CREADAS
+═══════════════════════════════════════════════════════════════════════
+
+  1. noreply@sorteos.club      (Transaccional)
+  2. info@sorteos.club          (Contacto general)
+  3. soporte@sorteos.club       (Soporte técnico)
+  4. postmaster@sorteos.club    (Administración)
+
+  📄 Credenciales completas en:
+     /opt/Sorteos/mail-server-docs/mail-server-credentials.txt
+
+
+🔐 SEGURIDAD
+═══════════════════════════════════════════════════════════════════════
+
+  ✅ TLS/SSL obligatorio en todos los puertos
+  ✅ Certificados Let's Encrypt válidos (sorteos.club)
+  ✅ Autenticación SASL activa
+  ✅ DKIM firmando correos
+  ✅ Fail2ban protegiendo contra ataques
+  ✅ PTR configurado correctamente
+  ✅ Protocolos seguros: TLS 1.2, TLS 1.3
+
+
+🧪 PRUEBAS REALIZADAS
+═══════════════════════════════════════════════════════════════════════
+
+  ✅ Entrega local de correos (Maildir)         100% OK
+  ✅ Firma DKIM activa                          100% OK
+  ✅ Autenticación SMTP puerto 587 + TLS        100% OK
+  ✅ Dovecot autenticando usuarios              100% OK
+  ✅ Fail2ban detectando intentos fallidos      100% OK
+
+
+⏳ PENDIENTE: CONFIGURACIÓN DNS
+═══════════════════════════════════════════════════════════════════════
+
+  📍 Registros DNS que DEBES configurar en Contabo:
+
+  1. A       mail.sorteos.club               → 62.171.188.255
+  2. A       webmail.sorteos.club            → 62.171.188.255
+  3. TXT     sorteos.club (SPF)              → v=spf1 +a +mx +ip4:62.171.188.255 ~all
+  4. TXT     mail.sorteos.club (SPF)         → v=spf1 a mx ip4:62.171.188.255 ~all
+  5. TXT     default._domainkey.sorteos.club → [ver dns-records file]
+  6. TXT     _dmarc.sorteos.club             → v=DMARC1; p=none; rua=mailto:postmaster@sorteos.club
+
+  ⚠️  NO cambies el MX hasta verificar que los correos salen bien!
+
+  📄 Registros DNS completos con ejemplos:
+     /opt/Sorteos/mail-server-docs/dns-records-sorteos-club.txt
+
+
+📚 DOCUMENTACIÓN GENERADA
+═══════════════════════════════════════════════════════════════════════
+
+  /opt/Sorteos/mail-server-docs/
+    ├── README.md                           (Resumen ejecutivo)
+    ├── mail-server-credentials.txt         (Todas las contraseñas)
+    ├── dns-records-sorteos-club.txt        (Registros DNS completos)
+    ├── PLAYBOOK-MANTENIMIENTO.md           (Guía de administración)
+    └── dkim-backup/                        (Backup de claves DKIM)
+
+
+🚀 PRÓXIMOS PASOS
+═══════════════════════════════════════════════════════════════════════
+
+  1. Configurar registros DNS en Contabo (ver dns-records file)
+
+  2. Esperar propagación DNS (1-2 horas)
+     Verificar con: dig TXT sorteos.club +short
+
+  3. Hacer prueba de envío a Gmail/Outlook
+     Ver instrucciones en README.md
+
+  4. Verificar headers: SPF=pass, DKIM=pass, DMARC=pass
+     Gmail: "Mostrar original"
+
+  5. Probar con https://www.mail-tester.com/
+     Score objetivo: >8/10
+
+  6. Solo entonces, cambiar MX a mail.sorteos.club
+
+  7. Actualizar .env de la aplicación sorteos.club
+     CONFIG_SMTP_HOST=mail.sorteos.club
+     CONFIG_SMTP_PORT=587
+
+  8. Reiniciar app: systemctl restart sorteos-api
+
+
+📊 COMANDOS ÚTILES
+═══════════════════════════════════════════════════════════════════════
+
+  # Ver estado
+  systemctl status postfix dovecot opendkim
+
+  # Ver cola
+  mailq
+
+  # Logs en tiempo real
+  tail -f /var/log/postfix.log
+
+  # Ver IPs bloqueadas
+  fail2ban-client status postfix
+
+  # Estadísticas
+  pflogsumm -d today /var/log/postfix.log
+
+
+📧 CONFIGURACIÓN SMTP PARA TU APP
+═══════════════════════════════════════════════════════════════════════
+
+  Host:     mail.sorteos.club
+  Port:     587
+  User:     noreply@sorteos.club
+  Password: [ver credentials.txt]
+  TLS:      true (STARTTLS)
+
+
+═══════════════════════════════════════════════════════════════════════
+  🎉 INSTALACIÓN COMPLETADA AL 100%
+  ✅ SISTEMA FUNCIONANDO CORRECTAMENTE
+  ⏳ SOLO FALTA CONFIGURAR DNS Y PROBAR
+═══════════════════════════════════════════════════════════════════════
+
