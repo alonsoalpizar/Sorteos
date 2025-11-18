@@ -151,10 +151,11 @@ func setupUserRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Log
 		users.PUT("/:id/status", handler.UpdateStatus) // PUT /api/v1/admin/users/:id/status
 		users.PUT("/:id/kyc", handler.UpdateKYC)       // PUT /api/v1/admin/users/:id/kyc
 		users.DELETE("/:id", handler.Delete)           // DELETE /api/v1/admin/users/:id
+		users.POST("/:id/reset-password", handler.ResetPassword) // POST /api/v1/admin/users/:id/reset-password
 	}
 
 	log.Info("Admin user routes registered",
-		logger.Int("endpoints", 5),
+		logger.Int("endpoints", 6),
 		logger.String("base_path", "/api/v1/admin/users"))
 }
 
@@ -233,7 +234,7 @@ func setupNotificationRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *lo
 	}
 
 	log.Info("Admin notification routes registered",
-		logger.Int("endpoints", 5),
+		logger.Int("endpoints", 6),
 		logger.String("base_path", "/api/v1/admin/notifications"))
 }
 

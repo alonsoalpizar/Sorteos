@@ -18,6 +18,7 @@ type UserHandler struct {
 	updateUserStatusUC *user.UpdateUserStatusUseCase
 	updateUserKYCUC    *user.UpdateUserKYCUseCase
 	deleteUserUC       *user.DeleteUserUseCase
+	resetPasswordUC    *user.ResetUserPasswordUseCase
 	log                *logger.Logger
 }
 
@@ -29,6 +30,7 @@ func NewUserHandler(db *gorm.DB, log *logger.Logger) *UserHandler {
 		updateUserStatusUC: user.NewUpdateUserStatusUseCase(db, log),
 		updateUserKYCUC:    user.NewUpdateUserKYCUseCase(db, log),
 		deleteUserUC:       user.NewDeleteUserUseCase(db, log),
+		resetPasswordUC:    user.NewResetUserPasswordUseCase(db, log),
 		log:                log,
 	}
 }
@@ -301,5 +303,41 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "User deleted successfully",
+	})
+}
+
+// ResetPassword genera token de reset de contraseña y envía email
+// POST /api/v1/admin/users/:id/reset-password
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	// Obtener admin ID
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// Parse user ID
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_USER_ID",
+				"message": "invalid user ID",
+			},
+		})
+		return
+	}
+
+	// Ejecutar use case
+	resetToken, err := h.resetPasswordUC.Execute(c.Request.Context(), userID, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Password reset email sent successfully",
+		"reset_token": resetToken, // TODO: Remove in production, only for dev/testing
 	})
 }
