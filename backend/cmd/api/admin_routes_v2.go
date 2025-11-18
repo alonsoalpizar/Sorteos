@@ -54,6 +54,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== NOTIFICATIONS ====================
 	setupNotificationRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== REPORTS & DASHBOARD ====================
+	setupReportsRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -232,4 +235,23 @@ func setupNotificationRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *lo
 	log.Info("Admin notification routes registered",
 		logger.Int("endpoints", 5),
 		logger.String("base_path", "/api/v1/admin/notifications"))
+}
+
+// setupReportsRoutesV2 configura rutas de reportes y dashboard
+func setupReportsRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewReportsHandler(db, log)
+
+	// Configurar rutas
+	reports := adminGroup.Group("/reports")
+	{
+		reports.GET("/dashboard", handler.GetDashboard)                 // GET /api/v1/admin/reports/dashboard
+		reports.GET("/revenue", handler.GetRevenueReport)               // GET /api/v1/admin/reports/revenue
+		reports.GET("/liquidations", handler.GetLiquidationsReport)     // GET /api/v1/admin/reports/liquidations
+		reports.POST("/export", handler.ExportData)                     // POST /api/v1/admin/reports/export
+	}
+
+	log.Info("Admin reports routes registered",
+		logger.Int("endpoints", 4),
+		logger.String("base_path", "/api/v1/admin/reports"))
 }
