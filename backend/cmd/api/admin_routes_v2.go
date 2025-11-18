@@ -39,6 +39,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== SETTLEMENTS ====================
 	setupSettlementRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== USER MANAGEMENT ====================
+	setupUserRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -118,4 +121,24 @@ func setupSettlementRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logg
 	log.Info("Admin settlement routes registered",
 		logger.Int("endpoints", 7),
 		logger.String("base_path", "/api/v1/admin/settlements"))
+}
+
+// setupUserRoutesV2 configura rutas de gestión de usuarios
+func setupUserRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewUserHandler(db, log)
+
+	// Configurar rutas
+	users := adminGroup.Group("/users")
+	{
+		users.GET("", handler.List)                    // GET /api/v1/admin/users
+		users.GET("/:id", handler.GetByID)             // GET /api/v1/admin/users/:id
+		users.PUT("/:id/status", handler.UpdateStatus) // PUT /api/v1/admin/users/:id/status
+		users.PUT("/:id/kyc", handler.UpdateKYC)       // PUT /api/v1/admin/users/:id/kyc
+		users.DELETE("/:id", handler.Delete)           // DELETE /api/v1/admin/users/:id
+	}
+
+	log.Info("Admin user routes registered",
+		logger.Int("endpoints", 5),
+		logger.String("base_path", "/api/v1/admin/users"))
 }
