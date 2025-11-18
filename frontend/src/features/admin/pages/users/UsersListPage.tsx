@@ -174,7 +174,7 @@ export function UsersListPage() {
               description={error.message}
             />
           </div>
-        ) : !data || data.data.length === 0 ? (
+        ) : !data || !data.data || data.data.length === 0 ? (
           <div className="p-6">
             <EmptyState
               icon={<UserX className="w-12 h-12 text-slate-400" />}
