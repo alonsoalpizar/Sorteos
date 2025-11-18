@@ -57,6 +57,12 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== REPORTS & DASHBOARD ====================
 	setupReportsRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== SYSTEM CONFIGURATION ====================
+	setupSystemRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== AUDIT LOGS ====================
+	setupAuditRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -66,6 +72,7 @@ func setupCategoryRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger
 	updateCategory := categoryuc.NewUpdateCategoryUseCase(db, log)
 	deleteCategory := categoryuc.NewDeleteCategoryUseCase(db, log)
 	listCategories := categoryuc.NewListCategoriesUseCase(db, log)
+	reorderCategories := categoryuc.NewReorderCategoriesUseCase(db, log)
 
 	// Inicializar handler
 	handler := adminHandler.NewCategoryHandler(
@@ -73,6 +80,7 @@ func setupCategoryRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger
 		updateCategory,
 		deleteCategory,
 		listCategories,
+		reorderCategories,
 	)
 
 	// Configurar rutas
@@ -82,6 +90,7 @@ func setupCategoryRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger
 		categories.POST("", handler.CreateCategory)       // POST /api/v1/admin/categories
 		categories.PUT("/:id", handler.UpdateCategory)    // PUT /api/v1/admin/categories/:id
 		categories.DELETE("/:id", handler.DeleteCategory) // DELETE /api/v1/admin/categories/:id
+		categories.POST("/reorder", handler.ReorderCategories) // POST /api/v1/admin/categories/reorder
 	}
 
 	log.Info("Admin category routes registered",
@@ -256,4 +265,43 @@ func setupReportsRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.
 	log.Info("Admin reports routes registered",
 		logger.Int("endpoints", 4),
 		logger.String("base_path", "/api/v1/admin/reports"))
+}
+
+// setupSystemRoutesV2 configura rutas de configuración del sistema
+func setupSystemRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler
+	handler := adminHandler.NewSystemHandler(db, log)
+
+	// Configurar rutas
+	system := adminGroup.Group("/system")
+	{
+		// Parameters
+		system.GET("/parameters", handler.ListParameters)                  // GET /api/v1/admin/system/parameters
+		system.PUT("/parameters/:key", handler.UpdateParameter)            // PUT /api/v1/admin/system/parameters/:key
+		
+		// Company settings
+		system.GET("/company", handler.GetCompanySettings)                 // GET /api/v1/admin/system/company
+		system.PUT("/company", handler.UpdateCompanySettings)              // PUT /api/v1/admin/system/company
+		
+		// Payment processors
+		system.GET("/payment-processors", handler.ListPaymentProcessors)   // GET /api/v1/admin/system/payment-processors
+		system.PUT("/payment-processors/:processor", handler.UpdatePaymentProcessor) // PUT /api/v1/admin/system/payment-processors/:processor
+	}
+
+	log.Info("Admin system routes registered",
+		logger.Int("endpoints", 6),
+		logger.String("base_path", "/api/v1/admin/system"))
+}
+
+// setupAuditRoutesV2 configura rutas de audit logs
+func setupAuditRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler
+	handler := adminHandler.NewAuditHandler(db, log)
+
+	// Configurar ruta
+	adminGroup.GET("/audit", handler.ListAuditLogs) // GET /api/v1/admin/audit
+
+	log.Info("Admin audit routes registered",
+		logger.Int("endpoints", 1),
+		logger.String("base_path", "/api/v1/admin/audit"))
 }

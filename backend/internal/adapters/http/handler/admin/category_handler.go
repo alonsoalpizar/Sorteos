@@ -15,6 +15,7 @@ type CategoryHandler struct {
 	updateCategory *category.UpdateCategoryUseCase
 	deleteCategory *category.DeleteCategoryUseCase
 	listCategories *category.ListCategoriesUseCase
+	reorderCategoriesUC *category.ReorderCategoriesUseCase
 }
 
 // NewCategoryHandler crea una nueva instancia
@@ -23,12 +24,14 @@ func NewCategoryHandler(
 	updateCategory *category.UpdateCategoryUseCase,
 	deleteCategory *category.DeleteCategoryUseCase,
 	listCategories *category.ListCategoriesUseCase,
+	reorderCategories *category.ReorderCategoriesUseCase,
 ) *CategoryHandler {
 	return &CategoryHandler{
 		createCategory: createCategory,
 		updateCategory: updateCategory,
 		deleteCategory: deleteCategory,
 		listCategories: listCategories,
+		reorderCategoriesUC: reorderCategories,
 	}
 }
 
@@ -168,4 +171,39 @@ func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, output)
+}
+
+// ReorderCategories reordena las categorías según el array de IDs proporcionado
+// POST /api/v1/admin/categories/reorder
+func (h *CategoryHandler) ReorderCategories(c *gin.Context) {
+	// Obtener admin ID del contexto
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// Parse body
+	var input category.ReorderCategoriesInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_INPUT",
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	// Ejecutar use case
+	output, err := h.reorderCategoriesUC.Execute(c.Request.Context(), &input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    output,
+	})
 }
