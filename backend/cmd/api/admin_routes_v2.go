@@ -48,6 +48,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== PAYMENT MANAGEMENT ====================
 	setupPaymentRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== RAFFLE MANAGEMENT ====================
+	setupRaffleRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -185,4 +188,25 @@ func setupPaymentRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.
 	log.Info("Admin payment routes registered",
 		logger.Int("endpoints", 4),
 		logger.String("base_path", "/api/v1/admin/payments"))
+}
+
+// setupRaffleRoutesV2 configura rutas de gestión de rifas
+func setupRaffleRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewRaffleHandler(db, log)
+
+	// Configurar rutas
+	raffles := adminGroup.Group("/raffles")
+	{
+		raffles.GET("", handler.List)                             // GET /api/v1/admin/raffles
+		raffles.GET("/:id/transactions", handler.ViewTransactions) // GET /api/v1/admin/raffles/:id/transactions
+		raffles.PUT("/:id/status", handler.ForceStatusChange)     // PUT /api/v1/admin/raffles/:id/status
+		raffles.POST("/:id/draw", handler.ManualDraw)             // POST /api/v1/admin/raffles/:id/draw
+		raffles.POST("/:id/notes", handler.AddNotes)              // POST /api/v1/admin/raffles/:id/notes
+		raffles.POST("/:id/cancel", handler.CancelWithRefund)     // POST /api/v1/admin/raffles/:id/cancel
+	}
+
+	log.Info("Admin raffle routes registered",
+		logger.Int("endpoints", 6),
+		logger.String("base_path", "/api/v1/admin/raffles"))
 }
