@@ -1,0 +1,188 @@
+package admin
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sorteos-platform/backend/internal/usecase/admin/notifications"
+	"github.com/sorteos-platform/backend/pkg/errors"
+)
+
+// NotificationHandler maneja todas las operaciones de notificaciones
+type NotificationHandler struct {
+	sendEmail      *notifications.SendEmailNotificationUseCase
+	sendBulk       *notifications.SendBulkNotificationUseCase
+	testEmail      *notifications.TestEmailDeliveryUseCase
+	listTemplates  *notifications.ListEmailTemplatesUseCase
+}
+
+// NewNotificationHandler crea una nueva instancia
+func NewNotificationHandler(
+	sendEmail *notifications.SendEmailNotificationUseCase,
+	sendBulk *notifications.SendBulkNotificationUseCase,
+	testEmail *notifications.TestEmailDeliveryUseCase,
+	listTemplates *notifications.ListEmailTemplatesUseCase,
+) *NotificationHandler {
+	return &NotificationHandler{
+		sendEmail:     sendEmail,
+		sendBulk:      sendBulk,
+		testEmail:     testEmail,
+		listTemplates: listTemplates,
+	}
+}
+
+// SendEmail maneja POST /api/v1/admin/notifications/email
+func (h *NotificationHandler) SendEmail(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	var req struct {
+		RecipientEmail string                 `json:"recipient_email" binding:"required"`
+		Subject        string                 `json:"subject" binding:"required"`
+		Body           string                 `json:"body" binding:"required"`
+		TemplateID     *int64                 `json:"template_id"`
+		Variables      map[string]interface{} `json:"variables"`
+		Priority       string                 `json:"priority"`
+		ScheduledAt    *string                `json:"scheduled_at"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, errors.New("INVALID_INPUT", "invalid request body", 400, err))
+		return
+	}
+
+	input := &notifications.SendEmailNotificationInput{
+		RecipientEmail: req.RecipientEmail,
+		Subject:        req.Subject,
+		Body:           req.Body,
+		TemplateID:     req.TemplateID,
+		Variables:      req.Variables,
+		Priority:       req.Priority,
+		ScheduledAt:    req.ScheduledAt,
+	}
+
+	output, err := h.sendEmail.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// SendBulk maneja POST /api/v1/admin/notifications/bulk
+func (h *NotificationHandler) SendBulk(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	var req struct {
+		Recipients []struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+		} `json:"recipients" binding:"required"`
+		Subject    string                 `json:"subject" binding:"required"`
+		Body       string                 `json:"body" binding:"required"`
+		TemplateID *int64                 `json:"template_id"`
+		Variables  map[string]interface{} `json:"variables"`
+		Priority   string                 `json:"priority"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, errors.New("INVALID_INPUT", "invalid request body", 400, err))
+		return
+	}
+
+	// Convertir recipients
+	recipients := make([]notifications.EmailRecipient, len(req.Recipients))
+	for i, r := range req.Recipients {
+		recipients[i] = notifications.EmailRecipient{
+			Email: r.Email,
+			Name:  r.Name,
+		}
+	}
+
+	input := &notifications.SendBulkNotificationInput{
+		Recipients: recipients,
+		Subject:    req.Subject,
+		Body:       req.Body,
+		TemplateID: req.TemplateID,
+		Variables:  req.Variables,
+		Priority:   req.Priority,
+	}
+
+	output, err := h.sendBulk.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// TestEmail maneja POST /api/v1/admin/notifications/test
+func (h *NotificationHandler) TestEmail(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	var req struct {
+		ToEmail  string  `json:"to_email" binding:"required"`
+		Provider *string `json:"provider"`
+		TestType string  `json:"test_type" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, errors.New("INVALID_INPUT", "invalid request body", 400, err))
+		return
+	}
+
+	input := &notifications.TestEmailDeliveryInput{
+		ToEmail:  req.ToEmail,
+		Provider: req.Provider,
+		TestType: req.TestType,
+	}
+
+	output, err := h.testEmail.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// ListTemplates maneja GET /api/v1/admin/notifications/templates
+func (h *NotificationHandler) ListTemplates(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	input := &notifications.ListEmailTemplatesInput{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   stringPtr(c.Query("search")),
+	}
+
+	if categoryStr := c.Query("category"); categoryStr != "" {
+		input.Category = stringPtr(categoryStr)
+	}
+
+	output, err := h.listTemplates.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}

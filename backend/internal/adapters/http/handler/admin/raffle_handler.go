@@ -1,0 +1,184 @@
+package admin
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sorteos-platform/backend/internal/usecase/admin/raffle"
+	"github.com/sorteos-platform/backend/pkg/errors"
+)
+
+// RaffleHandler maneja todas las operaciones de administración de rifas
+type RaffleHandler struct {
+	listRaffles      *raffle.ListRafflesUseCase
+	viewRaffleDetail *raffle.ViewRaffleDetailUseCase
+	updateStatus     *raffle.UpdateRaffleStatusUseCase
+	deleteRaffle     *raffle.DeleteRaffleUseCase
+}
+
+// NewRaffleHandler crea una nueva instancia
+func NewRaffleHandler(
+	listRaffles *raffle.ListRafflesUseCase,
+	viewRaffleDetail *raffle.ViewRaffleDetailUseCase,
+	updateStatus *raffle.UpdateRaffleStatusUseCase,
+	deleteRaffle *raffle.DeleteRaffleUseCase,
+) *RaffleHandler {
+	return &RaffleHandler{
+		listRaffles:      listRaffles,
+		viewRaffleDetail: viewRaffleDetail,
+		updateStatus:     updateStatus,
+		deleteRaffle:     deleteRaffle,
+	}
+}
+
+// ListRaffles maneja GET /api/v1/admin/raffles
+func (h *RaffleHandler) ListRaffles(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	input := &raffle.ListRafflesInput{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   stringPtr(c.Query("search")),
+		OrderBy:  stringPtr(c.Query("order_by")),
+	}
+
+	// Filtros opcionales
+	if statusStr := c.Query("status"); statusStr != "" {
+		input.Status = stringPtr(statusStr)
+	}
+	if categoryIDStr := c.Query("category_id"); categoryIDStr != "" {
+		catID, err := strconv.ParseInt(categoryIDStr, 10, 64)
+		if err == nil {
+			input.CategoryID = &catID
+		}
+	}
+	if organizerIDStr := c.Query("organizer_id"); organizerIDStr != "" {
+		orgID, err := strconv.ParseInt(organizerIDStr, 10, 64)
+		if err == nil {
+			input.OrganizerID = &orgID
+		}
+	}
+	if dateFrom := c.Query("date_from"); dateFrom != "" {
+		input.DateFrom = stringPtr(dateFrom)
+	}
+	if dateTo := c.Query("date_to"); dateTo != "" {
+		input.DateTo = stringPtr(dateTo)
+	}
+
+	output, err := h.listRaffles.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// GetRaffleByID maneja GET /api/v1/admin/raffles/:id
+func (h *RaffleHandler) GetRaffleByID(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	raffleIDStr := c.Param("id")
+	raffleID, err := strconv.ParseInt(raffleIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_RAFFLE_ID", "invalid raffle ID format", 400, err))
+		return
+	}
+
+	input := &raffle.ViewRaffleDetailInput{
+		RaffleID: raffleID,
+	}
+
+	output, err := h.viewRaffleDetail.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// UpdateRaffleStatus maneja PUT /api/v1/admin/raffles/:id/status
+func (h *RaffleHandler) UpdateRaffleStatus(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	raffleIDStr := c.Param("id")
+	raffleID, err := strconv.ParseInt(raffleIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_RAFFLE_ID", "invalid raffle ID format", 400, err))
+		return
+	}
+
+	var req struct {
+		NewStatus string  `json:"new_status" binding:"required"`
+		Reason    *string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		handleError(c, errors.New("INVALID_INPUT", "invalid request body", 400, err))
+		return
+	}
+
+	input := &raffle.UpdateRaffleStatusInput{
+		RaffleID:  raffleID,
+		NewStatus: req.NewStatus,
+		Reason:    req.Reason,
+	}
+
+	output, err := h.updateStatus.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+// DeleteRaffle maneja DELETE /api/v1/admin/raffles/:id
+func (h *RaffleHandler) DeleteRaffle(c *gin.Context) {
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	raffleIDStr := c.Param("id")
+	raffleID, err := strconv.ParseInt(raffleIDStr, 10, 64)
+	if err != nil {
+		handleError(c, errors.New("INVALID_RAFFLE_ID", "invalid raffle ID format", 400, err))
+		return
+	}
+
+	var req struct {
+		Reason *string `json:"reason"`
+	}
+	c.ShouldBindJSON(&req)
+
+	input := &raffle.DeleteRaffleInput{
+		RaffleID: raffleID,
+		Reason:   req.Reason,
+	}
+
+	output, err := h.deleteRaffle.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
