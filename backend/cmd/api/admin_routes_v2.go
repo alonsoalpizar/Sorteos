@@ -45,6 +45,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== ORGANIZER MANAGEMENT ====================
 	setupOrganizerRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== PAYMENT MANAGEMENT ====================
+	setupPaymentRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -163,4 +166,23 @@ func setupOrganizerRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logge
 	log.Info("Admin organizer routes registered",
 		logger.Int("endpoints", 4),
 		logger.String("base_path", "/api/v1/admin/organizers"))
+}
+
+// setupPaymentRoutesV2 configura rutas de gestión de pagos
+func setupPaymentRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler (el handler ya inicializa todos sus use cases internamente)
+	handler := adminHandler.NewPaymentHandler(db, log)
+
+	// Configurar rutas
+	payments := adminGroup.Group("/payments")
+	{
+		payments.GET("", handler.List)                      // GET /api/v1/admin/payments
+		payments.GET("/:id", handler.GetByID)               // GET /api/v1/admin/payments/:id
+		payments.POST("/:id/refund", handler.ProcessRefund) // POST /api/v1/admin/payments/:id/refund
+		payments.POST("/:id/dispute", handler.ManageDispute) // POST /api/v1/admin/payments/:id/dispute
+	}
+
+	log.Info("Admin payment routes registered",
+		logger.Int("endpoints", 4),
+		logger.String("base_path", "/api/v1/admin/payments"))
 }
