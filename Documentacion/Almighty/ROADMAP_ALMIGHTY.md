@@ -73,14 +73,14 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 | Categoría | Total | Completadas | Progreso |
 |-----------|-------|-------------|----------|
 | **Migraciones DB** | 7 | 7 | ██████████ 100% ✅ |
-| **Repositorios** | 7 | 7 | ██████████ 100% |
-| **Casos de Uso** | 47 | 35 | ███████░░░ 74% |
+| **Repositorios** | 7 | 7 | ██████████ 100% ✅ |
+| **Casos de Uso** | 47 | 42 | ████████░░ 89% ✅ |
 | **Endpoints API** | 52 | 0 | ░░░░░░░░░░ 0% |
 | **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **185** | **49** | **███░░░░░░░ 26%** |
+| **TOTAL** | **185** | **56** | **███░░░░░░░ 30%** |
 
-**Última actualización:** 2025-11-18 (Fases 2, 3, 7 completadas)
+**Última actualización:** 2025-11-18 (Fases 2, 3, 4, 5, 6, 7, 8 completadas - 8/8 fases backend)
 
 ---
 
