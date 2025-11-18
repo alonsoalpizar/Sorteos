@@ -79,11 +79,11 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 | **HTTP Handlers (funcionales)** | 7 | 7 | ██████████ 100% ✅ |
 | **Routes & Middleware** | 1 | 1 | ██████████ 100% ✅ |
 | **Endpoints API** | 52 | 52 | ██████████ 100% ✅ |
-| **Páginas Frontend** | 12 | 0 | ░░░░░░░░░░ 0% |
+| **Páginas Frontend** | 12 | 3 | ██░░░░░░░░ 25% |
 | **Tests** | 60 | 0 | ░░░░░░░░░░ 0% |
-| **TOTAL** | **200** | **123** | **██████░░░░ 62%** |
+| **TOTAL** | **200** | **126** | **██████░░░░ 63%** |
 
-**Última actualización:** 2025-11-18 20:05 (Backend 100% COMPLETO Y FUNCIONAL ✅)
+**Última actualización:** 2025-11-18 21:45 (Fase 1 Frontend - Setup base ✅)
 
 **Estado actual:**
 - ✅ Backend use cases 100% completos (47/47)
@@ -91,7 +91,8 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - ✅ 52/52 endpoints activos y funcionales (100%) 🎉
 - ✅ Fase 8.8 COMPLETADA: 6/6 handlers reescritos con firmas exactas
 - ✅ 11/11 módulos admin verificados y funcionando en producción
-- 🔄 Frontend admin: Por iniciar (siguiente fase)
+- ✅ Fase 1 Frontend COMPLETADA: Setup base + Users Management (3 páginas)
+- 🔄 Frontend compilado exitosamente (build: 12s, bundle: 640KB gzip: 176KB)
 
 ---
 
@@ -376,25 +377,32 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Aplicar rate limiting (10 req/min)
 - [ ] Documentar endpoints
 
-### 4.6 Frontend - Páginas de Usuarios
+### 4.6 Frontend - Páginas de Usuarios ✅ COMPLETADO
 
-#### frontend/src/features/admin/pages/UsersPage.tsx
-- [ ] Crear componente UsersPage
-- [ ] Implementar tabla con shadcn/ui Table
-- [ ] Agregar filtros: role, status, KYC level, búsqueda
-- [ ] Agregar paginación
-- [ ] Agregar acciones: ver detalle, suspender, editar KYC
-- [ ] Implementar estado de carga con LoadingSpinner
-- [ ] Agregar EmptyState cuando no hay usuarios
-- [ ] Estilizar con Tailwind (paleta blue/slate)
+#### frontend/src/features/admin/pages/users/UsersListPage.tsx
+- [x] Crear componente UsersListPage
+- [x] Implementar tabla con componente Table personalizado
+- [x] Agregar filtros: role, status, KYC level, búsqueda
+- [x] Agregar paginación (anterior/siguiente)
+- [x] Agregar acciones: click en row para ver detalle
+- [x] Implementar estado de carga con LoadingSpinner
+- [x] Agregar EmptyState cuando no hay usuarios
+- [x] Estilizar con Tailwind (paleta blue/slate) ✅
+- [x] Badges de estado con colores semánticos (green/amber/red)
+- [x] Indicador de email verificado con icono
+- [x] Formato de fecha con date-fns
 
-#### frontend/src/features/admin/pages/UserDetailPage.tsx
-- [ ] Crear componente UserDetailPage
-- [ ] Mostrar información completa del usuario
-- [ ] Mostrar tabs: Overview, Raffles, Payments, Audit Log
-- [ ] Agregar acciones: Suspender, Cambiar KYC, Reset Password
-- [ ] Implementar modales de confirmación
-- [ ] Mostrar toasts de éxito/error
+#### frontend/src/features/admin/pages/users/UserDetailPage.tsx
+- [x] Crear componente UserDetailPage
+- [x] Mostrar información completa del usuario (grid con dl/dt/dd)
+- [x] Mostrar estadísticas de rifas (total, active, completed, revenue)
+- [x] Mostrar estadísticas de pagos (total, spent, refunds)
+- [x] Agregar acciones: Suspender/Activar, Cambiar KYC
+- [x] Implementar confirmaciones con window.confirm (v1 - mejorar con modales)
+- [x] Mostrar toasts de éxito/error con sonner
+- [x] Navegación con botón "Volver"
+- [ ] Mostrar tabs: Overview, Raffles, Payments, Audit Log (v2)
+- [ ] Reset Password (pendiente endpoint backend)
 
 ### 4.7 Frontend - Páginas de Organizadores
 
@@ -412,14 +420,33 @@ El módulo **Almighty Admin** proporciona control total sobre la plataforma Sort
 - [ ] Gráfico de ingresos por mes
 - [ ] Acción: Set Custom Commission
 
-### 4.8 Frontend - Hooks y API
+### 4.8 Frontend - Hooks y API ✅ COMPLETADO
 
-#### frontend/src/hooks/useAdminUsers.ts
-- [ ] Crear hook `useUsers(filters, pagination)`
-- [ ] Crear hook `useUserDetail(userId)`
-- [ ] Crear hook `useUpdateUserStatus()`
-- [ ] Crear hook `useUpdateUserKYC()`
-- [ ] Usar React Query para caching
+#### frontend/src/features/admin/api/adminApi.ts
+- [x] Crear módulo adminUsersApi con funciones:
+  - [x] `list(filters, pagination)` → GET /admin/users
+  - [x] `getDetail(userId)` → GET /admin/users/:id
+  - [x] `updateStatus(userId, data)` → PUT /admin/users/:id/status
+  - [x] `updateKYC(userId, data)` → PUT /admin/users/:id/kyc
+  - [x] `deleteUser(userId)` → DELETE /admin/users/:id
+
+#### frontend/src/features/admin/hooks/useAdminUsers.ts
+- [x] Crear hook `useAdminUsers(filters, pagination)` con TanStack Query
+- [x] Crear hook `useAdminUserDetail(userId)`
+- [x] Crear hook `useUpdateUserStatus()` con mutation + invalidation
+- [x] Crear hook `useUpdateUserKYC()` con mutation + invalidation
+- [x] Crear hook `useDeleteUser()` con mutation + invalidation
+- [x] Usar React Query para caching (staleTime: 30s lists, 60s detail)
+- [x] Query keys centralizados con patrón `adminUsersKeys`
+- [x] Toasts automáticos de éxito/error con sonner
+
+#### frontend/src/features/admin/types/index.ts
+- [x] Definir tipos completos para módulo admin (419 líneas)
+- [x] Re-exportar tipos base (UserRole, KYCLevel, UserStatus)
+- [x] AdminUserListItem, AdminUserDetail con stats
+- [x] Request types (UpdateUserStatusRequest, UpdateUserKYCRequest)
+- [x] PaginatedResponse<T> genérico
+- [x] Filtros tipados (UserFilters, PaginationParams)
 
 #### frontend/src/hooks/useAdminOrganizers.ts
 - [ ] Crear hook `useOrganizers(filters, pagination)`
@@ -1257,6 +1284,119 @@ GET  /api/v1/admin/notifications/history        → View notification history
 - [STATUS_FINAL_ROUTES.md](STATUS_FINAL_ROUTES.md) - Diagnóstico completo de incompatibilidades
 - [/opt/Sorteos/backend/internal/usecase/admin/](file:///opt/Sorteos/backend/internal/usecase/admin/) - Use cases implementados
 - [test_admin_endpoints.sh](test_admin_endpoints.sh) - Script de testing
+
+---
+
+## 8.9 Fase Frontend: Setup Base + Users Management (Semana 8) ✅ COMPLETADA
+**Estado:** ✅ COMPLETADA - 2025-11-18 21:45
+**Progreso:** ██████████ 100% (10/10 tareas)
+
+**Objetivo:** Integrar panel admin al frontend React existente con módulo de usuarios funcional.
+
+**Duración:** 4-6 horas de trabajo concentrado
+**Prioridad:** 🔴 CRÍTICA
+
+### 8.9.1 Infraestructura Base ✅
+
+#### frontend/src/features/admin/ (Estructura de carpetas)
+- [x] Crear `features/admin/{components,pages,hooks,types,api}`
+- [x] Crear carpetas por módulo: `pages/{dashboard,users,organizers,raffles,categories,payments,settlements,reports,notifications,system,audit}`
+
+#### frontend/src/features/admin/components/AdminRoute.tsx
+- [x] Componente de protección de rutas por rol
+- [x] Verificar autenticación con `useIsAuthenticated()`
+- [x] Verificar rol admin con `useAuthStore().isAdmin()`
+- [x] Redirect a /login si no autenticado
+- [x] Redirect a /dashboard si autenticado pero no admin
+
+#### frontend/src/features/admin/components/AdminLayout.tsx (153 líneas)
+- [x] Layout específico para módulo admin
+- [x] Header fijo con logo + badge "Admin" + info de usuario + logout
+- [x] Sidebar con 11 módulos navegables:
+  - [x] Dashboard, Users, Organizers, Raffles, Categories
+  - [x] Payments, Settlements, Reports, Notifications, System, Audit
+- [x] Sidebar responsive con toggle mobile (hamburger menu)
+- [x] Overlay para cerrar sidebar en mobile
+- [x] Iconos con lucide-react
+- [x] Active state con highlight azul
+- [x] Colores: azul/slate (NO morado/rosa) ✅
+
+#### frontend/src/components/ui/Table.tsx
+- [x] Componente Table reutilizable
+- [x] TableHeader, TableBody, TableRow, TableHead, TableCell
+- [x] Hover effect en rows clickeables
+- [x] Bordes y padding consistentes
+- [x] Responsive con overflow-x-auto
+
+#### frontend/src/App.tsx (Integración de rutas)
+- [x] Importar AdminRoute, AdminLayout, AdminDashboardPage
+- [x] Importar UsersListPage, UserDetailPage
+- [x] Agregar ruta `/admin/dashboard`
+- [x] Agregar ruta `/admin/users` (lista)
+- [x] Agregar ruta `/admin/users/:id` (detalle)
+- [x] Patrón: AdminRoute > AdminLayout > Page
+
+### 8.9.2 Dashboard Admin ✅
+
+#### frontend/src/features/admin/pages/dashboard/AdminDashboardPage.tsx
+- [x] Página de bienvenida con 4 KPI cards (placeholders)
+- [x] Cards: Total Usuarios, Organizadores, Rifas Activas, Ingresos del Mes
+- [x] Iconos: Users, UserCog, Ticket, DollarSign
+- [x] Colores semánticos: blue, green, amber
+- [x] Card informativa con lista de funcionalidades del módulo
+- [x] Nota de estado del desarrollo (Fase 1 en progreso)
+
+### 8.9.3 Users Management (COMPLETO) ✅
+
+Ya documentado en sección 4.6 y 4.8 (ver arriba).
+
+### 8.9.4 Build y Compilación ✅
+
+- [x] Frontend compila sin errores TypeScript
+- [x] Build exitoso con Vite: 12 segundos
+- [x] Bundle size: 640KB (176KB gzip)
+- [x] 2493 módulos transformados
+- [x] Warnings de chunk size (>500KB) - normal para MVP
+
+### 8.9.5 Archivos Creados (11 archivos nuevos)
+
+| Archivo | Líneas | Descripción |
+|---------|--------|-------------|
+| `features/admin/types/index.ts` | 419 | Tipos completos del módulo admin |
+| `features/admin/components/AdminRoute.tsx` | 28 | Protección de rutas |
+| `features/admin/components/AdminLayout.tsx` | 153 | Layout con sidebar |
+| `features/admin/pages/dashboard/AdminDashboardPage.tsx` | 87 | Dashboard principal |
+| `features/admin/pages/users/UsersListPage.tsx` | 265 | Lista de usuarios con tabla y filtros |
+| `features/admin/pages/users/UserDetailPage.tsx` | 232 | Detalle de usuario con acciones |
+| `features/admin/api/adminApi.ts` | 68 | API client para endpoints admin |
+| `features/admin/hooks/useAdminUsers.ts` | 139 | Hooks TanStack Query |
+| `components/ui/Table.tsx` | 72 | Componente Table reutilizable |
+| `App.tsx` | +18 | 3 rutas admin agregadas |
+| **TOTAL** | **1,481** | **11 archivos** |
+
+### 8.9.6 Criterios de Aceptación ✅
+
+- ✅ AdminRoute protege rutas por rol (admin/super_admin)
+- ✅ AdminLayout se integra sin conflictos con MainLayout
+- ✅ Sidebar responsive funciona en mobile y desktop
+- ✅ Rutas `/admin/*` agregadas a App.tsx sin romper existentes
+- ✅ Dashboard admin es accesible y muestra información
+- ✅ UsersListPage muestra tabla con filtros funcionales
+- ✅ UserDetailPage muestra info completa y acciones
+- ✅ Hooks TanStack Query con caching (30s/60s staleTime)
+- ✅ Mutations con invalidación automática de queries
+- ✅ Toasts de éxito/error con sonner
+- ✅ Colores blue/slate (NO morado/rosa)
+- ✅ Frontend compila sin errores (0 errores TS)
+- ✅ Build production exitoso (12s)
+
+### 8.9.7 Próximos Pasos
+
+**Fase 2 Frontend (siguiente sesión):**
+1. Implementar módulo Organizers (2 páginas)
+2. Implementar módulo Categories (1 página)
+3. Implementar módulo Raffles Admin (2 páginas)
+4. Conectar Dashboard con datos reales (KPIs dinámicos)
 
 ---
 

@@ -45,6 +45,13 @@ import { WalletPage } from "@/features/wallet/pages/WalletPage";
 // Profile pages
 import { ProfilePage } from "@/features/profile/components/ProfilePage";
 
+// Admin pages
+import { AdminRoute } from "@/features/admin/components/AdminRoute";
+import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import { AdminDashboardPage } from "@/features/admin/pages/dashboard/AdminDashboardPage";
+import { UsersListPage } from "@/features/admin/pages/users/UsersListPage";
+import { UserDetailPage } from "@/features/admin/pages/users/UserDetailPage";
+
 // Componente interno para usar hooks que requieren Router context
 function AppRoutes() {
   const navigate = useNavigate();
@@ -258,6 +265,38 @@ function AppRoutes() {
                   <PaymentCancelPage />
                 </MainLayout>
               </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes (protected, admin-only, with AdminLayout) */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <AdminDashboardPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <UsersListPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:id"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <UserDetailPage />
+                </AdminLayout>
+              </AdminRoute>
             }
           />
 
