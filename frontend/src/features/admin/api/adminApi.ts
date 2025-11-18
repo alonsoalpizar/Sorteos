@@ -32,7 +32,19 @@ export const adminUsersApi = {
     if (filters?.search) params.append("search", filters.search);
 
     const response = await api.get(`/admin/users?${params.toString()}`);
-    return response.data.data;
+
+    // El backend devuelve: { success, data: { Users, Total, Page, PageSize, TotalPages } }
+    // Mapeamos a la estructura esperada por el frontend
+    const backendData = response.data.data;
+    return {
+      data: backendData.Users || [],
+      pagination: {
+        page: backendData.Page || 1,
+        limit: backendData.PageSize || 20,
+        total: backendData.Total || 0,
+        total_pages: backendData.TotalPages || 0,
+      },
+    };
   },
 
   // GET /api/v1/admin/users/:id
