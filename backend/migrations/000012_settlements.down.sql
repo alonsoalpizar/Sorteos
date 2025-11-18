@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS settlements CASCADE;
+DROP TYPE IF EXISTS settlement_status CASCADE;
