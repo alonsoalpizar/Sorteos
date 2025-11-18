@@ -17,6 +17,7 @@ type OrganizerHandler struct {
 	getOrganizerDetailUC       *organizer.GetOrganizerDetailUseCase
 	updateOrganizerCommissionUC *organizer.UpdateOrganizerCommissionUseCase
 	verifyOrganizerUC          *organizer.VerifyOrganizerUseCase
+	calculateRevenueUC         *organizer.CalculateOrganizerRevenueUseCase
 	log                        *logger.Logger
 }
 
@@ -30,6 +31,7 @@ func NewOrganizerHandler(gormDB *gorm.DB, log *logger.Logger) *OrganizerHandler 
 		getOrganizerDetailUC:       organizer.NewGetOrganizerDetailUseCase(organizerRepo, log),
 		updateOrganizerCommissionUC: organizer.NewUpdateOrganizerCommissionUseCase(organizerRepo, log),
 		verifyOrganizerUC:          organizer.NewVerifyOrganizerUseCase(organizerRepo, log),
+		calculateRevenueUC:         organizer.NewCalculateOrganizerRevenueUseCase(gormDB, log),
 		log:                        log,
 	}
 }
@@ -227,5 +229,58 @@ func (h *OrganizerHandler) Verify(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Organizer verified successfully",
+	})
+}
+
+// GetRevenue calcula y retorna revenue del organizador con filtros de fecha
+// GET /api/v1/admin/organizers/:id/revenue
+func (h *OrganizerHandler) GetRevenue(c *gin.Context) {
+	// Obtener admin ID
+	adminID, err := getAdminIDFromContext(c)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// Parse organizer ID
+	organizerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_ORGANIZER_ID",
+				"message": "invalid organizer ID",
+			},
+		})
+		return
+	}
+
+	// Construir input desde query params
+	input := &organizer.CalculateOrganizerRevenueInput{
+		OrganizerID: organizerID,
+	}
+
+	// Parse filtros opcionales
+	if dateFrom := c.Query("date_from"); dateFrom != "" {
+		input.DateFrom = &dateFrom
+	}
+
+	if dateTo := c.Query("date_to"); dateTo != "" {
+		input.DateTo = &dateTo
+	}
+
+	if groupBy := c.Query("group_by"); groupBy != "" {
+		input.GroupBy = &groupBy
+	}
+
+	// Ejecutar use case
+	output, err := h.calculateRevenueUC.Execute(c.Request.Context(), input, adminID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    output,
 	})
 }

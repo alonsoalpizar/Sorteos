@@ -171,6 +171,7 @@ func setupOrganizerRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logge
 		organizers.GET("/:id", handler.GetByID)                    // GET /api/v1/admin/organizers/:id
 		organizers.PUT("/:id/commission", handler.UpdateCommission) // PUT /api/v1/admin/organizers/:id/commission
 		organizers.PUT("/:id/verify", handler.Verify)              // PUT /api/v1/admin/organizers/:id/verify
+		organizers.GET("/:id/revenue", handler.GetRevenue)        // GET /api/v1/admin/organizers/:id/revenue
 	}
 
 	log.Info("Admin organizer routes registered",
