@@ -29,14 +29,15 @@ const (
 	DrawMethodRandom           DrawMethod = "random"
 )
 
-// SettlementStatus representa el estado de liquidación
-type SettlementStatus string
+// RaffleSettlementStatus representa el estado de liquidación de una rifa
+// DEPRECATED: Use Settlement entity instead
+type RaffleSettlementStatus string
 
 const (
-	SettlementStatusPending    SettlementStatus = "pending"
-	SettlementStatusProcessing SettlementStatus = "processing"
-	SettlementStatusCompleted  SettlementStatus = "completed"
-	SettlementStatusFailed     SettlementStatus = "failed"
+	RaffleSettlementStatusPending    RaffleSettlementStatus = "pending"
+	RaffleSettlementStatusProcessing RaffleSettlementStatus = "processing"
+	RaffleSettlementStatusCompleted  RaffleSettlementStatus = "completed"
+	RaffleSettlementStatusFailed     RaffleSettlementStatus = "failed"
 )
 
 // Raffle representa un sorteo/rifa en el sistema
@@ -77,12 +78,18 @@ type Raffle struct {
 	PlatformFeeAmount    decimal.Decimal
 	NetAmount            decimal.Decimal
 
-	// Settlement
+	// Settlement (DEPRECATED: use settlements table instead)
 	SettledAt        *time.Time
-	SettlementStatus SettlementStatus
+	SettlementStatus RaffleSettlementStatus
 
 	// Metadata
 	Metadata datatypes.JSON
+
+	// Admin fields (for Almighty module)
+	SuspensionReason *string    `gorm:"column:suspension_reason"`
+	SuspendedBy      *int64     `gorm:"column:suspended_by"`
+	SuspendedAt      *time.Time `gorm:"column:suspended_at"`
+	AdminNotes       *string    `gorm:"column:admin_notes"`
 
 	// Timestamps
 	CreatedAt   time.Time
@@ -111,7 +118,7 @@ func NewRaffle(userID int64, title string, pricePerNumber decimal.Decimal, total
 		PlatformFeePercentage: decimal.NewFromFloat(10.0), // 10% default
 		PlatformFeeAmount:     decimal.Zero,
 		NetAmount:             decimal.Zero,
-		SettlementStatus:      SettlementStatusPending,
+		SettlementStatus:      RaffleSettlementStatusPending,
 		CreatedAt:             time.Now(),
 		UpdatedAt:             time.Now(),
 	}
@@ -302,7 +309,7 @@ func (r *Raffle) CalculateRevenue() {
 // CanBeSettled verifica si el sorteo puede ser liquidado
 func (r *Raffle) CanBeSettled() bool {
 	return r.IsCompleted() &&
-		r.SettlementStatus == SettlementStatusPending &&
+		r.SettlementStatus == RaffleSettlementStatusPending &&
 		r.WinnerNumber != nil
 }
 
@@ -314,7 +321,7 @@ func (r *Raffle) MarkAsSettled() error {
 
 	now := time.Now()
 	r.SettledAt = &now
-	r.SettlementStatus = SettlementStatusCompleted
+	r.SettlementStatus = RaffleSettlementStatusCompleted
 	r.UpdatedAt = now
 
 	return nil

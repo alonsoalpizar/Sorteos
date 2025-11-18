@@ -84,6 +84,13 @@ type User struct {
 	PasswordResetToken         *string    `json:"-"`
 	PasswordResetExpiresAt     *time.Time `json:"-"`
 
+	// Admin fields (for Almighty module)
+	SuspensionReason *string    `json:"suspension_reason,omitempty"`
+	SuspendedBy      *int64     `json:"suspended_by,omitempty"` // Admin user ID que suspendió
+	SuspendedAt      *time.Time `json:"suspended_at,omitempty"`
+	LastKYCReview    *time.Time `json:"last_kyc_review,omitempty"`
+	KYCReviewer      *int64     `json:"kyc_reviewer,omitempty"` // Admin user ID que revisó KYC
+
 	// Auditoría
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
