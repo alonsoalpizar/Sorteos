@@ -51,6 +51,23 @@ import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminDashboardPage } from "@/features/admin/pages/dashboard/AdminDashboardPage";
 import { UsersListPage } from "@/features/admin/pages/users/UsersListPage";
 import { UserDetailPage } from "@/features/admin/pages/users/UserDetailPage";
+import { OrganizersListPage } from "@/features/admin/pages/organizers/OrganizersListPage";
+import { OrganizerDetailPage } from "@/features/admin/pages/organizers/OrganizerDetailPage";
+import { RafflesListPage as AdminRafflesListPage } from "@/features/admin/pages/raffles/RafflesListPage";
+import { RaffleDetailPage as AdminRaffleDetailPage } from "@/features/admin/pages/raffles/RaffleDetailPage";
+import { CategoriesPage } from "@/features/admin/pages/categories/CategoriesPage";
+import { PaymentsListPage } from "@/features/admin/pages/payments/PaymentsListPage";
+import { PaymentDetailPage } from "@/features/admin/pages/payments/PaymentDetailPage";
+import { SettlementsListPage } from "@/features/admin/pages/settlements/SettlementsListPage";
+import { SettlementDetailPage } from "@/features/admin/pages/settlements/SettlementDetailPage";
+import { WalletsListPage } from "@/features/admin/wallets/components/WalletsListPage";
+import { WalletDetailPage } from "@/features/admin/wallets/components/WalletDetailPage";
+import { ReportsPage } from "@/features/admin/pages/reports/ReportsPage";
+import { RevenueReportPage } from "@/features/admin/pages/reports/RevenueReportPage";
+import { LiquidationsReportPage } from "@/features/admin/pages/reports/LiquidationsReportPage";
+import { NotificationsPage } from "@/features/admin/pages/notifications/NotificationsPage";
+import { SystemConfigPage } from "@/features/admin/pages/system/SystemConfigPage";
+import { AuditLogsPage } from "@/features/admin/pages/audit/AuditLogsPage";
 
 // Componente interno para usar hooks que requieren Router context
 function AppRoutes() {
@@ -295,6 +312,192 @@ function AppRoutes() {
               <AdminRoute>
                 <AdminLayout>
                   <UserDetailPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/organizers"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <OrganizersListPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/organizers/:id"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <OrganizerDetailPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/raffles"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <AdminRafflesListPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/raffles/:id"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <AdminRaffleDetailPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin: Categories */}
+          <Route
+            path="/admin/categories"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <CategoriesPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin Payments */}
+          <Route
+            path="/admin/payments"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <PaymentsListPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/payments/:id"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <PaymentDetailPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin Settlements */}
+          <Route
+            path="/admin/settlements"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <SettlementsListPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/settlements/:id"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <SettlementDetailPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin Wallets */}
+          <Route
+            path="/admin/wallets"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <WalletsListPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/wallets/:id"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <WalletDetailPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin Reports */}
+          <Route
+            path="/admin/reports"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <ReportsPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/revenue"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <RevenueReportPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/liquidations"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <LiquidationsReportPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin Notifications */}
+          <Route
+            path="/admin/notifications"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <NotificationsPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin System Configuration */}
+          <Route
+            path="/admin/system"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <SystemConfigPage />
+                </AdminLayout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Admin Audit Logs */}
+          <Route
+            path="/admin/audit"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <AuditLogsPage />
                 </AdminLayout>
               </AdminRoute>
             }

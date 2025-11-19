@@ -63,6 +63,9 @@ func setupAdminRoutesV2(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 
 	// ==================== AUDIT LOGS ====================
 	setupAuditRoutesV2(adminGroup, gormDB, log)
+
+	// ==================== WALLET MANAGEMENT ====================
+	setupWalletRoutesV2(adminGroup, gormDB, log)
 }
 
 // setupCategoryRoutesV2 configura rutas de gestión de categorías
@@ -304,4 +307,24 @@ func setupAuditRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Lo
 	log.Info("Admin audit routes registered",
 		logger.Int("endpoints", 1),
 		logger.String("base_path", "/api/v1/admin/audit"))
+}
+
+// setupWalletRoutesV2 configura rutas de gestión de billeteras
+func setupWalletRoutesV2(adminGroup *gin.RouterGroup, db *gorm.DB, log *logger.Logger) {
+	// Inicializar handler
+	handler := adminHandler.NewWalletHandler(db, log)
+
+	// Configurar rutas de wallets
+	wallets := adminGroup.Group("/wallets")
+	{
+		wallets.GET("", handler.List)                          // GET /api/v1/admin/wallets
+		wallets.GET("/:id", handler.ViewDetails)               // GET /api/v1/admin/wallets/:id
+		wallets.GET("/:id/transactions", handler.ListTransactions) // GET /api/v1/admin/wallets/:id/transactions
+		wallets.PUT("/:id/freeze", handler.Freeze)             // PUT /api/v1/admin/wallets/:id/freeze
+		wallets.PUT("/:id/unfreeze", handler.Unfreeze)         // PUT /api/v1/admin/wallets/:id/unfreeze
+	}
+
+	log.Info("Admin wallet routes registered",
+		logger.Int("endpoints", 5),
+		logger.String("base_path", "/api/v1/admin/wallets"))
 }

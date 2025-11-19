@@ -1,33 +1,69 @@
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
-import { useTransactionHistory } from '../hooks/useTransactionHistory';
-import {
-  formatCRC,
-  translateTransactionType,
-  translateTransactionStatus,
-  getStatusColor,
-} from '../../../types/wallet';
-import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
-import { EmptyState } from '../../../components/ui/EmptyState';
+import { useState } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, RefreshCw, History } from "lucide-react";
+import { useWalletTransactions } from "../hooks/useWallet";
+import type { TransactionType, TransactionStatus } from "../types";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { EmptyState } from "@/components/ui/EmptyState";
+
+// Helper para formatear CRC
+function formatCRC(amount: number | string): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat("es-CR", {
+    style: "currency",
+    currency: "CRC",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+// Helper para traducir tipos de transacción
+function translateTransactionType(type: TransactionType): string {
+  const types: Record<TransactionType, string> = {
+    deposit: "Recarga",
+    withdrawal: "Retiro",
+    purchase: "Compra de boletos",
+    refund: "Reembolso",
+    prize_claim: "Premio ganado",
+    settlement_payout: "Pago de liquidación",
+    adjustment: "Ajuste",
+  };
+  return types[type] || type;
+}
+
+// Helper para traducir estados
+function translateTransactionStatus(status: TransactionStatus): string {
+  const statuses: Record<TransactionStatus, string> = {
+    pending: "Pendiente",
+    completed: "Completada",
+    failed: "Fallida",
+    reversed: "Revertida",
+  };
+  return statuses[status] || status;
+}
+
+// Helper para obtener badge color según estado
+function getStatusBadgeClass(status: TransactionStatus): string {
+  const classes: Record<TransactionStatus, string> = {
+    pending: "bg-yellow-100 text-yellow-700",
+    completed: "bg-green-100 text-green-700",
+    failed: "bg-red-100 text-red-700",
+    reversed: "bg-slate-100 text-slate-700",
+  };
+  return classes[status] || "bg-slate-100 text-slate-700";
+}
 
 export const TransactionHistory = () => {
-  const {
-    transactions,
-    pagination,
-    isLoading,
-    error,
-    refetch,
-    hasNextPage,
-    hasPreviousPage,
-    nextPage,
-    previousPage,
-    currentPage,
-    totalPages,
-  } = useTransactionHistory(20);
+  const [page, setPage] = useState(0);
+  const limit = 20;
+
+  const { data, isLoading, error, refetch } = useWalletTransactions({
+    limit,
+    offset: page * limit,
+  });
 
   if (error) {
     return (
@@ -46,17 +82,17 @@ export const TransactionHistory = () => {
     return (
       <Card className="p-6">
         <div className="flex items-center justify-center py-8">
-          <LoadingSpinner size="lg" />
+          <LoadingSpinner />
         </div>
       </Card>
     );
   }
 
-  if (transactions.length === 0) {
+  if (!data || data.transactions.length === 0) {
     return (
       <Card className="p-6">
         <EmptyState
-          icon="📊"
+          icon={<History className="w-12 h-12 text-slate-400" />}
           title="No hay transacciones"
           description="Aún no has realizado ninguna transacción en tu billetera"
         />
@@ -64,12 +100,16 @@ export const TransactionHistory = () => {
     );
   }
 
+  const totalPages = Math.ceil(data.pagination.total / limit);
+  const hasNextPage = page < totalPages - 1;
+  const hasPreviousPage = page > 0;
+
   return (
     <div className="space-y-4">
       {/* Header con botón de refrescar */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900">
-          Historial de Transacciones ({pagination.total})
+          Historial de Transacciones ({data.pagination.total})
         </h2>
         <Button variant="ghost" size="sm" onClick={() => refetch()}>
           <RefreshCw className="w-4 h-4" />
@@ -100,14 +140,14 @@ export const TransactionHistory = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {transactions.map((tx) => {
-                const isDebit = ['purchase', 'withdrawal', 'adjustment'].includes(tx.type);
+              {data.transactions.map((tx) => {
+                const isDebit = ["purchase", "withdrawal", "adjustment"].includes(tx.type);
                 const date = new Date(tx.created_at);
 
                 return (
                   <tr key={tx.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                      {format(date, 'dd MMM yyyy, HH:mm', { locale: es })}
+                      {format(date, "dd MMM yyyy, HH:mm", { locale: es })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                       {translateTransactionType(tx.type)}
@@ -115,16 +155,20 @@ export const TransactionHistory = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
                         className={`font-semibold ${
-                          isDebit ? 'text-red-600' : 'text-green-600'
+                          isDebit ? "text-red-600" : "text-green-600"
                         }`}
                       >
-                        {isDebit ? '-' : '+'} {formatCRC(tx.amount)}
+                        {isDebit ? "-" : "+"} {formatCRC(tx.amount)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={getStatusColor(tx.status)}>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
+                          tx.status
+                        )}`}
+                      >
                         {translateTransactionStatus(tx.status)}
-                      </Badge>
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                       {formatCRC(tx.balance_after)}
@@ -139,8 +183,8 @@ export const TransactionHistory = () => {
 
       {/* Lista de transacciones (Mobile) */}
       <div className="md:hidden space-y-3">
-        {transactions.map((tx) => {
-          const isDebit = ['purchase', 'withdrawal', 'adjustment'].includes(tx.type);
+        {data.transactions.map((tx) => {
+          const isDebit = ["purchase", "withdrawal", "adjustment"].includes(tx.type);
           const date = new Date(tx.created_at);
 
           return (
@@ -149,18 +193,22 @@ export const TransactionHistory = () => {
                 <div>
                   <p className="font-medium text-slate-900">{translateTransactionType(tx.type)}</p>
                   <p className="text-xs text-slate-500">
-                    {format(date, 'dd MMM yyyy, HH:mm', { locale: es })}
+                    {format(date, "dd MMM yyyy, HH:mm", { locale: es })}
                   </p>
                 </div>
-                <Badge variant={getStatusColor(tx.status)}>
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
+                    tx.status
+                  )}`}
+                >
                   {translateTransactionStatus(tx.status)}
-                </Badge>
+                </span>
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
                 <span
-                  className={`text-lg font-bold ${isDebit ? 'text-red-600' : 'text-green-600'}`}
+                  className={`text-lg font-bold ${isDebit ? "text-red-600" : "text-green-600"}`}
                 >
-                  {isDebit ? '-' : '+'} {formatCRC(tx.amount)}
+                  {isDebit ? "-" : "+"} {formatCRC(tx.amount)}
                 </span>
                 <span className="text-sm text-slate-600">
                   Saldo: {formatCRC(tx.balance_after)}
@@ -176,19 +224,24 @@ export const TransactionHistory = () => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-slate-600">
-              Página {currentPage + 1} de {totalPages}
+              Página {page + 1} de {totalPages}
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={previousPage}
+                onClick={() => setPage((p) => p - 1)}
                 disabled={!hasPreviousPage}
               >
                 <ChevronLeft className="w-4 h-4" />
                 Anterior
               </Button>
-              <Button variant="outline" size="sm" onClick={nextPage} disabled={!hasNextPage}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasNextPage}
+              >
                 Siguiente
                 <ChevronRight className="w-4 h-4" />
               </Button>

@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { UserStatus, KYCLevel } from "../../types";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -147,13 +148,13 @@ export function UserDetailPage() {
             <div>
               <dt className="text-sm font-medium text-slate-600">Fecha de Registro</dt>
               <dd className="text-sm text-slate-900 mt-1">
-                {format(new Date(user.created_at), "dd/MM/yyyy HH:mm")}
+                {user.created_at ? format(new Date(user.created_at), "dd/MM/yyyy HH:mm") : "N/A"}
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-slate-600">Última Actualización</dt>
               <dd className="text-sm text-slate-900 mt-1">
-                {format(new Date(user.updated_at), "dd/MM/yyyy HH:mm")}
+                {user.updated_at ? format(new Date(user.updated_at), "dd/MM/yyyy HH:mm") : "N/A"}
               </dd>
             </div>
           </dl>
@@ -236,7 +237,7 @@ export function UserDetailPage() {
             <div>
               <p className="text-sm font-medium text-slate-600">Ingresos Totales</p>
               <p className="text-2xl font-bold text-slate-900 mt-1">
-                ${user.raffle_stats.total_revenue.toLocaleString()}
+                {formatCurrency(user.raffle_stats.total_revenue)}
               </p>
             </div>
           </div>
@@ -259,7 +260,7 @@ export function UserDetailPage() {
             <div>
               <p className="text-sm font-medium text-slate-600">Total Gastado</p>
               <p className="text-2xl font-bold text-slate-900 mt-1">
-                ${user.payment_stats.total_spent.toLocaleString()}
+                {formatCurrency(user.payment_stats.total_spent)}
               </p>
             </div>
             <div>

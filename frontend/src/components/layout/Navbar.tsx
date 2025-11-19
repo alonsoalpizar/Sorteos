@@ -5,7 +5,7 @@ import { useUserMode } from '@/contexts/UserModeContext';
 import { useState } from 'react';
 
 export function Navbar() {
-  const { user } = useAuthStore();
+  const { user, isAdmin } = useAuthStore();
   const { mode } = useUserMode();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,6 +111,19 @@ export function Navbar() {
                     </Link>
                   </>
                 )}
+
+                {/* Admin link - only visible to super-admin users */}
+                {isAdmin() && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="px-3 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Admin
+                  </Link>
+                )}
               </nav>
             )}
 
@@ -160,6 +173,16 @@ export function Navbar() {
                   + Crear
                 </Link>
               </>
+            )}
+
+            {/* Admin link for mobile - only visible to super-admin users */}
+            {isAdmin() && (
+              <Link
+                to="/admin/dashboard"
+                className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 transition-colors whitespace-nowrap"
+              >
+                Admin
+              </Link>
             )}
           </nav>
         </div>

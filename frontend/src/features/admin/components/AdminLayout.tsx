@@ -9,6 +9,7 @@ import {
   FolderTree,
   CreditCard,
   DollarSign,
+  Wallet,
   BarChart3,
   Bell,
   Settings,
@@ -16,6 +17,7 @@ import {
   LogOut,
   Menu,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -37,6 +39,7 @@ const navItems: NavItem[] = [
   { name: "Categorías", path: "/admin/categories", icon: FolderTree },
   { name: "Pagos", path: "/admin/payments", icon: CreditCard },
   { name: "Liquidaciones", path: "/admin/settlements", icon: DollarSign },
+  { name: "Billeteras", path: "/admin/wallets", icon: Wallet },
   { name: "Reportes", path: "/admin/reports", icon: BarChart3 },
   { name: "Notificaciones", path: "/admin/notifications", icon: Bell },
   { name: "Configuración", path: "/admin/system", icon: Settings },
@@ -90,6 +93,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </p>
               <p className="text-xs text-slate-500">{user?.role === "super_admin" ? "Super Admin" : "Admin"}</p>
             </div>
+
+            <Link to="/explore">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-slate-700 hover:text-blue-600 hover:border-blue-600"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Ver Sitio</span>
+              </Button>
+            </Link>
 
             <Button
               variant="outline"

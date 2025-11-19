@@ -1,64 +1,84 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getWalletBalance, addFunds, generateIdempotencyKey } from '../../../api/wallet';
-import type { AddFundsRequest } from '../../../types/wallet';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { walletApi } from "../api/walletApi";
+import type { ListTransactionsInput, AddFundsInput } from "../types";
+import { toast } from "sonner";
 
-/**
- * Hook para gestionar el estado de la billetera del usuario
- */
-export const useWallet = () => {
-  const queryClient = useQueryClient();
+// Query Keys
+export const walletKeys = {
+  all: ["wallet"] as const,
+  balance: () => [...walletKeys.all, "balance"] as const,
+  transactions: (input: ListTransactionsInput = {}) => [...walletKeys.all, "transactions", input] as const,
+  rechargeOptions: () => [...walletKeys.all, "recharge-options"] as const,
+  earnings: () => [...walletKeys.all, "earnings"] as const,
+};
 
-  // Query para obtener el saldo
-  const {
-    data: walletData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['wallet', 'balance'],
-    queryFn: async () => {
-      const response = await getWalletBalance();
-      return response.data;
-    },
+// Get Balance
+export function useWalletBalance(enabled = true) {
+  return useQuery({
+    queryKey: walletKeys.balance(),
+    queryFn: () => walletApi.getBalance(),
+    enabled,
     staleTime: 30000, // 30 segundos
     refetchInterval: 60000, // Refetch cada minuto
   });
+}
 
-  // Mutation para agregar fondos
-  const addFundsMutation = useMutation({
-    mutationFn: async (request: AddFundsRequest) => {
-      const idempotencyKey = generateIdempotencyKey();
-      return addFunds(request, idempotencyKey);
+// List Transactions
+export function useWalletTransactions(input: ListTransactionsInput = {}, enabled = true) {
+  return useQuery({
+    queryKey: walletKeys.transactions(input),
+    queryFn: () => walletApi.listTransactions(input),
+    enabled,
+    staleTime: 30000, // 30 segundos
+  });
+}
+
+// Get Recharge Options (público, no requiere autenticación)
+export function useRechargeOptions(enabled = true) {
+  return useQuery({
+    queryKey: walletKeys.rechargeOptions(),
+    queryFn: () => walletApi.getRechargeOptions(),
+    enabled,
+    staleTime: 300000, // 5 minutos (las opciones no cambian frecuentemente)
+  });
+}
+
+// Get Earnings
+export function useEarnings(enabled = true) {
+  return useQuery({
+    queryKey: walletKeys.earnings(),
+    queryFn: () => walletApi.getEarnings(),
+    enabled,
+    staleTime: 60000, // 1 minuto
+  });
+}
+
+// Add Funds Mutation
+export function useAddFunds() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AddFundsInput) => walletApi.addFunds(input),
+    onSuccess: (data) => {
+      toast.success("Recarga iniciada", {
+        description: `Se está procesando tu recarga de ₡${data.amount}`,
+      });
+      // Invalidar balance y transacciones para refrescar
+      queryClient.invalidateQueries({ queryKey: walletKeys.balance() });
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
     },
-    onSuccess: () => {
-      // Invalidar el cache de balance para refetch automático
-      queryClient.invalidateQueries({ queryKey: ['wallet', 'balance'] });
-      queryClient.invalidateQueries({ queryKey: ['wallet', 'transactions'] });
+    onError: (error: any) => {
+      toast.error("Error al procesar recarga", {
+        description: error.response?.data?.error?.message || error.message,
+      });
     },
   });
+}
 
-  return {
-    wallet: walletData,
-    balance: walletData?.balance || '0',
-    pendingBalance: walletData?.pending_balance || '0',
-    currency: walletData?.currency || 'CRC',
-    status: walletData?.status || 'active',
-    isLoading,
-    error,
-    refetch,
-    addFunds: addFundsMutation.mutate,
-    isAddingFunds: addFundsMutation.isPending,
-    addFundsError: addFundsMutation.error,
-    addFundsSuccess: addFundsMutation.isSuccess,
-    addFundsData: addFundsMutation.data,
-  };
-};
-
-/**
- * Hook para verificar si el usuario tiene saldo suficiente
- */
-export const useHasSufficientBalance = (requiredAmount: number): boolean => {
-  const { balance } = useWallet();
-  const currentBalance = parseFloat(balance) || 0;
+// Hook de conveniencia para verificar saldo suficiente
+export function useHasSufficientBalance(requiredAmount: number): boolean {
+  const { data } = useWalletBalance();
+  if (!data) return false;
+  const currentBalance = parseFloat(data.balance) || 0;
   return currentBalance >= requiredAmount;
-};
+}
