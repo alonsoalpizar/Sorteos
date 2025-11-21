@@ -60,6 +60,7 @@ coverage/
 # Build artifacts
 build/
 bin/
+backend/sorteos-api
 
 # OS
 Thumbs.db
