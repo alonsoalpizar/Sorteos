@@ -687,8 +687,250 @@ CONFIG_ENV=development
 CONFIG_PORT=8080
 
 # Uploads
-CONFIG_STORAGE_PATH=./backend/uploads  # Relativo a /opt/Sorteos
+CONFIG_STORAGE_PATH=/opt/Sorteos/backend/uploads  # Ruta absoluta
 ```
+
+---
+
+## 📦 Arquitectura de Compilación y Archivos Estáticos
+
+### Estructura de Archivos (Actualizada 2025-11-21)
+
+```
+/opt/Sorteos/
+├── backend/
+│   ├── sorteos-api              # Binario compilado (NO en git)
+│   ├── bin/
+│   │   └── sorteos-api          # Binario generado por make build
+│   ├── uploads/                 # ⭐ TODAS las imágenes aquí
+│   │   └── raffles/
+│   │       └── {raffle_id}/
+│   │           ├── original/    # Imágenes originales
+│   │           ├── large/       # 800x800 WebP
+│   │           ├── medium/      # 400x400 WebP
+│   │           └── thumbnail/   # 150x150 WebP
+│   ├── cmd/api/
+│   │   └── main.go              # Entry point
+│   └── .env                     # CONFIG_STORAGE_PATH=/opt/Sorteos/backend/uploads
+│
+├── frontend/
+│   ├── dist/                    # ⭐ Build de producción (servido por backend)
+│   │   ├── index.html
+│   │   └── assets/
+│   │       ├── index-{hash}.js
+│   │       └── index-{hash}.css
+│   └── src/
+│
+└── Documentacion/
+```
+
+### Flujo de Compilación y Despliegue
+
+#### 1. Frontend (React + Vite)
+
+**Comando:**
+```bash
+cd /opt/Sorteos/frontend
+npm run build
+```
+
+**Resultado:**
+- ✅ Build generado en `/opt/Sorteos/frontend/dist/` (10 segundos)
+- ✅ Backend **automáticamente** sirve los archivos nuevos
+- ✅ **NO requiere** reiniciar servicios
+- ✅ **NO requiere** reload de Nginx
+
+**Configuración en Backend:**
+```go
+// cmd/api/main.go
+router.Static("/assets", "./frontend/dist/assets")
+router.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
+
+// SPA support: todas las rutas no-API sirven index.html
+router.NoRoute(func(c *gin.Context) {
+    if !strings.HasPrefix(c.Request.URL.Path, "/api") {
+        c.File("./frontend/dist/index.html")
+    }
+})
+```
+
+**Ventaja:**
+- `npm run build` → Los cambios se reflejan inmediatamente
+- Sin Docker, sin Nginx reload, sin complejidad
+
+#### 2. Backend (Go)
+
+**Comando:**
+```bash
+cd /opt/Sorteos/backend
+make build
+sudo systemctl restart sorteos-api
+```
+
+**Makefile:**
+```makefile
+build: ## Compilar aplicación
+	@echo "🔨 Compilando sorteos-api..."
+	go build -o bin/sorteos-api ./cmd/api
+	@echo "✅ Binario creado en bin/sorteos-api"
+```
+
+**Resultado:**
+- ✅ Binario generado en `bin/sorteos-api`
+- ✅ Copiar manualmente a raíz: `cp bin/sorteos-api sorteos-api`
+- ✅ Reiniciar servicio: `sudo systemctl restart sorteos-api`
+
+**Servicio systemd:**
+```ini
+# /etc/systemd/system/sorteos-api.service
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/Sorteos
+EnvironmentFile=/opt/Sorteos/backend/.env
+ExecStart=/opt/Sorteos/backend/sorteos-api
+Restart=always
+```
+
+#### 3. Imágenes (Uploads)
+
+**URLs Relativas (Solución Multi-Dominio):**
+
+**Problema anterior:**
+- URLs absolutas: `http://localhost:8080/uploads/raffles/4/thumbnail/imagen.webp`
+- ❌ No funcionaba en otros dominios/dispositivos
+
+**Solución implementada:**
+```go
+// backend/internal/infrastructure/image/processor.go:156
+// ANTES:
+url := fmt.Sprintf("%s/uploads/raffles/%d/%s/%s", p.baseURL, raffleID, variant, filename)
+
+// DESPUÉS:
+url := fmt.Sprintf("/uploads/raffles/%d/%s/%s", raffleID, variant, filename)
+```
+
+**Beneficios:**
+- ✅ Funciona en cualquier dominio (sorteos.club, localhost, IP, etc.)
+- ✅ Respeta automáticamente el protocolo (HTTP/HTTPS)
+- ✅ Compatible con CDN o proxies reversos
+- ✅ Sin configuración de baseURL necesaria
+
+**Configuración de Nginx:**
+```nginx
+# /etc/nginx/sites-available/sorteos
+location /uploads/ {
+    alias /opt/Sorteos/backend/uploads/;
+    access_log off;
+
+    # Cache agresivo para imágenes
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+
+    # CORS para imágenes
+    add_header Access-Control-Allow-Origin "*";
+
+    # Solo archivos de imagen
+    location ~ \.(jpg|jpeg|png|gif|webp|ico)$ {
+        try_files $uri =404;
+    }
+}
+```
+
+**Ejemplo de URLs generadas:**
+```
+/uploads/raffles/5/original/74b54a03-4348-40fc-bc8f-9e64cc3eb51b.jpg
+/uploads/raffles/5/large/74b54a03-4348-40fc-bc8f-9e64cc3eb51b.webp
+/uploads/raffles/5/medium/74b54a03-4348-40fc-bc8f-9e64cc3eb51b.webp
+/uploads/raffles/5/thumbnail/74b54a03-4348-40fc-bc8f-9e64cc3eb51b.webp
+```
+
+**Migración de URLs antiguas:**
+```sql
+-- backend/migrations/fix_image_urls.sql
+UPDATE raffle_images
+SET
+    url_original = REPLACE(url_original, 'http://localhost:8080', ''),
+    url_large = REPLACE(url_large, 'http://localhost:8080', ''),
+    url_medium = REPLACE(url_medium, 'http://localhost:8080', ''),
+    url_thumbnail = REPLACE(url_thumbnail, 'http://localhost:8080', '');
+```
+
+### Configuración de Nginx (Resumen)
+
+**Ubicación:** `/etc/nginx/sites-available/sorteos`
+
+**Responsabilidades:**
+1. **Uploads:** Sirve desde `/opt/Sorteos/backend/uploads/`
+2. **Proxy:** Redirige todo lo demás al backend (localhost:8080)
+3. **SSL:** Terminación SSL con Let's Encrypt
+4. **HTTPS:** Fuerza redirect de HTTP → HTTPS
+
+**Regla importante:**
+```nginx
+# Frontend y API: Proxy al backend
+location / {
+    proxy_pass http://localhost:8080;
+    # Headers para WebSockets, HTTPS, etc.
+}
+
+# Uploads: Servir archivos estáticos directamente
+location /uploads/ {
+    alias /opt/Sorteos/backend/uploads/;
+}
+```
+
+### Workflow de Desarrollo Simplificado
+
+#### Cambio en Frontend:
+```bash
+cd /opt/Sorteos/frontend
+# Editar archivos en src/
+npm run build        # 10 segundos
+# ✅ Listo! Ya está publicado
+```
+
+#### Cambio en Backend:
+```bash
+cd /opt/Sorteos/backend
+# Editar archivos .go
+make build
+cp bin/sorteos-api sorteos-api
+sudo systemctl restart sorteos-api
+# ✅ Listo!
+```
+
+#### Subir imagen a rifa:
+```bash
+# Desde la UI de admin:
+1. Crear/editar rifa
+2. Subir imagen
+3. Se guarda en: /opt/Sorteos/backend/uploads/raffles/{id}/
+4. URL generada: /uploads/raffles/{id}/thumbnail/...
+5. ✅ Accesible desde cualquier dispositivo
+```
+
+### Ventajas de esta Arquitectura
+
+1. **Simplicidad:**
+   - Sin Docker
+   - Sin builds complejos
+   - Sin múltiples capas de proxy
+
+2. **Velocidad:**
+   - Frontend build: 10 segundos (vs 3+ minutos con Docker)
+   - Backend build: 5 segundos
+   - Hot reload no necesario en producción
+
+3. **Debugging:**
+   - Logs centralizados: `journalctl -xeu sorteos-api`
+   - Acceso directo a archivos
+   - Sin necesidad de `docker exec`
+
+4. **Portabilidad:**
+   - URLs relativas funcionan en cualquier entorno
+   - Fácil migración a CDN (solo cambiar Nginx)
+   - Compatible con load balancers
 
 ---
 
@@ -787,7 +1029,7 @@ Cuando agregues features importantes:
 
 ---
 
-**Última actualización:** 2025-11-18 (Skill instalado)
-**Versión:** 2.1 - Skill sorteos-context integrado
+**Última actualización:** 2025-11-21 (Arquitectura de archivos estáticos documentada)
+**Versión:** 2.2 - URLs relativas + Workflow simplificado
 **Contacto:** Ing. Alonso Alpízar
 **Despliegue:** https://sorteos.club
