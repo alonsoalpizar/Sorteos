@@ -152,8 +152,8 @@ func (p *ImageProcessor) ProcessImage(sourcePath string, raffleID int64) (*Proce
 			}
 		}
 
-		// Generar URL
-		url := fmt.Sprintf("%s/uploads/raffles/%d/%s/%s", p.baseURL, raffleID, variant, filename)
+		// Generar URL relativa (para que funcione en cualquier dominio)
+		url := fmt.Sprintf("/uploads/raffles/%d/%s/%s", raffleID, variant, filename)
 
 		// Asignar rutas y URLs según variante
 		switch variant {
