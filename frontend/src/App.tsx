@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
@@ -5,6 +6,7 @@ import { queryClient } from "@/lib/queryClient";
 import { UserModeProvider } from "@/contexts/UserModeContext";
 import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
 import { useAuthStore } from "@/store/authStore";
+import { setSessionExpiredCallback } from "@/lib/api";
 
 // Layout
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -73,6 +75,15 @@ import { AuditLogsPage } from "@/features/admin/pages/audit/AuditLogsPage";
 function AppRoutes() {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
+  const setUser = useAuthStore((state) => state.setUser);
+
+  // Registrar callback para cuando el interceptor detecte sesión expirada (401)
+  useEffect(() => {
+    setSessionExpiredCallback(() => {
+      // Limpiar el estado de Zustand sin llamar al backend (ya falló)
+      setUser(null);
+    });
+  }, [setUser]);
 
   // Timeout de inactividad: 30 minutos
   useInactivityTimeout({

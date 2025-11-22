@@ -104,7 +104,16 @@ export const adminUsersApi = {
     userId: number,
     data: UpdateUserStatusRequest
   ): Promise<void> => {
-    await api.put(`/admin/users/${userId}/status`, data);
+    // Backend espera action (suspend/activate/ban/unban), no new_status
+    const actionMap: Record<string, string> = {
+      suspended: "suspend",
+      active: "activate",
+      banned: "ban",
+    };
+    await api.put(`/admin/users/${userId}/status`, {
+      action: actionMap[data.new_status] || data.new_status,
+      reason: data.reason,
+    });
   },
 
   // PUT /api/v1/admin/users/:id/kyc
@@ -112,12 +121,22 @@ export const adminUsersApi = {
     userId: number,
     data: UpdateUserKYCRequest
   ): Promise<void> => {
-    await api.put(`/admin/users/${userId}/kyc`, data);
+    // Backend espera kyc_level, no new_kyc_level
+    await api.put(`/admin/users/${userId}/kyc`, {
+      kyc_level: data.new_kyc_level,
+      notes: data.notes,
+    });
   },
 
   // DELETE /api/v1/admin/users/:id
   deleteUser: async (userId: number): Promise<void> => {
     await api.delete(`/admin/users/${userId}`);
+  },
+
+  // POST /api/v1/admin/users/:id/reset-password
+  resetPassword: async (userId: number): Promise<{ reset_token?: string }> => {
+    const response = await api.post(`/admin/users/${userId}/reset-password`);
+    return response.data;
   },
 };
 

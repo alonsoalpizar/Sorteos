@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, AlertCircle, Ban, CheckCircle } from "lucide-react";
-import { useAdminUserDetail, useUpdateUserStatus, useUpdateUserKYC } from "../../hooks/useAdminUsers";
+import { ArrowLeft, Shield, AlertCircle, Ban, CheckCircle, KeyRound } from "lucide-react";
+import { useAdminUserDetail, useUpdateUserStatus, useUpdateUserKYC, useResetUserPassword } from "../../hooks/useAdminUsers";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -18,6 +19,8 @@ export function UserDetailPage() {
   const { data: user, isLoading, error } = useAdminUserDetail(userId);
   const updateStatus = useUpdateUserStatus();
   const updateKYC = useUpdateUserKYC();
+  const resetPassword = useResetUserPassword();
+  const [showKYCSelector, setShowKYCSelector] = useState(false);
 
   const handleUpdateStatus = (newStatus: UserStatus, reason?: string) => {
     if (!confirm(`¿Confirmas cambiar el estado a "${newStatus}"?`)) return;
@@ -35,7 +38,21 @@ export function UserDetailPage() {
       userId,
       data: { new_kyc_level: newLevel },
     });
+    setShowKYCSelector(false);
   };
+
+  const handleResetPassword = () => {
+    if (!confirm(`¿Confirmas enviar email de reset de contraseña a ${user?.email}?`)) return;
+    resetPassword.mutate(userId);
+  };
+
+  const kycLevels: { value: KYCLevel; label: string }[] = [
+    { value: "none", label: "Sin KYC" },
+    { value: "email_verified", label: "Email Verificado" },
+    { value: "phone_verified", label: "Teléfono Verificado" },
+    { value: "cedula_verified", label: "Cédula Verificada" },
+    { value: "full_kyc", label: "KYC Completo" },
+  ];
 
   if (isLoading) {
     return (
@@ -186,18 +203,56 @@ export function UserDetailPage() {
               </Button>
             )}
 
+            {/* KYC Selector */}
+            {!showKYCSelector ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover:border-blue-600"
+                onClick={() => setShowKYCSelector(true)}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Actualizar KYC
+              </Button>
+            ) : (
+              <div className="space-y-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm font-medium text-slate-700">Seleccionar nivel KYC:</p>
+                <div className="space-y-1">
+                  {kycLevels.map((level) => (
+                    <button
+                      key={level.value}
+                      onClick={() => handleUpdateKYC(level.value)}
+                      disabled={level.value === user.kyc_level}
+                      className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        level.value === user.kyc_level
+                          ? "bg-blue-100 text-blue-700 font-medium cursor-default"
+                          : "hover:bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {level.label}
+                      {level.value === user.kyc_level && " (actual)"}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={() => setShowKYCSelector(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
+
+            {/* Reset Password */}
             <Button
               variant="outline"
-              className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover:border-blue-600"
-              onClick={() => {
-                const levels: KYCLevel[] = ["none", "email_verified", "phone_verified", "cedula_verified", "full_kyc"];
-                const currentIndex = levels.indexOf(user.kyc_level);
-                const nextLevel = levels[Math.min(currentIndex + 1, levels.length - 1)];
-                handleUpdateKYC(nextLevel);
-              }}
+              className="w-full justify-start text-amber-600 hover:text-amber-700 hover:bg-amber-50 hover:border-amber-600"
+              onClick={handleResetPassword}
+              disabled={resetPassword.isPending}
             >
-              <Shield className="w-4 h-4 mr-2" />
-              Actualizar KYC
+              <KeyRound className="w-4 h-4 mr-2" />
+              {resetPassword.isPending ? "Enviando..." : "Resetear Contraseña"}
             </Button>
           </div>
 

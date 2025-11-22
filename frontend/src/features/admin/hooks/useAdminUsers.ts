@@ -139,3 +139,22 @@ export function useDeleteUser() {
     },
   });
 }
+
+/**
+ * Hook to reset user password (sends reset email)
+ */
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: (userId: number) => adminUsersApi.resetPassword(userId),
+
+    onSuccess: () => {
+      toast.success("Email de reset de contraseña enviado correctamente");
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error al enviar email de reset", {
+        description: error.message,
+      });
+    },
+  });
+}

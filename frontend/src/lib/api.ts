@@ -1,7 +1,39 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { toast } from "sonner";
 
 // Base API URL - uses Vite proxy in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
+
+// Callback para limpiar el auth store cuando expira la sesión
+let onSessionExpired: (() => void) | null = null;
+
+export const setSessionExpiredCallback = (callback: () => void) => {
+  onSessionExpired = callback;
+};
+
+// Helper para forzar logout cuando expira la sesión
+const forceLogout = (reason: string) => {
+  clearTokens();
+  // Limpiar storage de auth y cart
+  localStorage.removeItem("auth-storage");
+  localStorage.removeItem("sorteos-cart-storage");
+
+  // Llamar callback si existe (para limpiar zustand store)
+  if (onSessionExpired) {
+    onSessionExpired();
+  }
+
+  // Mostrar notificación al usuario
+  toast.error("Sesión expirada", {
+    description: reason,
+    duration: 5000,
+  });
+
+  // Redirigir a login después de un pequeño delay para que se vea el toast
+  setTimeout(() => {
+    window.location.href = "/login";
+  }, 1000);
+};
 
 // Create axios instance
 export const api = axios.create({
@@ -108,9 +140,8 @@ api.interceptors.response.use(
       const refreshTokenValue = getRefreshToken();
 
       if (!refreshTokenValue) {
-        // No refresh token, redirect to login
-        clearTokens();
-        window.location.href = "/login";
+        // No refresh token, force logout
+        forceLogout("Por favor inicia sesión nuevamente");
         return Promise.reject(error);
       }
 
@@ -132,10 +163,9 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
+        // Refresh failed, force logout
         processQueue(refreshError as Error, null);
-        clearTokens();
-        window.location.href = "/login";
+        forceLogout("Tu sesión ha expirado. Por favor inicia sesión nuevamente");
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
