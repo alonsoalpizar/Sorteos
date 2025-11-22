@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { useIsAuthenticated } from '@/hooks/useAuth';
 
 export function LandingPage() {
+  const isAuthenticated = useIsAuthenticated();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
       {/* Header/Nav */}
@@ -20,28 +23,43 @@ export function LandingPage() {
             </div>
 
             <nav className="hidden md:flex items-center gap-6">
-              <Link to="/explore" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                Ver Sorteos
-              </Link>
-              <Link to="/login">
-                <Button variant="outline">
-                  Iniciar Sesión
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button>
-                  Registrarse
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button>
+                    Ir al Panel
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <Button variant="outline">
+                      Iniciar Sesión
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button>
+                      Registrarse
+                    </Button>
+                  </Link>
+                </>
+              )}
             </nav>
 
             {/* Mobile menu button */}
             <div className="md:hidden flex gap-2">
-              <Link to="/login">
-                <Button variant="outline" size="sm">
-                  Ingresar
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button size="sm">
+                    Mi Panel
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/login">
+                  <Button variant="outline" size="sm">
+                    Ingresar
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -60,19 +78,32 @@ export function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register">
-              <Button size="lg" className="w-full sm:w-auto">
-                Comenzar Gratis
-                <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Button>
-            </Link>
-            <Link to="/explore">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                Explorar Sorteos
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/explore">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Ver Sorteos Disponibles
+                  <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/register">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Comenzar Gratis
+                    <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                    Crear Cuenta
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Stats */}
@@ -214,22 +245,35 @@ export function LandingPage() {
       <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            ¿Listo para comenzar?
+            {isAuthenticated ? "Explora los sorteos disponibles" : "¿Listo para comenzar?"}
           </h2>
           <p className="text-blue-100 mb-8 max-w-2xl mx-auto text-lg">
-            Únete a Sorteos.club hoy y comienza a participar en sorteos transparentes y seguros
+            {isAuthenticated
+              ? "Descubre los sorteos activos y participa por increíbles premios"
+              : "Únete a Sorteos.club hoy y comienza a participar en sorteos transparentes y seguros"
+            }
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-slate-50 border-white">
-                Crear Cuenta Gratis
-              </Button>
-            </Link>
-            <Link to="/explore">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-blue-500">
-                Ver Sorteos Activos
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/explore">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-slate-50 border-white">
+                  Ver Sorteos Activos
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/register">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-slate-50 border-white">
+                    Crear Cuenta Gratis
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-blue-500">
+                    Ya tengo cuenta
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -255,9 +299,18 @@ export function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Plataforma</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/explore" className="hover:text-white transition-colors">Ver Sorteos</Link></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Crear Cuenta</Link></li>
-                <li><Link to="/login" className="hover:text-white transition-colors">Iniciar Sesión</Link></li>
+                {isAuthenticated ? (
+                  <>
+                    <li><Link to="/explore" className="hover:text-white transition-colors">Ver Sorteos</Link></li>
+                    <li><Link to="/dashboard" className="hover:text-white transition-colors">Mi Panel</Link></li>
+                    <li><Link to="/wallet" className="hover:text-white transition-colors">Mi Billetera</Link></li>
+                  </>
+                ) : (
+                  <>
+                    <li><Link to="/register" className="hover:text-white transition-colors">Crear Cuenta</Link></li>
+                    <li><Link to="/login" className="hover:text-white transition-colors">Iniciar Sesión</Link></li>
+                  </>
+                )}
               </ul>
             </div>
 
