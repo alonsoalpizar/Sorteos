@@ -50,6 +50,10 @@ type User struct {
 	PhoneVerifiedAt    *time.Time `json:"phone_verified_at,omitempty"`
 	PasswordHash       string     `json:"-" gorm:"not null"` // Never serialize password
 
+	// OAuth providers
+	GoogleID     *string `json:"-" gorm:"uniqueIndex"`                    // Google OAuth sub claim
+	AuthProvider string  `json:"auth_provider" gorm:"default:'email'"`    // email, google
+
 	// Información personal
 	FirstName       *string    `json:"first_name,omitempty"`
 	LastName        *string    `json:"last_name,omitempty"`
@@ -315,6 +319,12 @@ type UserRepository interface {
 
 	// FindByCedula busca un usuario por cédula
 	FindByCedula(cedula string) (*User, error)
+
+	// FindByGoogleID busca un usuario por Google ID
+	FindByGoogleID(googleID string) (*User, error)
+
+	// LinkGoogleAccount vincula una cuenta de Google a un usuario existente
+	LinkGoogleAccount(userID int64, googleID string) error
 
 	// Update actualiza un usuario existente
 	Update(user *User) error

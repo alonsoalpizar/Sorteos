@@ -88,6 +88,36 @@ func (r *UserRepositoryImpl) FindByCedula(cedula string) (*domain.User, error) {
 	return &user, nil
 }
 
+// FindByGoogleID busca un usuario por Google ID
+func (r *UserRepositoryImpl) FindByGoogleID(googleID string) (*domain.User, error) {
+	var user domain.User
+	if err := r.db.Where("google_id = ? AND deleted_at IS NULL", googleID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errors.ErrUserNotFound
+		}
+		return nil, errors.Wrap(errors.ErrDatabaseError, err)
+	}
+	return &user, nil
+}
+
+// LinkGoogleAccount vincula una cuenta de Google a un usuario existente
+func (r *UserRepositoryImpl) LinkGoogleAccount(userID int64, googleID string) error {
+	result := r.db.Model(&domain.User{}).
+		Where("id = ? AND deleted_at IS NULL", userID).
+		Updates(map[string]interface{}{
+			"google_id":     googleID,
+			"auth_provider": "google",
+		})
+
+	if result.Error != nil {
+		return errors.Wrap(errors.ErrDatabaseError, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return errors.ErrUserNotFound
+	}
+	return nil
+}
+
 // Update actualiza un usuario existente
 func (r *UserRepositoryImpl) Update(user *domain.User) error {
 	if err := r.db.Save(user).Error; err != nil {

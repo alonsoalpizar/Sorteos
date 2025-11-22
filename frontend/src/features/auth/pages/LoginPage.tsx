@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { GoogleAuthButton } from "../components/GoogleAuthButton";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -102,6 +103,19 @@ export const LoginPage = () => {
             >
               Iniciar Sesión
             </Button>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-slate-500">O continúa con</span>
+              </div>
+            </div>
+
+            {/* Google OAuth Button */}
+            <GoogleAuthButton mode="login" />
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">

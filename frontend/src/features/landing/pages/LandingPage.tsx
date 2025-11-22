@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { useIsAuthenticated } from '@/hooks/useAuth';
-import { Shield, Eye, Zap, Gift, Ticket, Trophy } from 'lucide-react';
+import { Shield, Eye, Zap, Gift, Ticket, Trophy, Ban, CheckCircle, UserCheck, FileCheck, Clock, ShieldX } from 'lucide-react';
 
 export function LandingPage() {
   const isAuthenticated = useIsAuthenticated();
@@ -81,8 +81,8 @@ export function LandingPage() {
             <div className="text-center lg:text-left">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
-                <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                Plataforma 100% Costarricense
+                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                Nuevo en Costa Rica
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
@@ -94,7 +94,7 @@ export function LandingPage() {
               </h1>
 
               <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-xl mx-auto lg:mx-0">
-                Crea rifas, vende boletos y realiza sorteos verificables.
+                Gestiona y realiza sorteos verificables.
                 La forma más confiable de organizar y participar en sorteos en línea.
               </p>
 
@@ -172,7 +172,7 @@ export function LandingPage() {
                           }
                         `}
                       >
-                        {String(i + 1).padStart(2, '0')}
+                        {String(i).padStart(2, '0')}
                       </div>
                     );
                   })}
@@ -180,51 +180,31 @@ export function LandingPage() {
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500">7 de 100 vendidos</span>
-                  <span className="font-semibold text-green-600">$5,000 / boleto</span>
+                  <span className="font-semibold text-green-600">¢5,000 / boleto</span>
                 </div>
               </div>
 
               {/* Floating elements */}
-              <div className="absolute -top-4 -left-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-bounce">
+              <div className="absolute -top-6 right-8 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-bounce z-20">
                 +₡50,000 recaudado
               </div>
 
-              <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4 transform -rotate-3">
+              <div className="absolute bottom-4 -left-4 bg-white dark:bg-slate-800 rounded-xl shadow-lg p-3 transform rotate-3 z-20">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
                     <Trophy className="w-4 h-4 text-amber-600" />
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Ganador</p>
-                    <p className="font-semibold text-slate-900 dark:text-white text-sm">#07 - María G.</p>
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">#08 - María G.</p>
                   </div>
                 </div>
               </div>
 
-              {/* Background decoration card */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl transform -rotate-6 -z-10" />
+              {/* Background decoration card - hidden to avoid visual clutter */}
             </div>
           </div>
 
-          {/* Stats bar */}
-          <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            <div className="text-center p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400">100%</div>
-              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">Transparente</div>
-            </div>
-            <div className="text-center p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400">24/7</div>
-              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">Disponible</div>
-            </div>
-            <div className="text-center p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400">CRC</div>
-              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">Colones</div>
-            </div>
-            <div className="text-center p-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400">SINPE</div>
-              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">Pagos locales</div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -338,6 +318,112 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Platform Rules Section */}
+      <section className="py-20 bg-white dark:bg-slate-800">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Normas que garantizan tu seguridad
+            </h2>
+            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              Reglas claras para sorteos justos, transparentes y legales
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {/* Rule 1 - No money */}
+            <div className="flex items-start gap-4 p-6 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Ban className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Solo productos, no dinero</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Solo se permite sortear artículos y productos. No se pueden rifar premios en efectivo.
+                </p>
+              </div>
+            </div>
+
+            {/* Rule 2 - Prohibited items */}
+            <div className="flex items-start gap-4 p-6 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-200 dark:border-rose-800">
+              <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <ShieldX className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Productos prohibidos</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  No se permiten armas, sustancias ilícitas, artículos robados ni cualquier producto que infrinja la ley.
+                </p>
+              </div>
+            </div>
+
+            {/* Rule 3 - Verified source */}
+            <div className="flex items-start gap-4 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Fuente verificable</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Los resultados se basan en la Lotería Nacional de Costa Rica, garantizando imparcialidad.
+                </p>
+              </div>
+            </div>
+
+            {/* Rule 4 - Verified users */}
+            <div className="flex items-start gap-4 p-6 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Usuarios verificados</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Todos los participantes y organizadores deben verificar su identidad.
+                </p>
+              </div>
+            </div>
+
+            {/* Rule 5 - Moderation */}
+            <div className="flex items-start gap-4 p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Sorteos moderados</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Cada sorteo es revisado antes de publicarse. Contenido inapropiado será suspendido.
+                </p>
+              </div>
+            </div>
+
+            {/* Rule 6 - Full traceability */}
+            <div className="flex items-start gap-4 p-6 bg-slate-100 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600">
+              <div className="w-10 h-10 bg-slate-200 dark:bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Trazabilidad completa</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Todas las transacciones quedan registradas. Historial completo disponible para auditorías.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Platform disclaimer */}
+          <div className="mt-12 max-w-4xl mx-auto">
+            <div className="bg-slate-800 dark:bg-slate-900 rounded-xl p-6 text-center">
+              <p className="text-slate-300 text-sm leading-relaxed">
+                <span className="font-semibold text-white">Sorteos.club</span> es una plataforma tecnológica que facilita la gestión de sorteos entre usuarios.
+                La responsabilidad de cada sorteo recae exclusivamente en el organizador que lo publica.
+                Recomendamos a los participantes verificar siempre la información del organizador antes de participar.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800">
         <div className="container mx-auto px-4 text-center">
@@ -365,7 +451,7 @@ export function LandingPage() {
                   </Button>
                 </Link>
                 <Link to="/login">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-blue-500">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-slate-50 border-white">
                     Ya tengo cuenta
                   </Button>
                 </Link>

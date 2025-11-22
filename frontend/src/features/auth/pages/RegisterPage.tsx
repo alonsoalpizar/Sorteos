@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
+import { GoogleAuthButton } from "../components/GoogleAuthButton";
 
 const registerSchema = z
   .object({
@@ -101,6 +102,24 @@ export const RegisterPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Google OAuth Button - Registro rápido */}
+          <div className="mb-6">
+            <GoogleAuthButton mode="register" />
+            <p className="text-xs text-center text-slate-500 mt-2">
+              Al registrarte con Google, aceptas automáticamente los términos y condiciones
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-slate-500">O regístrate con email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {registerMutation.isError && (
               <Alert variant="destructive">

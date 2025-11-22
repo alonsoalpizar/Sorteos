@@ -1,12 +1,16 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Toaster, toast } from "sonner";
 import { queryClient } from "@/lib/queryClient";
 import { UserModeProvider } from "@/contexts/UserModeContext";
 import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
 import { useAuthStore } from "@/store/authStore";
 import { setSessionExpiredCallback } from "@/lib/api";
+
+// Google OAuth Client ID - debe configurarse en .env
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 // Layout
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -518,12 +522,14 @@ function AppRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <UserModeProvider>
-        <Toaster position="top-right" richColors closeButton />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </UserModeProvider>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <UserModeProvider>
+          <Toaster position="top-right" richColors closeButton />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </UserModeProvider>
+      </GoogleOAuthProvider>
     </QueryClientProvider>
   );
 }

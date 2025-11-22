@@ -84,3 +84,29 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
+
+// Google OAuth types
+export interface GoogleAuthRequest {
+  id_token: string;
+}
+
+export interface GoogleLinkRequest {
+  id_token: string;
+  password: string;
+}
+
+export interface GoogleAuthResponse {
+  user: User;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+// Respuesta cuando se requiere vincular cuenta existente
+export interface GoogleAuthRequiresLinkingResponse {
+  success: false;
+  requires_linking: true;
+  message: string;
+  email: string;
+}

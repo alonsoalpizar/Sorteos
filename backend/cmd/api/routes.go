@@ -68,6 +68,8 @@ func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg
 	refreshTokenUseCase := auth.NewRefreshTokenUseCase(userRepo, tokenMgr, log)
 	verifyEmailUseCase := auth.NewVerifyEmailUseCase(userRepo, auditRepo, tokenMgr, log)
 	logoutUseCase := auth.NewLogoutUseCase(blacklistService)
+	googleAuthUseCase := auth.NewGoogleAuthUseCase(userRepo, walletRepo, auditRepo, tokenMgr, log)
+	googleLinkUseCase := auth.NewGoogleLinkUseCase(userRepo, auditRepo, tokenMgr, googleAuthUseCase, log)
 
 	// Inicializar handlers
 	registerHandler := authHandler.NewRegisterHandler(registerUseCase, log)
@@ -75,6 +77,8 @@ func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg
 	refreshHandler := authHandler.NewRefreshTokenHandler(refreshTokenUseCase, log)
 	verifyEmailHandler := authHandler.NewVerifyEmailHandler(verifyEmailUseCase, log)
 	logoutHandler := authHandler.NewLogoutHandler(logoutUseCase, log)
+	googleAuthHandler := authHandler.NewGoogleAuthHandler(googleAuthUseCase, log)
+	googleLinkHandler := authHandler.NewGoogleLinkHandler(googleLinkUseCase, log)
 
 	// Grupo de rutas de autenticación
 	authGroup := router.Group("/api/v1/auth")
@@ -98,6 +102,17 @@ func setupAuthRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg
 		authGroup.POST("/verify-email",
 			rateLimiter.LimitByIP(10, time.Minute),
 			verifyEmailHandler.Handle,
+		)
+
+		// Google OAuth endpoints
+		authGroup.POST("/google",
+			rateLimiter.LimitByIP(10, time.Minute),
+			googleAuthHandler.Handle,
+		)
+
+		authGroup.POST("/google/link",
+			rateLimiter.LimitByIP(5, time.Minute),
+			googleLinkHandler.Handle,
 		)
 
 		// Rutas protegidas
