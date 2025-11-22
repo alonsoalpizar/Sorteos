@@ -20,14 +20,19 @@ export const ExplorePage = () => {
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
 
   // Fetch active raffles with category filter
+  // Si hay usuario autenticado, excluir sus propias rifas usando el filtro del backend
   const filters: RaffleFilters = {
     page: 1,
     page_size: 12,
     status: 'active',
     category_id: selectedCategoryId,
+    exclude_mine: !!user, // Solo excluir si hay usuario autenticado
   };
 
   const { data, isLoading, error } = useRafflesList(filters);
+
+  // Los sorteos ya vienen filtrados del backend (sin sorteos propios del usuario)
+  const filteredRaffles = data?.raffles || [];
 
   const greeting = user ? (
     new Date().getHours() < 12
@@ -39,7 +44,7 @@ export const ExplorePage = () => {
 
   // Construir lista de categorías con "Todos"
   const categories = [
-    { id: undefined, icon: '🎯', label: 'Todos', count: data?.pagination.total || 0 },
+    { id: undefined, icon: '🎯', label: 'Todos', count: filteredRaffles.length },
     ...(categoriesData || []).map(cat => ({
       id: cat.id,
       icon: cat.icon,
@@ -48,8 +53,8 @@ export const ExplorePage = () => {
     })),
   ];
 
-  // Calculate stats from data
-  const activeCount = data?.pagination.total || 0;
+  // Calculate stats from data (usando rifas filtradas)
+  const activeCount = filteredRaffles.length;
   const endingToday = 0; // TODO: Calculate from draw_date
   const newToday = 0; // TODO: Calculate from created_at
 
@@ -192,21 +197,21 @@ export const ExplorePage = () => {
       {/* Raffles Grid or Empty State */}
       {!isLoading && data && (
         <>
-          {data.raffles.length === 0 ? (
+          {filteredRaffles.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
               <EmptyState
                 icon={<Sparkles className="w-12 h-12" />}
-                title="No hay sorteos activos aún"
-                description="Sé el primero en crear un sorteo o vuelve pronto para ver nuevas oportunidades."
+                title="No hay sorteos disponibles"
+                description="No hay sorteos de otros organizadores en este momento. Vuelve pronto para ver nuevas oportunidades."
                 action={{
-                  label: "Crear sorteo",
+                  label: "Crear mi propio sorteo",
                   onClick: () => navigate('/organizer')
                 }}
               />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {data.raffles.map((raffle) => (
+              {filteredRaffles.map((raffle) => (
                 <RaffleCard key={raffle.id} raffle={raffle} />
               ))}
             </div>

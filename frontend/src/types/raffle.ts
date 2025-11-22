@@ -156,6 +156,7 @@ export interface RaffleFilters {
   search?: string;
   user_id?: number;
   category_id?: number;
+  exclude_mine?: boolean; // Para /explore - excluir sorteos propios
   page?: number;
   page_size?: number;
 }

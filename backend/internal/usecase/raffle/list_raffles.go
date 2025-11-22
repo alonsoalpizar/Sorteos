@@ -10,13 +10,14 @@ import (
 
 // ListRafflesInput datos de entrada para listar sorteos
 type ListRafflesInput struct {
-	Page       int
-	PageSize   int
-	Status     *domain.RaffleStatus
-	UserID     *int64
-	CategoryID *int64
-	Search     string
-	OrderBy    string
+	Page          int
+	PageSize      int
+	Status        *domain.RaffleStatus
+	UserID        *int64
+	ExcludeUserID *int64 // Excluir sorteos de este usuario (para /explore)
+	CategoryID    *int64
+	Search        string
+	OrderBy       string
 	OnlyAvailable bool
 }
 
@@ -63,6 +64,10 @@ func (uc *ListRafflesUseCase) Execute(ctx context.Context, input *ListRafflesInp
 
 	if input.UserID != nil {
 		filters["user_id"] = *input.UserID
+	}
+
+	if input.ExcludeUserID != nil {
+		filters["exclude_user_id"] = *input.ExcludeUserID
 	}
 
 	if input.CategoryID != nil {

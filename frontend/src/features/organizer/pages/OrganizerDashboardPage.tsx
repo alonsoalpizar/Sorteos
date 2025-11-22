@@ -117,7 +117,7 @@ export const OrganizerDashboardPage = () => {
               <div
                 key={raffle.id}
                 onClick={() => navigate(`/raffles/${raffle.id}`)}
-                className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors cursor-pointer"
+                className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-600 transition-colors cursor-pointer"
               >
                 <div className="flex-1">
                   <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -149,7 +149,7 @@ export const OrganizerDashboardPage = () => {
                         : raffle.status === 'draft'
                         ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                         : raffle.status === 'completed'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-600/20 dark:text-primary-500'
                         : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                     }`}
                   >
@@ -166,7 +166,7 @@ export const OrganizerDashboardPage = () => {
             <div className="mt-4 text-center">
               <button
                 onClick={() => navigate('/organizer/raffles')}
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-600 font-medium"
               >
                 Ver todos los sorteos ({raffles.length})
               </button>

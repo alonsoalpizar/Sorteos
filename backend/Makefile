@@ -15,10 +15,10 @@ run: ## Ejecutar aplicación en desarrollo
 	@echo "🚀 Ejecutando $(APP_NAME)..."
 	go run ./cmd/api
 
-build: ## Compilar aplicación
+build: ## Compilar aplicación (directo a producción)
 	@echo "🔨 Compilando $(APP_NAME)..."
-	go build -o bin/$(APP_NAME) ./cmd/api
-	@echo "✅ Binario creado en bin/$(APP_NAME)"
+	go build -o $(APP_NAME) ./cmd/api
+	@echo "✅ Binario creado: $(APP_NAME)"
 
 test: ## Ejecutar tests
 	@echo "🧪 Ejecutando tests..."
@@ -85,9 +85,7 @@ docker-rebuild: ## Reconstruir contenedores
 
 clean: ## Limpiar archivos generados
 	@echo "🧹 Limpiando..."
-	rm -rf bin/
 	rm -f coverage.out coverage.html
-	rm -rf uploads/
 	rm -rf tmp/
 	@echo "✅ Limpieza completada"
 

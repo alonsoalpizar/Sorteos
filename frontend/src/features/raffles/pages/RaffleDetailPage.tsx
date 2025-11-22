@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRaffleDetail, usePublishRaffle, useDeleteRaffle } from '../../../hooks/useRaffles';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRaffleWebSocket } from '../../../hooks/useRaffleWebSocket';
+import { useUserMode } from '../../../contexts/UserModeContext';
 import { NumberGrid } from '../components/NumberGrid';
 import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
@@ -11,6 +12,7 @@ import { RaffleImageGallery } from '../../../components/RaffleImageGallery';
 import { reservationService, Reservation } from '../../../services/reservationService';
 import { toast } from 'sonner';
 import {
+  cn,
   formatCurrency,
   formatDateTime,
   getStatusLabel,
@@ -29,6 +31,7 @@ export function RaffleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { colors } = useUserMode();
 
   const { data, isLoading, error, refetch } = useRaffleDetail(id!, {
     includeNumbers: true,
@@ -465,8 +468,12 @@ export function RaffleDetailPage() {
         Volver al listado
       </button>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-xl overflow-hidden">
+      {/* Hero Section - color dinámico según modo */}
+      <div className={cn(
+        "rounded-xl overflow-hidden",
+        colors.gradient,
+        colors.gradientDark
+      )}>
         <div className="p-8 md:p-12">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
             {/* Title and Status */}
@@ -486,13 +493,13 @@ export function RaffleDetailPage() {
                 {raffle.title}
               </h1>
 
-              <p className="text-blue-100 text-lg mb-6 max-w-2xl">
+              <p className={cn("text-lg mb-6 max-w-2xl", colors.textMuted)}>
                 {raffle.description}
               </p>
 
               {/* Price */}
               <div className="inline-flex flex-col bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <span className="text-blue-100 text-sm mb-1">Precio por número</span>
+                <span className={cn("text-sm mb-1", colors.textMuted)}>Precio por número</span>
                 <span className="text-3xl font-bold text-white">
                   {formatCurrency(Number(raffle.price_per_number))}
                 </span>
@@ -505,9 +512,9 @@ export function RaffleDetailPage() {
                 {selectedNumbers.length > 0 ? (
                   <div className="space-y-3">
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                      <p className="text-blue-100 text-sm mb-1">Números reservados</p>
+                      <p className={cn("text-sm mb-1", colors.textMuted)}>Números reservados</p>
                       <p className="text-3xl font-bold text-white">{selectedNumbers.length}</p>
-                      <p className="text-blue-100 text-sm mt-2">
+                      <p className={cn("text-sm mt-2", colors.textMuted)}>
                         Total: {formatCurrency(selectedNumbers.length * Number(raffle.price_per_number))}
                       </p>
                     </div>
@@ -534,10 +541,10 @@ export function RaffleDetailPage() {
                   </div>
                 ) : (
                   <div className="text-center">
-                    <p className="text-blue-100 text-sm mb-3">
+                    <p className={cn("text-sm mb-3", colors.textMuted)}>
                       Selecciona números en la grilla
                     </p>
-                    <div className="flex items-center justify-center gap-2 text-blue-100 text-xs">
+                    <div className={cn("flex items-center justify-center gap-2 text-xs", colors.textMuted)}>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                       </svg>
@@ -617,7 +624,7 @@ export function RaffleDetailPage() {
                   <>
                     <Button
                       onClick={handleExtendDate}
-                      className="w-full bg-blue-600/10 border-blue-400/20 text-blue-100 hover:bg-blue-600/20"
+                      className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
                     >
                       Extender Fecha
                     </Button>
@@ -651,7 +658,7 @@ export function RaffleDetailPage() {
 
         {/* Progress bar */}
         <div className="bg-white/10 backdrop-blur-sm px-8 md:px-12 py-4">
-          <div className="flex items-center justify-between text-sm text-blue-100 mb-2">
+          <div className={cn("flex items-center justify-between text-sm mb-2", colors.textMuted)}>
             <span>Progreso de ventas</span>
             <span className="font-semibold">{soldPercentage.toFixed(1)}%</span>
           </div>

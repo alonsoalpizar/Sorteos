@@ -20,7 +20,7 @@ export function LandingPage() {
             </div>
 
             <nav className="hidden md:flex items-center gap-6">
-              <Link to="/raffles" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <Link to="/explore" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 Ver Sorteos
               </Link>
               <Link to="/login">
@@ -68,7 +68,7 @@ export function LandingPage() {
                 </svg>
               </Button>
             </Link>
-            <Link to="/raffles">
+            <Link to="/explore">
               <Button size="lg" variant="outline" className="w-full sm:w-auto">
                 Explorar Sorteos
               </Button>
@@ -225,7 +225,7 @@ export function LandingPage() {
                 Crear Cuenta Gratis
               </Button>
             </Link>
-            <Link to="/raffles">
+            <Link to="/explore">
               <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-blue-500">
                 Ver Sorteos Activos
               </Button>
@@ -255,7 +255,7 @@ export function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Plataforma</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/raffles" className="hover:text-white transition-colors">Ver Sorteos</Link></li>
+                <li><Link to="/explore" className="hover:text-white transition-colors">Ver Sorteos</Link></li>
                 <li><Link to="/register" className="hover:text-white transition-colors">Crear Cuenta</Link></li>
                 <li><Link to="/login" className="hover:text-white transition-colors">Iniciar Sesión</Link></li>
               </ul>

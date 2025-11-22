@@ -154,6 +154,11 @@ func (r *RaffleRepositoryImpl) List(offset, limit int, filters map[string]interf
 		query = query.Where("title ILIKE ?", "%"+search+"%")
 	}
 
+	// Filtro para excluir sorteos de un usuario específico (para /explore)
+	if excludeUserID, ok := filters["exclude_user_id"].(int64); ok {
+		query = query.Where("user_id != ?", excludeUserID)
+	}
+
 	// Filtro por disponibilidad
 	if onlyAvailable, ok := filters["only_available"].(bool); ok && onlyAvailable {
 		query = query.Where("sold_count < total_numbers")

@@ -1,45 +1,65 @@
 # Reglas Estrictas para Claude Code - Backend Sorteos
 
+## 🚀 COMPILACION Y DEPLOY RAPIDO
+
+### Backend (Go):
+```bash
+cd /opt/Sorteos/backend
+sudo systemctl stop sorteos-api && \
+go build -o sorteos-api ./cmd/api && \
+sudo systemctl start sorteos-api
+```
+
+### Frontend (Vite/React):
+```bash
+cd /opt/Sorteos/frontend
+npm run build
+```
+**Nota:** El backend Go sirve el frontend directamente desde `/opt/Sorteos/frontend/dist/` via symlink. No es necesario copiar archivos a ningún otro lugar.
+
+### Todo junto (Backend + Frontend):
+```bash
+# Frontend (primero para que esté listo cuando el backend reinicie)
+cd /opt/Sorteos/frontend && npm run build
+
+# Backend
+cd /opt/Sorteos/backend && sudo systemctl stop sorteos-api && \
+go build -o sorteos-api ./cmd/api && sudo systemctl start sorteos-api
+```
+
+---
+
 ## 🚨 REGLA #1: UN SOLO BINARIO OFICIAL
 
 **NUNCA compilar o copiar binarios en ubicaciones temporales como `/tmp/`**
 
-### Ubicación Oficial del Binario:
+### Ubicacion Oficial del Binario:
 ```
 /opt/Sorteos/backend/sorteos-api
 ```
 
-### Proceso de Compilación Oficial:
-
-1. **Usar Makefile:**
-   ```bash
-   cd /opt/Sorteos/backend
-   make build
-   ```
-
-2. **Ubicación del Binario Compilado:**
-   ```
-   /opt/Sorteos/backend/bin/sorteos-api
-   ```
-
-3. **Para Actualizar Producción:**
-   ```bash
-   # Detener servicio
-   sudo systemctl stop sorteos-api
-
-   # Copiar binario compilado a ubicación oficial
-   cp bin/sorteos-api sorteos-api
-
-   # Iniciar servicio
-   sudo systemctl start sorteos-api
-   ```
-
 ### Servicio Systemd:
 ```
 /etc/systemd/system/sorteos-api.service
+ExecStart=/opt/Sorteos/backend/sorteos-api
 ```
 
-El servicio ejecuta: `/opt/Sorteos/backend/sorteos-api`
+### Proceso de Compilacion Oficial:
+
+```bash
+cd /opt/Sorteos/backend
+sudo systemctl stop sorteos-api
+go build -o sorteos-api ./cmd/api
+sudo systemctl start sorteos-api
+```
+
+**Nota:** Se compila directamente en `sorteos-api` (ubicación de producción). No se usa carpeta `bin/` intermedia.
+
+### Verificar Deploy:
+```bash
+sudo systemctl status sorteos-api
+curl http://localhost:8080/health
+```
 
 ### ❌ PROHIBIDO:
 
@@ -50,9 +70,9 @@ El servicio ejecuta: `/opt/Sorteos/backend/sorteos-api`
 
 ### ✅ PERMITIDO:
 
-- ✅ Compilar usando `make build` (crea en `bin/sorteos-api`)
-- ✅ Copiar desde `bin/sorteos-api` a `sorteos-api` (producción)
-- ✅ Crear backup temporal SOLO durante actualización con fecha clara:
+- ✅ Compilar directamente: `go build -o sorteos-api ./cmd/api`
+- ✅ Usar `make build` si se prefiere (actualizar Makefile para compilar directo)
+- ✅ Crear backup temporal SOLO si es necesario:
   ```bash
   cp sorteos-api sorteos-api.backup-$(date +%Y%m%d-%H%M%S)
   ```
@@ -60,10 +80,10 @@ El servicio ejecuta: `/opt/Sorteos/backend/sorteos-api`
 
 ## 🏗️ Estructura de Compilación
 
-### Makefile Correcto:
+### Makefile:
 ```makefile
 build:
-	go build -o bin/sorteos-api ./cmd/api
+	go build -o sorteos-api ./cmd/api
 ```
 
 **Nota:** Compilar TODO el paquete `./cmd/api`, NO solo `cmd/api/main.go`
@@ -71,24 +91,22 @@ build:
 ### Comandos Disponibles:
 ```bash
 make help      # Ver todos los comandos
-make build     # Compilar binario
+make build     # Compilar binario directo a producción
 make run       # Ejecutar en desarrollo (go run ./cmd/api)
 make test      # Ejecutar tests
-make clean     # Limpiar binarios generados
 ```
 
 ## 📁 Estructura de Directorios
 
 ```
 /opt/Sorteos/backend/
-├── bin/                      # Binarios compilados (gitignored)
-│   └── sorteos-api          # Binario compilado por make build
 ├── sorteos-api              # Binario en producción (usado por systemd)
 ├── cmd/api/                 # Código fuente de la aplicación
 │   ├── main.go
 │   ├── admin_routes_v2.go
 │   ├── routes.go
 │   └── ...
+├── frontend/                # Symlink a ../frontend
 ├── Makefile                 # Build script oficial
 └── CLAUDE.md               # Este archivo
 ```
@@ -115,14 +133,11 @@ Cuando se actualice el backend:
 
 - [ ] `cd /opt/Sorteos/backend`
 - [ ] `git pull` (si aplica)
-- [ ] `make build`
-- [ ] Verificar compilación exitosa (`ls -lah bin/sorteos-api`)
 - [ ] `sudo systemctl stop sorteos-api`
-- [ ] `cp bin/sorteos-api sorteos-api`
+- [ ] `go build -o sorteos-api ./cmd/api`
 - [ ] `sudo systemctl start sorteos-api`
 - [ ] `sudo systemctl status sorteos-api` (verificar que inicia)
 - [ ] `curl http://localhost:8080/health` (verificar respuesta)
-- [ ] Eliminar cualquier binario temporal creado
 
 ## ⚠️ Resolución de Problemas
 

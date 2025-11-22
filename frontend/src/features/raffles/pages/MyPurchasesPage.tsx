@@ -53,7 +53,7 @@ export function MyPurchasesPage() {
           description="Explora los sorteos activos y compra números para participar"
           action={{
             label: 'Explorar Sorteos',
-            onClick: () => navigate('/raffles'),
+            onClick: () => navigate('/explore'),
           }}
         />
       ) : (

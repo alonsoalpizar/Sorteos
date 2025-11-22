@@ -3,12 +3,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserMode } from '@/contexts/UserModeContext';
 import { Button } from '@/components/ui/Button';
 import { useState, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuthStore();
-  const { mode, toggleMode } = useUserMode();
+  const { mode, toggleMode, colors } = useUserMode();
   const navigate = useNavigate();
 
   // Close menu when clicking outside
@@ -65,8 +66,11 @@ export function UserMenu() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-3 py-2 transition-colors"
       >
-        {/* User avatar */}
-        <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+        {/* User avatar - color dinámico según modo */}
+        <div className={cn(
+          "w-9 h-9 text-white rounded-full flex items-center justify-center font-semibold text-sm transition-colors",
+          colors.bg
+        )}>
           {initials}
         </div>
 
@@ -89,12 +93,21 @@ export function UserMenu() {
       {/* Dropdown menu */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50">
-          {/* User info */}
+          {/* User info + Mode badge */}
           <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">
-              {fullName || 'Usuario'}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-slate-900 dark:text-white">
+                {fullName || 'Usuario'}
+              </p>
+              <span className={cn(
+                "text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide",
+                colors.bg,
+                "text-white"
+              )}>
+                {mode === 'participant' ? 'Participante' : 'Organizador'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
               {user.email}
             </p>
           </div>
@@ -148,21 +161,32 @@ export function UserMenu() {
             )}
           </div>
 
-          {/* Mode Toggle */}
-          <div className="border-t border-slate-200 dark:border-slate-700 py-1">
-            <button
-              onClick={() => {
-                toggleMode();
-                setIsOpen(false);
-                navigate(mode === 'participant' ? '/organizer' : '/explore');
-              }}
-              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              {mode === 'participant' ? 'Modo Organizador' : 'Modo Participante'}
-            </button>
+          {/* Mode Toggle - destacado con colores */}
+          <div className="border-t border-slate-200 dark:border-slate-700 py-2 px-2">
+            <div className={cn(
+              "rounded-lg p-1 transition-colors",
+              colors.bgLight
+            )}>
+              <button
+                onClick={() => {
+                  toggleMode();
+                  setIsOpen(false);
+                  navigate(mode === 'participant' ? '/organizer' : '/explore');
+                }}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                  colors.textLight,
+                  mode === 'participant'
+                    ? 'hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                    : 'hover:bg-teal-100 dark:hover:bg-teal-900/30'
+                )}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span>Cambiar a {mode === 'participant' ? 'Organizador' : 'Participante'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Logout */}

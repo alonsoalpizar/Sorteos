@@ -45,7 +45,7 @@ export function StatsCard({ title, value, icon, trend, description }: StatsCardP
           )}
         </div>
         <div className="ml-4 flex-shrink-0">
-          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
+          <div className="w-12 h-12 bg-primary-50 dark:bg-primary-600/20 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-500">
             {icon}
           </div>
         </div>

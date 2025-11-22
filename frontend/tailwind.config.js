@@ -23,19 +23,14 @@ export default {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
-        // PRIMARY: Azul profesional (✅ APROBADO)
+        // PRIMARY: Dinámico por modo (Azul para Participante, Teal para Organizador)
         primary: {
-          DEFAULT: '#3B82F6', // Blue-500
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          50: 'rgb(var(--primary-50) / <alpha-value>)',
+          100: 'rgb(var(--primary-100) / <alpha-value>)',
+          500: 'rgb(var(--primary-500) / <alpha-value>)',
+          600: 'rgb(var(--primary-600) / <alpha-value>)',
+          700: 'rgb(var(--primary-700) / <alpha-value>)',
           foreground: '#FFFFFF',
         },
         // SECONDARY: Slate profesional (✅ APROBADO)

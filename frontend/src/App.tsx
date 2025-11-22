@@ -29,7 +29,6 @@ import { MyTicketsPage } from "@/features/raffles/pages/MyTicketsPage";
 import { OrganizerDashboardPage } from "@/features/organizer/pages/OrganizerDashboardPage";
 
 // Raffle pages
-import { RafflesListPage } from "@/features/raffles/pages/RafflesListPage";
 import { RaffleDetailPage } from "@/features/raffles/pages/RaffleDetailPage";
 import { CreateRafflePage } from "@/features/raffles/pages/CreateRafflePage";
 import { EditRafflePage } from "@/features/raffles/pages/EditRafflePage";
@@ -180,14 +179,10 @@ function AppRoutes() {
               }
             />
 
-          {/* Raffle routes with layout */}
+          {/* Redirect /raffles to /explore */}
           <Route
             path="/raffles"
-            element={
-              <MainLayout>
-                <RafflesListPage />
-              </MainLayout>
-            }
+            element={<Navigate to="/explore" replace />}
           />
           <Route
             path="/raffles/:id"

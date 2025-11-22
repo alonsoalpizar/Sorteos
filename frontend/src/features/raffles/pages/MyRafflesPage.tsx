@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useRafflesList } from '@/hooks/useRaffles';
 import { useUser } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -19,7 +19,7 @@ const statusColors: Record<RaffleStatus, string> = {
   draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
   active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   suspended: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  completed: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
@@ -52,6 +52,14 @@ export function MyRafflesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Back Link */}
+      <Link to="/organizer" className="inline-flex items-center text-teal-600 hover:text-teal-700">
+        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver al panel
+      </Link>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -62,7 +70,7 @@ export function MyRafflesPage() {
             Gestiona los sorteos que has creado
           </p>
         </div>
-        <Button onClick={() => navigate('/raffles/create')}>
+        <Button onClick={() => navigate('/organizer/raffles/new')} className="bg-teal-600 hover:bg-teal-700">
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -80,7 +88,7 @@ export function MyRafflesPage() {
             onClick={() => setFilterStatus('all')}
             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
               filterStatus === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-teal-600 text-white'
                 : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
             }`}
           >
@@ -92,7 +100,7 @@ export function MyRafflesPage() {
               onClick={() => setFilterStatus(status as RaffleStatus)}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                 filterStatus === status
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-teal-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >
@@ -116,7 +124,7 @@ export function MyRafflesPage() {
             filterStatus === 'all'
               ? {
                   label: 'Crear Sorteo',
-                  onClick: () => navigate('/raffles/create'),
+                  onClick: () => navigate('/organizer/raffles/new'),
                 }
               : undefined
           }
@@ -191,7 +199,7 @@ export function MyRafflesPage() {
                           </div>
                           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                             <div
-                              className="bg-blue-600 h-2 rounded-full transition-all"
+                              className="bg-teal-600 h-2 rounded-full transition-all"
                               style={{ width: `${soldPercentage}%` }}
                             />
                           </div>

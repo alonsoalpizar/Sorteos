@@ -87,6 +87,11 @@ func (h *ListRafflesHandler) Handle(c *gin.Context) {
 		}
 	}
 
+	// Exclude user ID filter (para /explore - excluir sorteos propios)
+	if c.Query("exclude_mine") == "true" && authenticatedUserID != nil {
+		input.ExcludeUserID = authenticatedUserID
+	}
+
 	// 4. Ejecutar use case
 	output, err := h.useCase.Execute(c.Request.Context(), input)
 	if err != nil {
