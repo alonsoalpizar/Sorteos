@@ -1,21 +1,42 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Wallet, TrendingUp, History, DollarSign } from 'lucide-react';
 import { WalletBalance } from '../components/WalletBalance';
 import { RechargeOptions } from '../components/RechargeOptions';
 import { TransactionHistory } from '../components/TransactionHistory';
 import { Earnings } from '../components/Earnings';
+import { useUserMode } from '@/contexts/UserModeContext';
+import { cn } from '@/lib/utils';
 
 type Tab = 'balance' | 'recharge' | 'history' | 'earnings';
 
 export const WalletPage = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('balance');
+  const { mode } = useUserMode();
+  const isOrganizer = mode === 'organizer';
 
-  const tabs = [
-    { id: 'balance' as Tab, label: 'Mi Saldo', icon: Wallet },
-    { id: 'recharge' as Tab, label: 'Recargar', icon: TrendingUp },
-    { id: 'history' as Tab, label: 'Historial', icon: History },
-    { id: 'earnings' as Tab, label: 'Mis Ganancias', icon: DollarSign },
-  ];
+  // Tab default según modo: Organizador = Ganancias, Participante = Recargar
+  const defaultTab: Tab = isOrganizer ? 'earnings' : 'recharge';
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+
+  // Tabs ordenados según modo
+  const tabs = useMemo(() => {
+    if (isOrganizer) {
+      // Organizador: Ganancias primero, luego Saldo, Historial, Recargar
+      return [
+        { id: 'earnings' as Tab, label: 'Mis Ganancias', icon: DollarSign },
+        { id: 'balance' as Tab, label: 'Mi Saldo', icon: Wallet },
+        { id: 'history' as Tab, label: 'Historial', icon: History },
+        { id: 'recharge' as Tab, label: 'Recargar', icon: TrendingUp },
+      ];
+    } else {
+      // Participante: Recargar primero, luego Saldo, Historial, Ganancias
+      return [
+        { id: 'recharge' as Tab, label: 'Recargar', icon: TrendingUp },
+        { id: 'balance' as Tab, label: 'Mi Saldo', icon: Wallet },
+        { id: 'history' as Tab, label: 'Historial', icon: History },
+        { id: 'earnings' as Tab, label: 'Mis Ganancias', icon: DollarSign },
+      ];
+    }
+  }, [isOrganizer]);
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -35,24 +56,26 @@ export const WalletPage = () => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
 
+              // Colores dinámicos según modo
+              const activeColor = isOrganizer ? 'border-teal-500 text-teal-600' : 'border-blue-500 text-blue-600';
+              const activeIconColor = isOrganizer ? 'text-teal-600' : 'text-blue-600';
+
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-                    ${
-                      isActive
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                    }
-                  `}
+                  className={cn(
+                    "group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors",
+                    isActive
+                      ? activeColor
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                  )}
                 >
                   <Icon
-                    className={`
-                      -ml-0.5 mr-2 h-5 w-5
-                      ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'}
-                    `}
+                    className={cn(
+                      "-ml-0.5 mr-2 h-5 w-5 transition-colors",
+                      isActive ? activeIconColor : 'text-slate-400 group-hover:text-slate-500'
+                    )}
                   />
                   {tab.label}
                 </button>
@@ -71,9 +94,14 @@ export const WalletPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   onClick={() => setActiveTab('recharge')}
-                  className="p-6 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                  className={cn(
+                    "p-6 bg-white border-2 rounded-lg transition-colors text-left",
+                    isOrganizer
+                      ? "border-teal-500 hover:bg-teal-50"
+                      : "border-blue-500 hover:bg-blue-50"
+                  )}
                 >
-                  <TrendingUp className="w-6 h-6 text-blue-600 mb-2" />
+                  <TrendingUp className={cn("w-6 h-6 mb-2", isOrganizer ? "text-teal-600" : "text-blue-600")} />
                   <h3 className="font-semibold text-slate-900 mb-1">Recargar saldo</h3>
                   <p className="text-sm text-slate-600">
                     Agrega créditos a tu billetera con tus métodos de pago preferidos
@@ -93,20 +121,39 @@ export const WalletPage = () => {
               </div>
 
               {/* Info sobre el uso de la billetera */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">💡 ¿Cómo funciona?</h3>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Recarga créditos una vez y úsalos para comprar boletos en todos los sorteos</li>
-                  <li>• Sin comisiones adicionales al pagar con tu saldo</li>
-                  <li>• Transacciones instantáneas y seguras</li>
-                  <li>• Consulta tu historial completo en cualquier momento</li>
+              <div className={cn(
+                "rounded-lg p-4 border",
+                isOrganizer
+                  ? "bg-teal-50 border-teal-200"
+                  : "bg-blue-50 border-blue-200"
+              )}>
+                <h3 className={cn("font-semibold mb-2", isOrganizer ? "text-teal-900" : "text-blue-900")}>
+                  {isOrganizer ? "💰 Tu billetera de organizador" : "💡 ¿Cómo funciona?"}
+                </h3>
+                <ul className={cn("text-sm space-y-1", isOrganizer ? "text-teal-800" : "text-blue-800")}>
+                  {isOrganizer ? (
+                    <>
+                      <li>• Recibe automáticamente las ganancias de tus sorteos completados</li>
+                      <li>• Solicita retiros cuando lo necesites</li>
+                      <li>• Consulta el desglose de comisiones y ganancias netas</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>• Recarga créditos una vez y úsalos para comprar boletos en todos los sorteos</li>
+                      <li>• Sin comisiones adicionales al pagar con tu saldo</li>
+                      <li>• Transacciones instantáneas y seguras</li>
+                      <li>• Consulta tu historial completo en cualquier momento</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
           )}
 
           {activeTab === 'recharge' && (
-            <div>
+            <div className="space-y-6">
+              {/* Saldo compacto arriba de las opciones de recarga */}
+              <WalletBalance showRefreshButton={true} compact={true} />
               <RechargeOptions />
             </div>
           )}

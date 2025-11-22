@@ -4,6 +4,8 @@ import { useRechargeOptions, useAddFunds } from "../hooks/useWallet";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useUserMode } from "@/contexts/UserModeContext";
+import { cn } from "@/lib/utils";
 
 // Helper para formatear CRC
 function formatCRC(amount: number | string): string {
@@ -24,6 +26,8 @@ function generateIdempotencyKey(): string {
 export const RechargeOptions = () => {
   const { data: optionsData, isLoading: optionsLoading } = useRechargeOptions();
   const addFundsMutation = useAddFunds();
+  const { mode } = useUserMode();
+  const isOrganizer = mode === 'organizer';
 
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "sinpe" | "transfer">("card");
@@ -97,9 +101,12 @@ export const RechargeOptions = () => {
     <div className="space-y-6">
       {/* Info note */}
       {optionsData.note && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-900">{optionsData.note}</p>
+        <div className={cn(
+          "rounded-lg p-4 flex items-start gap-3 border",
+          isOrganizer ? "bg-teal-50 border-teal-200" : "bg-blue-50 border-blue-200"
+        )}>
+          <Info className={cn("w-5 h-5 flex-shrink-0 mt-0.5", isOrganizer ? "text-teal-600" : "text-blue-600")} />
+          <p className={cn("text-sm", isOrganizer ? "text-teal-900" : "text-blue-900")}>{optionsData.note}</p>
         </div>
       )}
 
@@ -124,16 +131,23 @@ export const RechargeOptions = () => {
           return (
             <Card
               key={index}
-              className={`p-5 cursor-pointer transition-all ${
-                isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "hover:shadow-md"
-              }`}
+              className={cn(
+                "p-5 cursor-pointer transition-all",
+                isSelected
+                  ? isOrganizer
+                    ? "ring-2 ring-teal-500 bg-teal-50"
+                    : "ring-2 ring-blue-500 bg-blue-50"
+                  : "hover:shadow-md"
+              )}
               onClick={() => setSelectedOptionIndex(index)}
             >
               <div className="text-center">
                 {/* Crédito que recibirá */}
                 <div className="mb-3">
                   <p className="text-sm text-slate-600 font-medium">Recibirás</p>
-                  <p className="text-3xl font-bold text-blue-600">{formatCRC(desiredCredit)}</p>
+                  <p className={cn("text-3xl font-bold", isOrganizer ? "text-teal-600" : "text-blue-600")}>
+                    {formatCRC(desiredCredit)}
+                  </p>
                 </div>
 
                 {/* Divider */}
@@ -154,7 +168,10 @@ export const RechargeOptions = () => {
                 {/* Checkmark si está seleccionado */}
                 {isSelected && (
                   <div className="mt-3">
-                    <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto">
+                    <div className={cn(
+                      "text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto",
+                      isOrganizer ? "bg-teal-600" : "bg-blue-600"
+                    )}>
                       ✓
                     </div>
                   </div>
@@ -181,7 +198,9 @@ export const RechargeOptions = () => {
             <div className="border-t border-slate-300 my-2"></div>
             <div className="flex justify-between font-semibold text-base">
               <span>Total a pagar:</span>
-              <span className="text-blue-600">{formatCRC(optionsData.options[selectedOptionIndex].charge_amount)}</span>
+              <span className={isOrganizer ? "text-teal-600" : "text-blue-600"}>
+                {formatCRC(optionsData.options[selectedOptionIndex].charge_amount)}
+              </span>
             </div>
           </div>
         </Card>
@@ -194,33 +213,42 @@ export const RechargeOptions = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               onClick={() => setPaymentMethod("card")}
-              className={`p-4 border-2 rounded-lg transition-all ${
+              className={cn(
+                "p-4 border-2 rounded-lg transition-all",
                 paymentMethod === "card"
-                  ? "border-blue-500 bg-blue-50"
+                  ? isOrganizer
+                    ? "border-teal-500 bg-teal-50"
+                    : "border-blue-500 bg-blue-50"
                   : "border-slate-200 hover:border-slate-300"
-              }`}
+              )}
             >
-              <CreditCard className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+              <CreditCard className={cn("w-6 h-6 mx-auto mb-2", isOrganizer ? "text-teal-600" : "text-blue-600")} />
               <p className="text-sm font-medium">Tarjeta</p>
             </button>
             <button
               onClick={() => setPaymentMethod("sinpe")}
-              className={`p-4 border-2 rounded-lg transition-all ${
+              className={cn(
+                "p-4 border-2 rounded-lg transition-all",
                 paymentMethod === "sinpe"
-                  ? "border-blue-500 bg-blue-50"
+                  ? isOrganizer
+                    ? "border-teal-500 bg-teal-50"
+                    : "border-blue-500 bg-blue-50"
                   : "border-slate-200 hover:border-slate-300"
-              }`}
+              )}
             >
               <div className="w-6 h-6 mx-auto mb-2 text-2xl">💸</div>
               <p className="text-sm font-medium">SINPE Móvil</p>
             </button>
             <button
               onClick={() => setPaymentMethod("transfer")}
-              className={`p-4 border-2 rounded-lg transition-all ${
+              className={cn(
+                "p-4 border-2 rounded-lg transition-all",
                 paymentMethod === "transfer"
-                  ? "border-blue-500 bg-blue-50"
+                  ? isOrganizer
+                    ? "border-teal-500 bg-teal-50"
+                    : "border-blue-500 bg-blue-50"
                   : "border-slate-200 hover:border-slate-300"
-              }`}
+              )}
             >
               <div className="w-6 h-6 mx-auto mb-2 text-2xl">🏦</div>
               <p className="text-sm font-medium">Transferencia</p>

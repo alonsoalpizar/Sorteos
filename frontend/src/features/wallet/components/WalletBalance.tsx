@@ -3,6 +3,8 @@ import { useWalletBalance } from "../hooks/useWallet";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useUserMode } from "@/contexts/UserModeContext";
+import { cn } from "@/lib/utils";
 
 interface WalletBalanceProps {
   showRefreshButton?: boolean;
@@ -22,6 +24,8 @@ function formatCRC(amount: number | string): string {
 
 export const WalletBalance = ({ showRefreshButton = true, compact = false }: WalletBalanceProps) => {
   const { data, isLoading, refetch } = useWalletBalance();
+  const { mode } = useUserMode();
+  const isOrganizer = mode === 'organizer';
 
   if (isLoading) {
     return (
@@ -46,11 +50,17 @@ export const WalletBalance = ({ showRefreshButton = true, compact = false }: Wal
   const isFrozen = data.status === "frozen";
 
   return (
-    <Card className={`${compact ? "p-4" : "p-6"} ${isFrozen ? "border-red-500" : ""}`}>
+    <Card className={cn(
+      compact ? "p-4" : "p-6",
+      isFrozen && "border-red-500"
+    )}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <Wallet className="w-6 h-6 text-blue-600" />
+          <div className={cn(
+            "p-3 rounded-lg",
+            isOrganizer ? "bg-teal-100" : "bg-blue-100"
+          )}>
+            <Wallet className={cn("w-6 h-6", isOrganizer ? "text-teal-600" : "text-blue-600")} />
           </div>
           <div>
             <p className="text-sm text-slate-600 font-medium">Saldo Disponible</p>

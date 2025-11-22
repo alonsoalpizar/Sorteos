@@ -2,6 +2,8 @@ import { DollarSign, TrendingUp, Percent, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useEarnings } from "../hooks/useWallet";
+import { useUserMode } from "@/contexts/UserModeContext";
+import { cn } from "@/lib/utils";
 
 // Helper para formatear CRC
 function formatCRC(amount: number | string): string {
@@ -16,6 +18,8 @@ function formatCRC(amount: number | string): string {
 
 export const Earnings = () => {
   const { data, isLoading } = useEarnings();
+  const { mode } = useUserMode();
+  const isOrganizer = mode === 'organizer';
 
   if (isLoading) {
     return (
@@ -35,9 +39,12 @@ export const Earnings = () => {
   return (
     <div className="space-y-6">
       {/* Info alert */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-blue-900">
+      <div className={cn(
+        "rounded-lg p-4 flex items-start gap-3 border",
+        isOrganizer ? "bg-teal-50 border-teal-200" : "bg-blue-50 border-blue-200"
+      )}>
+        <AlertCircle className={cn("w-5 h-5 flex-shrink-0 mt-0.5", isOrganizer ? "text-teal-600" : "text-blue-600")} />
+        <div className={cn("text-sm", isOrganizer ? "text-teal-900" : "text-blue-900")}>
           <p className="font-medium mb-1">¿Cómo funcionan las ganancias?</p>
           <p>
             Aquí puedes ver las <strong>ganancias de tus sorteos completados</strong>. El monto mostrado es el
@@ -53,7 +60,7 @@ export const Earnings = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-600">Total Recolectado</span>
-            <DollarSign className="w-5 h-5 text-blue-600" />
+            <DollarSign className={cn("w-5 h-5", isOrganizer ? "text-teal-600" : "text-blue-600")} />
           </div>
           <p className="text-2xl font-bold text-slate-900">{formatCRC(totalCollected)}</p>
           <p className="text-xs text-slate-500 mt-1">
