@@ -58,12 +58,16 @@ func (h *VerifyEmailHandler) Handle(c *gin.Context) {
 	if output.AccessToken != "" {
 		response["data"] = gin.H{
 			"user": gin.H{
-				"id":            output.User.ID,
-				"uuid":          output.User.UUID,
-				"email":         output.User.Email,
+				"id":             output.User.ID,
+				"uuid":           output.User.UUID,
+				"email":          output.User.Email,
 				"email_verified": output.User.EmailVerified,
-				"kyc_level":     output.User.KYCLevel,
-				"role":          output.User.Role,
+				"phone_verified": output.User.PhoneVerified,
+				"kyc_level":      output.User.KYCLevel,
+				"role":           output.User.Role,
+				"status":         output.User.Status,
+				"first_name":     output.User.FirstName,
+				"last_name":      output.User.LastName,
 			},
 			"access_token":  output.AccessToken,
 			"refresh_token": output.RefreshToken,

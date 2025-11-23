@@ -159,3 +159,25 @@ func ReleaseMultipleLocks(ctx context.Context, locks []*Lock) error {
 func ReservationLockKey(raffleID, numberID string) string {
 	return fmt.Sprintf("lock:reservation:%s:%s", raffleID, numberID)
 }
+
+// ForceReleaseLock forcefully releases a lock without verifying ownership
+// Use this only for administrative operations like cancellation or expiration
+func (s *LockService) ForceReleaseLock(ctx context.Context, key string) error {
+	_, err := s.client.Del(ctx, key).Result()
+	if err != nil {
+		return fmt.Errorf("redis del error: %w", err)
+	}
+	return nil
+}
+
+// ForceReleaseMultipleLocks forcefully releases multiple locks
+func (s *LockService) ForceReleaseMultipleLocks(ctx context.Context, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	_, err := s.client.Del(ctx, keys...).Result()
+	if err != nil {
+		return fmt.Errorf("redis del error: %w", err)
+	}
+	return nil
+}

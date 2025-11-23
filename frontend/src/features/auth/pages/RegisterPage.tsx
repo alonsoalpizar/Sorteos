@@ -92,6 +92,14 @@ export const RegisterPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+      {/* Logo/Link al landing */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+      >
+        Sorteos.club
+      </Link>
+
       <Card className="w-full max-w-2xl my-8">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center">

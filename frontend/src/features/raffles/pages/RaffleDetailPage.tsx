@@ -170,7 +170,9 @@ export function RaffleDetailPage() {
       return;
     }
 
-    if (isLoadingReservation) return;
+    if (isLoadingReservation) {
+      return;
+    }
 
     const isAlreadySelected = selectedNumbers.includes(numberStr);
 
@@ -218,9 +220,9 @@ export function RaffleDetailPage() {
             session_id: sessionId,
           });
 
-          console.log('Reserva creada:', reservation);
           setActiveReservation(reservation);
           setSelectedNumbers([numberStr]);
+          await refetch();
 
           toast.success('Número reservado', {
             description: 'Tienes 10 minutos para completar tu compra',
@@ -789,6 +791,7 @@ export function RaffleDetailPage() {
       {!isOwner && raffle.status === 'active' && selectedNumbers.length > 0 && (
         <FloatingCheckoutButton
           selectedCount={selectedNumbers.length}
+          selectedNumbers={selectedNumbers}
           totalAmount={selectedNumbers.length * Number(raffle.price_per_number)}
           onCheckout={handlePayNow}
           onCancel={handleClearSelection}

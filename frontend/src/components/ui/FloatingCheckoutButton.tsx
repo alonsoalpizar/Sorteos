@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface FloatingCheckoutButtonProps {
   selectedCount: number;
+  selectedNumbers: string[];
   totalAmount: number;
   onCheckout: () => void;
   onCancel: () => void;
@@ -13,6 +14,7 @@ interface FloatingCheckoutButtonProps {
 
 export function FloatingCheckoutButton({
   selectedCount,
+  selectedNumbers,
   totalAmount,
   onCheckout,
   onCancel,
@@ -29,7 +31,7 @@ export function FloatingCheckoutButton({
       )}
     >
       <div className="bg-white rounded-full shadow-2xl border-2 border-blue-500 px-6 py-4 flex items-center gap-6">
-        {/* Contador de números */}
+        {/* Contador y números seleccionados */}
         <div className="flex items-center gap-3">
           <div className="bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">
             {selectedCount}
@@ -38,9 +40,14 @@ export function FloatingCheckoutButton({
             <p className="text-sm text-gray-600 font-medium">
               {selectedCount === 1 ? '1 número' : `${selectedCount} números`}
             </p>
-            <p className="text-lg font-bold text-gray-900">
-              ₡{totalAmount.toLocaleString()}
-            </p>
+            <div className="flex items-center gap-1">
+              <p className="text-lg font-bold text-gray-900">
+                ₡{totalAmount.toLocaleString()}
+              </p>
+              <span className="text-xs text-gray-500 ml-2">
+                [{selectedNumbers.sort((a, b) => Number(a) - Number(b)).join(', ')}]
+              </span>
+            </div>
           </div>
         </div>
 

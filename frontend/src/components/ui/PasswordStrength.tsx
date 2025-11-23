@@ -24,8 +24,8 @@ export const PasswordStrength = ({ password }: PasswordStrengthProps) => {
       label: "Un número",
     },
     {
-      test: /[^A-Za-z0-9]/.test(password),
-      label: "Un símbolo especial",
+      test: /[!@#$%^&*]/.test(password),
+      label: "Un símbolo especial (!@#$%^&*)",
     },
   ];
 

@@ -137,9 +137,18 @@ func (uc *ReservationUseCases) CreateReservation(ctx context.Context, input Crea
 	}
 
 	// 8. Update raffle_numbers table to mark as RESERVED
-	// Note: We use placeholder user_id 1 for legacy compatibility
-	if err := uc.raffleNumberRepo.ReserveNumbers(raffle.ID, input.NumberIDs, 1, 0, entities.ReservationExpirationDuration); err != nil {
-		// Log error but continue - the reservation in MongoDB is what matters
+	// Get numeric user ID from UUID
+	user, userErr := uc.userRepo.FindByUUID(input.UserID.String())
+	if userErr != nil {
+		fmt.Printf("[CreateReservation] Error finding user by UUID: %v\n", userErr)
+	}
+	var numericUserID int64 = 0
+	if user != nil {
+		numericUserID = user.ID
+	}
+
+	if err := uc.raffleNumberRepo.ReserveNumbers(raffle.ID, input.NumberIDs, numericUserID, 0, entities.ReservationExpirationDuration); err != nil {
+		// Log error but continue - the reservation record is the source of truth
 		fmt.Printf("[CreateReservation] Error marking numbers as reserved: %v\n", err)
 	}
 
@@ -407,9 +416,19 @@ func (uc *ReservationUseCases) AddNumberToReservation(ctx context.Context, reser
 		return fmt.Errorf("error fetching raffle: %w", err)
 	}
 
+	// Get numeric user ID from UUID
+	user, userErr := uc.userRepo.FindByUUID(reservation.UserID.String())
+	if userErr != nil {
+		fmt.Printf("[AddNumberToReservation] Error finding user by UUID: %v\n", userErr)
+	}
+	var numericUserID int64 = 0
+	if user != nil {
+		numericUserID = user.ID
+	}
+
 	// Mark the number as reserved in raffle_numbers table
-	if err := uc.raffleNumberRepo.ReserveNumbers(raffle.ID, []string{numberID}, 1, 0, entities.ReservationSelectionTimeout); err != nil {
-		// Log error but continue - the reservation in MongoDB is what matters
+	if err := uc.raffleNumberRepo.ReserveNumbers(raffle.ID, []string{numberID}, numericUserID, 0, entities.ReservationSelectionTimeout); err != nil {
+		// Log error but continue - the reservation record is the source of truth
 		fmt.Printf("[AddNumberToReservation] Error marking number %s as reserved: %v\n", numberID, err)
 	}
 
@@ -473,7 +492,13 @@ func (uc *ReservationUseCases) RemoveNumberFromReservation(ctx context.Context, 
 		}
 	}
 
-	// 8. Notify via WebSocket
+	// 8. Release Redis lock for the number
+	lockKey := redis.ReservationLockKey(reservation.RaffleID.String(), numberID)
+	if err := uc.lockService.ForceReleaseLock(ctx, lockKey); err != nil {
+		fmt.Printf("[RemoveNumberFromReservation] Error releasing lock for number %s: %v\n", numberID, err)
+	}
+
+	// 9. Notify via WebSocket
 	uc.wsHub.BroadcastNumberUpdate(
 		reservation.RaffleID.String(),
 		numberID,
@@ -481,15 +506,23 @@ func (uc *ReservationUseCases) RemoveNumberFromReservation(ctx context.Context, 
 		nil,
 	)
 
-	// Note: Lock will expire automatically based on TTL, no need to manually release
-
 	return nil
 }
 
 // releaseLocks releases Redis locks for a reservation
 func (uc *ReservationUseCases) releaseLocks(ctx context.Context, reservation *entities.Reservation) error {
-	// Los locks ya tienen TTL automático, no necesitamos liberarlos manualmente
-	// ya que expirarán con la reserva
+	// Build lock keys for all numbers in the reservation
+	lockKeys := make([]string, len(reservation.NumberIDs))
+	for i, numberID := range reservation.NumberIDs {
+		lockKeys[i] = redis.ReservationLockKey(reservation.RaffleID.String(), numberID)
+	}
+
+	// Force release all locks (no ownership verification needed for cancellation)
+	if err := uc.lockService.ForceReleaseMultipleLocks(ctx, lockKeys); err != nil {
+		fmt.Printf("[releaseLocks] Error releasing locks for reservation %s: %v\n", reservation.ID.String(), err)
+		return err
+	}
+
 	return nil
 }
 
