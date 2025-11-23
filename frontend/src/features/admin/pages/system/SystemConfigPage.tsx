@@ -11,12 +11,17 @@ export function SystemConfigPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<any>(null);
+  const [editCategory, setEditCategory] = useState<string>("business");
+  const [editValueType, setEditValueType] = useState<"string" | "int" | "float" | "bool" | "json">("string");
+  const [editDescription, setEditDescription] = useState<string>("");
 
   // New parameter state
   const [showNewForm, setShowNewForm] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const [newCategory, setNewCategory] = useState("business");
+  const [newValueType, setNewValueType] = useState<"string" | "int" | "float" | "bool" | "json">("string");
+  const [newDescription, setNewDescription] = useState("");
 
   const { data, isLoading, refetch } = useSystemSettings({ category: selectedCategory });
   const updateMutation = useUpdateSystemSetting();
@@ -29,6 +34,10 @@ export function SystemConfigPage() {
     } else {
       setEditValue(setting.value);
     }
+    // Cargar valores actuales para edición
+    setEditCategory(setting.category || "business");
+    setEditValueType(setting.value_type || "string");
+    setEditDescription(setting.description || "");
   };
 
   const handleSave = async (setting: SystemSetting) => {
@@ -56,16 +65,24 @@ export function SystemConfigPage() {
     await updateMutation.mutateAsync({
       key: setting.key,
       value: finalValue,
-      category: setting.category,
+      category: editCategory,
+      value_type: editValueType,
+      description: editDescription || undefined,
     });
 
     setEditingKey(null);
     setEditValue(null);
+    setEditCategory("business");
+    setEditValueType("string");
+    setEditDescription("");
   };
 
   const handleCancel = () => {
     setEditingKey(null);
     setEditValue(null);
+    setEditCategory("business");
+    setEditValueType("string");
+    setEditDescription("");
   };
 
   const handleCreateNew = async () => {
@@ -73,35 +90,21 @@ export function SystemConfigPage() {
       return;
     }
 
-    let finalValue: any = newValue;
-
-    // Parse value type
-    const trimmed = newValue.trim();
-    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-        (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
-      try {
-        finalValue = JSON.parse(newValue);
-      } catch (e) {
-        // Keep as string if parse fails
-      }
-    } else if (trimmed === "true") {
-      finalValue = true;
-    } else if (trimmed === "false") {
-      finalValue = false;
-    } else if (!isNaN(Number(trimmed)) && trimmed !== "") {
-      finalValue = Number(trimmed);
-    }
-
+    // El valor se envía como string, el backend lo guarda y valida según value_type
     await updateMutation.mutateAsync({
       key: newKey.trim(),
-      value: finalValue,
+      value: newValue.trim(),
       category: newCategory,
+      value_type: newValueType,
+      description: newDescription.trim() || undefined,
     });
 
     // Reset form
     setNewKey("");
     setNewValue("");
     setNewCategory("business");
+    setNewValueType("string");
+    setNewDescription("");
     setShowNewForm(false);
   };
 
@@ -209,7 +212,7 @@ export function SystemConfigPage() {
       {showNewForm && (
         <Card className="p-6 bg-blue-50 border-blue-200">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Crear Nuevo Parámetro</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Clave (Key) *
@@ -236,6 +239,22 @@ export function SystemConfigPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
+                Tipo de Dato *
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={newValueType}
+                onChange={(e) => setNewValueType(e.target.value as "string" | "int" | "float" | "bool" | "json")}
+              >
+                <option value="string">string (texto)</option>
+                <option value="int">int (entero)</option>
+                <option value="float">float (decimal)</option>
+                <option value="bool">bool (true/false)</option>
+                <option value="json">json (objeto/array)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Categoría *
               </label>
               <select
@@ -251,6 +270,18 @@ export function SystemConfigPage() {
                 <option value="database">database</option>
               </select>
             </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Descripción (opcional)
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="ej: Tamaño máximo de archivo en MB"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+            />
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -275,9 +306,6 @@ export function SystemConfigPage() {
               Cancelar
             </Button>
           </div>
-          <p className="text-xs text-slate-600 mt-3">
-            Tip: Usa true/false para booleanos, números sin comillas, o JSON para objetos/arrays
-          </p>
         </Card>
       )}
 
@@ -334,7 +362,7 @@ export function SystemConfigPage() {
                           <div>
                             <h3 className="text-lg font-semibold text-slate-900">{setting.key}</h3>
                             <p className="text-xs text-slate-500">
-                              Categoría: {setting.category} • Actualizado:{" "}
+                              Categoría: {setting.category} • Tipo: {setting.value_type || "string"} • Actualizado:{" "}
                               {new Date(setting.updated_at).toLocaleString("es-CR")}
                             </p>
                           </div>
@@ -344,6 +372,62 @@ export function SystemConfigPage() {
                           <label className="block text-sm font-medium text-slate-700 mb-2">Valor</label>
                           {renderValue(setting.value, isEditing)}
                         </div>
+
+                        {/* Mostrar descripción actual si existe y no estamos editando */}
+                        {!isEditing && setting.description && (
+                          <p className="text-sm text-slate-500 mt-2 italic">{setting.description}</p>
+                        )}
+
+                        {/* Campos adicionales de edición */}
+                        {isEditing && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 p-4 bg-slate-50 rounded-lg">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Tipo de Dato
+                              </label>
+                              <select
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                value={editValueType}
+                                onChange={(e) => setEditValueType(e.target.value as "string" | "int" | "float" | "bool" | "json")}
+                              >
+                                <option value="string">string (texto)</option>
+                                <option value="int">int (entero)</option>
+                                <option value="float">float (decimal)</option>
+                                <option value="bool">bool (true/false)</option>
+                                <option value="json">json (objeto/array)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Categoría
+                              </label>
+                              <select
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                value={editCategory}
+                                onChange={(e) => setEditCategory(e.target.value)}
+                              >
+                                <option value="business">business</option>
+                                <option value="email">email</option>
+                                <option value="payment">payment</option>
+                                <option value="security">security</option>
+                                <option value="performance">performance</option>
+                                <option value="database">database</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Descripción
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                placeholder="Descripción del parámetro"
+                                value={editDescription}
+                                onChange={(e) => setEditDescription(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         {isEditing && (
                           <div className="flex items-center gap-3 mt-4">

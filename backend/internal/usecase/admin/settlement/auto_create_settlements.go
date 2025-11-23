@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -43,15 +44,17 @@ type SettlementSummary struct {
 
 // AutoCreateSettlementsUseCase caso de uso para crear settlements automáticamente (batch job)
 type AutoCreateSettlementsUseCase struct {
-	db  *gorm.DB
-	log *logger.Logger
+	db              *gorm.DB
+	log             *logger.Logger
+	systemParamRepo *db.PostgresSystemParameterRepository
 }
 
 // NewAutoCreateSettlementsUseCase crea una nueva instancia
-func NewAutoCreateSettlementsUseCase(db *gorm.DB, log *logger.Logger) *AutoCreateSettlementsUseCase {
+func NewAutoCreateSettlementsUseCase(gormDB *gorm.DB, log *logger.Logger) *AutoCreateSettlementsUseCase {
 	return &AutoCreateSettlementsUseCase{
-		db:  db,
-		log: log,
+		db:              gormDB,
+		log:             log,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
 	}
 }
 
@@ -268,6 +271,7 @@ func (uc *AutoCreateSettlementsUseCase) validateInput(input *AutoCreateSettlemen
 }
 
 // getPlatformFeePercent obtiene el porcentaje de comisión del organizador
+// Prioridad: commission_override del organizador > platform_fee_percentage global > 10.0
 func (uc *AutoCreateSettlementsUseCase) getPlatformFeePercent(ctx context.Context, organizerID int64) float64 {
 	var commissionOverride *float64
 
@@ -281,8 +285,15 @@ func (uc *AutoCreateSettlementsUseCase) getPlatformFeePercent(ctx context.Contex
 		return *commissionOverride
 	}
 
-	// Default commission: 10%
-	return 10.0
+	// Obtener platform_fee_percentage desde system_parameters
+	platformFee, err := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
+	if err != nil {
+		uc.log.Error("Error getting platform_fee_percentage, using default",
+			logger.Error(err))
+		return 10.0
+	}
+
+	return platformFee
 }
 
 // updateOrganizerProfile actualiza las métricas del organizador

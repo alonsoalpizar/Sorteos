@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -27,15 +28,17 @@ type CreateSettlementOutput struct {
 
 // CreateSettlementUseCase caso de uso para crear liquidaciones
 type CreateSettlementUseCase struct {
-	db  *gorm.DB
-	log *logger.Logger
+	db              *gorm.DB
+	log             *logger.Logger
+	systemParamRepo *db.PostgresSystemParameterRepository
 }
 
 // NewCreateSettlementUseCase crea una nueva instancia
-func NewCreateSettlementUseCase(db *gorm.DB, log *logger.Logger) *CreateSettlementUseCase {
+func NewCreateSettlementUseCase(gormDB *gorm.DB, log *logger.Logger) *CreateSettlementUseCase {
 	return &CreateSettlementUseCase{
-		db:  db,
-		log: log,
+		db:              gormDB,
+		log:             log,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
 	}
 }
 
@@ -151,6 +154,7 @@ func (uc *CreateSettlementUseCase) validateInput(input *CreateSettlementInput) e
 }
 
 // getPlatformFeePercent obtiene el porcentaje de comisión (custom o default)
+// Prioridad: commission_override del organizador > platform_fee_percentage global > 10.0
 func (uc *CreateSettlementUseCase) getPlatformFeePercent(ctx context.Context, organizerID int64) float64 {
 	var commissionOverride *float64
 	uc.db.WithContext(ctx).
@@ -163,8 +167,15 @@ func (uc *CreateSettlementUseCase) getPlatformFeePercent(ctx context.Context, or
 		return *commissionOverride
 	}
 
-	// Default: 10%
-	return 10.0
+	// Obtener platform_fee_percentage desde system_parameters
+	platformFee, err := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
+	if err != nil {
+		uc.log.Error("Error getting platform_fee_percentage, using default",
+			logger.Error(err))
+		return 10.0
+	}
+
+	return platformFee
 }
 
 // getEligibleRaffles obtiene las rifas elegibles para crear settlements

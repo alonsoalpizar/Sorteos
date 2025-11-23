@@ -11,11 +11,13 @@ import (
 
 // SystemSetting configuración individual del sistema
 type SystemSetting struct {
-	Key       string                 `json:"key"`
-	Value     interface{}            `json:"value"` // Deserializado de JSON
-	Category  string                 `json:"category"`
-	UpdatedAt string                 `json:"updated_at"`
-	UpdatedBy *int64                 `json:"updated_by,omitempty"`
+	Key         string      `json:"key"`
+	Value       interface{} `json:"value"` // Deserializado de JSON
+	ValueType   string      `json:"value_type,omitempty"`
+	Category    string      `json:"category"`
+	Description *string     `json:"description,omitempty"`
+	UpdatedAt   string      `json:"updated_at"`
+	UpdatedBy   *int64      `json:"updated_by,omitempty"`
 }
 
 // GetSystemSettingsInput datos de entrada
@@ -94,11 +96,13 @@ func (uc *GetSystemSettingsUseCase) Execute(ctx context.Context, input *GetSyste
 		}
 
 		setting := &SystemSetting{
-			Key:       config.Key,
-			Value:     value,
-			Category:  config.Category,
-			UpdatedAt: config.UpdatedAt.Format("2006-01-02 15:04:05"),
-			UpdatedBy: config.UpdatedBy,
+			Key:         config.Key,
+			Value:       value,
+			ValueType:   config.ValueType,
+			Category:    config.Category,
+			Description: config.Description,
+			UpdatedAt:   config.UpdatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedBy:   config.UpdatedBy,
 		}
 
 		settings = append(settings, setting)

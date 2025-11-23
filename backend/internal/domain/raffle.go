@@ -191,8 +191,20 @@ func (r *Raffle) CanBePublished() bool {
 
 // Publish marca el sorteo como activo
 func (r *Raffle) Publish() error {
-	if !r.CanBePublished() {
-		return fmt.Errorf("el sorteo no puede ser publicado en su estado actual")
+	// Verificar estado
+	if r.Status != RaffleStatusDraft {
+		return fmt.Errorf("solo se pueden publicar sorteos en estado borrador (estado actual: %s)", r.Status)
+	}
+
+	// Verificar validación básica
+	if err := r.Validate(); err != nil {
+		return fmt.Errorf("el sorteo tiene errores de validación: %w", err)
+	}
+
+	// Verificar fecha con al menos 24h de anticipación
+	minDrawDate := time.Now().Add(24 * time.Hour)
+	if !r.DrawDate.After(minDrawDate) {
+		return fmt.Errorf("la fecha del sorteo debe ser al menos 24 horas en el futuro (fecha mínima: %s)", minDrawDate.Format("2006-01-02 15:04"))
 	}
 
 	now := time.Now()

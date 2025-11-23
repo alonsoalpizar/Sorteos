@@ -3,6 +3,7 @@ package reports
 import (
 	"context"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -51,14 +52,16 @@ type OrganizerPayoutsReportOutput struct {
 
 // OrganizerPayoutsReportUseCase caso de uso para reporte de pagos a organizadores
 type OrganizerPayoutsReportUseCase struct {
+	systemParamRepo *db.PostgresSystemParameterRepository
 	db  *gorm.DB
 	log *logger.Logger
 }
 
 // NewOrganizerPayoutsReportUseCase crea una nueva instancia
-func NewOrganizerPayoutsReportUseCase(db *gorm.DB, log *logger.Logger) *OrganizerPayoutsReportUseCase {
+func NewOrganizerPayoutsReportUseCase(gormDB *gorm.DB, log *logger.Logger) *OrganizerPayoutsReportUseCase {
 	return &OrganizerPayoutsReportUseCase{
-		db:  db,
+		db:              gormDB,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
 		log: log,
 	}
 }
@@ -151,7 +154,8 @@ func (uc *OrganizerPayoutsReportUseCase) Execute(ctx context.Context, input *Org
 		}
 
 		// Platform fees (TODO: considerar custom commission)
-		platformFeePercent := 10.0
+		// Obtener platform_fee_percentage desde system_parameters
+		platformFeePercent, _ := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
 		if org.CustomCommission != nil {
 			platformFeePercent = *org.CustomCommission
 		}

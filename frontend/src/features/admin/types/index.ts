@@ -817,7 +817,9 @@ export interface ViewNotificationHistoryOutput {
 export interface SystemSetting {
   key: string;
   value: any; // Can be string, number, boolean, object, etc.
+  value_type?: "string" | "int" | "float" | "bool" | "json";
   category: string;
+  description?: string;
   updated_at: string;
   updated_by?: number;
 }
@@ -840,6 +842,8 @@ export interface UpdateSystemSettingsInput {
   key: string;
   value: any;
   category: string;
+  value_type?: "string" | "int" | "float" | "bool" | "json";
+  description?: string;
 }
 
 // Output uses snake_case (HAS json tags in Go struct)

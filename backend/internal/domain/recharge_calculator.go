@@ -39,8 +39,19 @@ type RechargeBreakdown struct {
 	ChargeAmount    decimal.Decimal `json:"charge_amount"`    // Monto total a cobrar al usuario
 }
 
+// roundUpToHundred redondea un monto hacia arriba a la centena más cercana
+// Ejemplos: 1239.36 -> 1300, 5494.68 -> 5500, 5500.00 -> 5500
+func roundUpToHundred(amount decimal.Decimal) decimal.Decimal {
+	hundred := decimal.NewFromInt(100)
+	// Dividir por 100, redondear hacia arriba (Ceil), multiplicar por 100
+	divided := amount.Div(hundred)
+	// Ceil redondea hacia arriba al entero más cercano
+	ceiled := divided.Ceil()
+	return ceiled.Mul(hundred)
+}
+
 // CalculateCharge calcula el monto a cobrar para obtener el crédito deseado
-// Fórmula: C = (D + f) / (1 - r)
+// Fórmula: C = (D + f) / (1 - r), redondeado a la centena superior
 func (rc *RechargeCalculator) CalculateCharge(desiredCredit decimal.Decimal) *RechargeBreakdown {
 	// C = (D + f) / (1 - r)
 	// Donde r incluye tanto la tasa del procesador como la de la plataforma
@@ -53,18 +64,19 @@ func (rc *RechargeCalculator) CalculateCharge(desiredCredit decimal.Decimal) *Re
 	denominator := decimal.NewFromFloat(1.0).Sub(totalRate)
 
 	// C = numerador / denominador
-	chargeAmount := numerator.Div(denominator)
+	chargeAmountRaw := numerator.Div(denominator)
 
-	// Redondear a 2 decimales (centavos)
-	chargeAmount = chargeAmount.Round(2)
+	// Redondear hacia arriba a la centena más cercana para montos "limpios"
+	chargeAmount := roundUpToHundred(chargeAmountRaw)
 
 	// Calcular comisiones individuales para el desglose
-	// La tarifa fija ya está incluida en el cálculo de C, no se suma aquí
+	// Usamos el monto redondeado para calcular las comisiones reales
 	processorFeePercentage := chargeAmount.Mul(rc.processorRate).Round(2)
 	platformFee := chargeAmount.Mul(rc.platformFeeRate).Round(2)
 
-	// Total de comisiones = tarifa fija + comisión porcentual procesador + comisión plataforma
-	totalFees := rc.fixedFee.Add(processorFeePercentage).Add(platformFee)
+	// Total de comisiones = monto cobrado - crédito deseado
+	// Esto incluye: tarifa fija + comisión procesador + comisión plataforma + redondeo
+	totalFees := chargeAmount.Sub(desiredCredit)
 
 	return &RechargeBreakdown{
 		DesiredCredit:   desiredCredit,

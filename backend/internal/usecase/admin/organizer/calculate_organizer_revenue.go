@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -47,15 +48,17 @@ type PeriodRevenue struct {
 
 // CalculateOrganizerRevenueUseCase caso de uso para calcular revenue de organizador
 type CalculateOrganizerRevenueUseCase struct {
+	systemParamRepo *db.PostgresSystemParameterRepository
 	db  *gorm.DB
 	log *logger.Logger
 }
 
 // NewCalculateOrganizerRevenueUseCase crea una nueva instancia
-func NewCalculateOrganizerRevenueUseCase(db *gorm.DB, log *logger.Logger) *CalculateOrganizerRevenueUseCase {
+func NewCalculateOrganizerRevenueUseCase(gormDB *gorm.DB, log *logger.Logger) *CalculateOrganizerRevenueUseCase {
 	return &CalculateOrganizerRevenueUseCase{
-		db:  db,
-		log: log,
+		db:              gormDB,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
+		log:             log,
 	}
 }
 
@@ -220,7 +223,8 @@ func (uc *CalculateOrganizerRevenueUseCase) calculateRevenueForPeriod(ctx contex
 		Where("user_id = ?", organizerID).
 		Scan(&customCommission)
 
-	platformFeePercent := 10.0 // Default 10%
+	// Obtener platform_fee_percentage desde system_parameters
+	platformFeePercent, _ := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
 	if customCommission != nil {
 		platformFeePercent = *customCommission
 	}

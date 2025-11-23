@@ -3,6 +3,7 @@ package reports
 import (
 	"context"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -41,14 +42,16 @@ type RevenueReportOutput struct {
 
 // RevenueReportUseCase caso de uso para generar reporte de ingresos
 type RevenueReportUseCase struct {
+	systemParamRepo *db.PostgresSystemParameterRepository
 	db  *gorm.DB
 	log *logger.Logger
 }
 
 // NewRevenueReportUseCase crea una nueva instancia
-func NewRevenueReportUseCase(db *gorm.DB, log *logger.Logger) *RevenueReportUseCase {
+func NewRevenueReportUseCase(gormDB *gorm.DB, log *logger.Logger) *RevenueReportUseCase {
 	return &RevenueReportUseCase{
-		db:  db,
+		db:              gormDB,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
 		log: log,
 	}
 }
@@ -121,7 +124,9 @@ func (uc *RevenueReportUseCase) Execute(ctx context.Context, input *RevenueRepor
 	}
 
 	// Platform fee percent (TODO: obtener de configuración)
-	platformFeePercent := 0.10
+	// Obtener platform_fee_percentage desde system_parameters (convertido a decimal)
+	platformFeePercentValue, _ := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
+	platformFeePercent := platformFeePercentValue / 100.0
 
 	// Convertir a data points con cálculos
 	dataPoints := make([]*RevenueDataPoint, len(rawDataPoints))

@@ -149,6 +149,7 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 		raffleNumberRepo,
 		userRepo,
 		auditRepo,
+		gormDB,
 		log,
 	)
 	listRafflesUseCase := raffleuc.NewListRafflesUseCase(raffleRepo)

@@ -3,6 +3,7 @@ package reports
 import (
 	"context"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -53,14 +54,16 @@ type RaffleLiquidationsReportOutput struct {
 
 // RaffleLiquidationsReportUseCase caso de uso para reporte de liquidaciones
 type RaffleLiquidationsReportUseCase struct {
+	systemParamRepo *db.PostgresSystemParameterRepository
 	db  *gorm.DB
 	log *logger.Logger
 }
 
 // NewRaffleLiquidationsReportUseCase crea una nueva instancia
-func NewRaffleLiquidationsReportUseCase(db *gorm.DB, log *logger.Logger) *RaffleLiquidationsReportUseCase {
+func NewRaffleLiquidationsReportUseCase(gormDB *gorm.DB, log *logger.Logger) *RaffleLiquidationsReportUseCase {
 	return &RaffleLiquidationsReportUseCase{
-		db:  db,
+		db:              gormDB,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
 		log: log,
 	}
 }
@@ -156,7 +159,8 @@ func (uc *RaffleLiquidationsReportUseCase) Execute(ctx context.Context, input *R
 			Scan(&grossRevenue)
 
 		// Platform fee (TODO: considerar custom commission de organizer)
-		platformFeePercent := 10.0
+		// Obtener platform_fee_percentage desde system_parameters
+		platformFeePercent, _ := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
 		platformFee := grossRevenue * platformFeePercent / 100.0
 		netRevenue := grossRevenue - platformFee
 

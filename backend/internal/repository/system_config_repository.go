@@ -10,12 +10,14 @@ import (
 
 // SystemConfig representa una configuración del sistema
 type SystemConfig struct {
-	ID        int64     `gorm:"primaryKey;autoIncrement"`
-	Key       string    `gorm:"type:varchar(255);uniqueIndex;not null"`
-	Value     string    `gorm:"type:jsonb;not null"` // JSON value
-	Category  string    `gorm:"type:varchar(100);index"`
-	UpdatedAt time.Time `gorm:"not null"`
-	UpdatedBy *int64    `gorm:"index"` // Admin ID que actualizó
+	ID          int64     `gorm:"primaryKey;autoIncrement"`
+	Key         string    `gorm:"type:varchar(255);uniqueIndex;not null"`
+	Value       string    `gorm:"type:jsonb;not null"` // JSON value
+	ValueType   string    `gorm:"column:value_type;type:varchar(20);default:'string'"` // string, int, float, bool, json
+	Category    string    `gorm:"type:varchar(100);index"`
+	Description *string   `gorm:"type:text"` // Descripción del parámetro
+	UpdatedAt   time.Time `gorm:"not null"`
+	UpdatedBy   *int64    `gorm:"index"` // Admin ID que actualizó
 }
 
 // TableName especifica el nombre de la tabla

@@ -273,7 +273,7 @@ export function RaffleDetailPage() {
   };
 
   const handlePublish = async () => {
-    if (!id) return;
+    if (!data?.raffle?.id) return;
 
     const confirmed = confirm(
       '⚠️ IMPORTANTE: Una vez publicado, el sorteo estará visible para todos los usuarios y NO podrás:\n\n' +
@@ -288,7 +288,7 @@ export function RaffleDetailPage() {
     if (!confirmed) return;
 
     try {
-      await publishMutation.mutateAsync(Number(id));
+      await publishMutation.mutateAsync(data.raffle.id);
       toast.success('Sorteo publicado exitosamente', {
         description: 'Ahora es visible para todos los usuarios'
       });
@@ -299,11 +299,11 @@ export function RaffleDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!id || !confirm('¿Estás seguro de eliminar este sorteo? Esta acción no se puede deshacer.'))
+    if (!data?.raffle?.id || !confirm('¿Estás seguro de eliminar este sorteo? Esta acción no se puede deshacer.'))
       return;
 
     try {
-      await deleteMutation.mutateAsync(Number(id));
+      await deleteMutation.mutateAsync(data.raffle.id);
       toast.success('Sorteo eliminado exitosamente');
       navigate('/raffles');
     } catch (error) {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 
 	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/internal/domain"
@@ -46,6 +47,7 @@ type CreateRaffleUseCase struct {
 	raffleNumberRepo db.RaffleNumberRepository
 	userRepo         domain.UserRepository
 	auditRepo        domain.AuditLogRepository
+	systemParamRepo  *db.PostgresSystemParameterRepository
 	logger           *logger.Logger
 }
 
@@ -55,6 +57,7 @@ func NewCreateRaffleUseCase(
 	raffleNumberRepo db.RaffleNumberRepository,
 	userRepo domain.UserRepository,
 	auditRepo domain.AuditLogRepository,
+	gormDB *gorm.DB,
 	logger *logger.Logger,
 ) *CreateRaffleUseCase {
 	return &CreateRaffleUseCase{
@@ -62,6 +65,7 @@ func NewCreateRaffleUseCase(
 		raffleNumberRepo: raffleNumberRepo,
 		userRepo:         userRepo,
 		auditRepo:        auditRepo,
+		systemParamRepo:  db.NewSystemParameterRepository(gormDB, logger),
 		logger:           logger,
 	}
 }
@@ -113,8 +117,13 @@ func (uc *CreateRaffleUseCase) Execute(ctx context.Context, input *CreateRaffleI
 		raffle.DrawMethod = input.DrawMethod
 	}
 
+	// Establecer platform fee percentage
 	if input.PlatformFeePercentage != nil {
 		raffle.PlatformFeePercentage = *input.PlatformFeePercentage
+	} else {
+		// Obtener el valor dinámico desde system_parameters
+		platformFeePercent, _ := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
+		raffle.PlatformFeePercentage = decimal.NewFromFloat(platformFeePercent)
 	}
 
 	// Validar la entidad

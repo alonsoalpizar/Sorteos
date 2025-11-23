@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sorteos-platform/backend/internal/adapters/db"
 	"github.com/sorteos-platform/backend/pkg/errors"
 	"github.com/sorteos-platform/backend/pkg/logger"
 	"gorm.io/gorm"
@@ -47,14 +48,16 @@ type CommissionBreakdownOutput struct {
 
 // CommissionBreakdownUseCase caso de uso para desglose de comisiones
 type CommissionBreakdownUseCase struct {
+	systemParamRepo *db.PostgresSystemParameterRepository
 	db  *gorm.DB
 	log *logger.Logger
 }
 
 // NewCommissionBreakdownUseCase crea una nueva instancia
-func NewCommissionBreakdownUseCase(db *gorm.DB, log *logger.Logger) *CommissionBreakdownUseCase {
+func NewCommissionBreakdownUseCase(gormDB *gorm.DB, log *logger.Logger) *CommissionBreakdownUseCase {
 	return &CommissionBreakdownUseCase{
-		db:  db,
+		db:              gormDB,
+		systemParamRepo: db.NewSystemParameterRepository(gormDB, log),
 		log: log,
 	}
 }
@@ -66,7 +69,8 @@ func (uc *CommissionBreakdownUseCase) Execute(ctx context.Context, input *Commis
 		return nil, errors.New("VALIDATION_FAILED", "date_from and date_to are required", 400, nil)
 	}
 
-	defaultCommissionPercent := 10.0
+	// Obtener platform_fee_percentage desde system_parameters
+	defaultCommissionPercent, _ := uc.systemParamRepo.GetFloat("platform_fee_percentage", 10.0)
 
 	// Obtener rifas completadas en el período con revenue y organizadores
 	type RaffleData struct {
