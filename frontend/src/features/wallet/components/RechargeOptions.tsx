@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CreditCard, Info, ArrowRight } from "lucide-react";
-import { useRechargeOptions, useAddFunds } from "../hooks/useWallet";
+import { useRechargeOptions, useAddFunds, usePurchaseCredits } from "../hooks/useWallet";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -26,6 +26,7 @@ function generateIdempotencyKey(): string {
 export const RechargeOptions = () => {
   const { data: optionsData, isLoading: optionsLoading } = useRechargeOptions();
   const addFundsMutation = useAddFunds();
+  const purchaseCreditsMutation = usePurchaseCredits();
   const { mode } = useUserMode();
   const isOrganizer = mode === 'organizer';
 
@@ -36,11 +37,22 @@ export const RechargeOptions = () => {
     if (selectedOptionIndex === null || !optionsData) return;
 
     const selectedOption = optionsData.options[selectedOptionIndex];
-    addFundsMutation.mutate({
-      amount: selectedOption.desired_credit,
-      payment_method: paymentMethod,
-      idempotency_key: generateIdempotencyKey(),
-    });
+
+    // Si el método de pago es tarjeta, usar Pagadito
+    if (paymentMethod === "card") {
+      purchaseCreditsMutation.mutate({
+        desired_credit: selectedOption.desired_credit,
+        currency: optionsData.currency || "CRC",
+        idempotency_key: generateIdempotencyKey(),
+      });
+    } else {
+      // Para otros métodos de pago, usar el flujo anterior
+      addFundsMutation.mutate({
+        amount: selectedOption.desired_credit,
+        payment_method: paymentMethod,
+        idempotency_key: generateIdempotencyKey(),
+      });
+    }
   };
 
   if (optionsLoading) {
@@ -111,11 +123,15 @@ export const RechargeOptions = () => {
       )}
 
       {/* Error alert */}
-      {addFundsMutation.isError && (
+      {(addFundsMutation.isError || purchaseCreditsMutation.isError) && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-sm text-red-900">
             Error al crear la recarga:{" "}
-            {addFundsMutation.error instanceof Error ? addFundsMutation.error.message : "Error desconocido"}
+            {addFundsMutation.error instanceof Error
+              ? addFundsMutation.error.message
+              : purchaseCreditsMutation.error instanceof Error
+              ? purchaseCreditsMutation.error.message
+              : "Error desconocido"}
           </p>
         </div>
       )}
@@ -261,11 +277,11 @@ export const RechargeOptions = () => {
       {selectedOptionIndex !== null && (
         <Button
           onClick={handleRecharge}
-          disabled={addFundsMutation.isPending}
+          disabled={addFundsMutation.isPending || purchaseCreditsMutation.isPending}
           className="w-full"
           size="lg"
         >
-          {addFundsMutation.isPending ? (
+          {(addFundsMutation.isPending || purchaseCreditsMutation.isPending) ? (
             <>
               <div className="w-5 h-5 mr-2 inline-block">
                 <LoadingSpinner />

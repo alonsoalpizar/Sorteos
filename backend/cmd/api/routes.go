@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,11 +21,15 @@ import (
 	"github.com/sorteos-platform/backend/internal/adapters/notifier"
 	"github.com/sorteos-platform/backend/internal/usecase/auth"
 	categoryuc "github.com/sorteos-platform/backend/internal/usecase/category"
+	creditsuc "github.com/sorteos-platform/backend/internal/usecase/credits"
 	imageuc "github.com/sorteos-platform/backend/internal/usecase/image"
 	profileuc "github.com/sorteos-platform/backend/internal/usecase/profile"
 	raffleuc "github.com/sorteos-platform/backend/internal/usecase/raffle"
+	walletuc "github.com/sorteos-platform/backend/internal/usecase/wallet"
 	"github.com/sorteos-platform/backend/internal/infrastructure/websocket"
+	"github.com/sorteos-platform/backend/internal/infrastructure/pagadito"
 	redisinfra "github.com/sorteos-platform/backend/internal/infrastructure/redis"
+	"github.com/sorteos-platform/backend/cmd/api/handlers"
 	"github.com/sorteos-platform/backend/pkg/config"
 	"github.com/sorteos-platform/backend/pkg/logger"
 )
@@ -329,4 +335,139 @@ func setupProfileRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, 
 		// Parámetros: cedula_front, cedula_back, selfie
 		profileGroup.POST("/kyc/:document_type", profileHdlr.UploadKYCDocument)
 	}
+}
+
+// loadPagaditoConfig carga la configuración de Pagadito desde la base de datos
+func loadPagaditoConfig(repo *db.PostgresPaymentProcessorRepository, log *logger.Logger) (*pagadito.Config, error) {
+	// Buscar procesador Pagadito activo (sandbox o producción)
+	processor, err := repo.FindByProvider("pagadito", true) // true = sandbox
+	if err != nil {
+		return nil, fmt.Errorf("error cargando configuración de Pagadito: %w", err)
+	}
+
+	if !processor.IsActive {
+		return nil, fmt.Errorf("Pagadito está deshabilitado en la configuración")
+	}
+
+	// Deserializar configuración del JSONB
+	var configMap map[string]interface{}
+	if err := json.Unmarshal(processor.Config, &configMap); err != nil {
+		return nil, fmt.Errorf("error deserializando configuración: %w", err)
+	}
+
+	uid, ok := configMap["uid"].(string)
+	if !ok {
+		return nil, fmt.Errorf("UID no encontrado en configuración")
+	}
+
+	wsk, ok := configMap["wsk"].(string)
+	if !ok {
+		return nil, fmt.Errorf("WSK no encontrado en configuración")
+	}
+
+	apiURL, ok := configMap["api_url"].(string)
+	if !ok {
+		return nil, fmt.Errorf("API URL no encontrado en configuración")
+	}
+
+	callbackURL, ok := configMap["callback_url"].(string)
+	if !ok {
+		return nil, fmt.Errorf("Callback URL no encontrado en configuración")
+	}
+
+	sandboxMode, _ := configMap["sandbox_mode"].(bool)
+
+	return &pagadito.Config{
+		UID:         uid,
+		WSK:         wsk,
+		SandboxMode: sandboxMode,
+		APIURL:      apiURL,
+		ReturnURL:   callbackURL,
+	}, nil
+}
+
+// setupCreditsRoutes configura las rutas de compra de créditos con Pagadito
+func setupCreditsRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, cfg *config.Config, log *logger.Logger) {
+	// Inicializar repositorios
+	creditPurchaseRepo := db.NewCreditPurchaseRepository(gormDB, log)
+	userRepo := db.NewUserRepository(gormDB)
+	walletRepo := db.NewWalletRepository(gormDB, log)
+	walletTransactionRepo := db.NewWalletTransactionRepository(gormDB, log)
+	auditRepo := db.NewAuditLogRepository(gormDB)
+	paymentProcessorRepo := db.NewPaymentProcessorRepository(gormDB, log)
+
+	// Cargar configuración de Pagadito desde base de datos
+	pagaditoConfig, err := loadPagaditoConfig(paymentProcessorRepo, log)
+	if err != nil {
+		log.Warn("No se pudo cargar configuración de Pagadito, rutas de créditos deshabilitadas",
+			logger.Error(err))
+		return
+	}
+
+	// Inicializar cliente Pagadito
+	pagaditoClient := pagadito.NewHTTPClient(pagaditoConfig)
+
+	// Inicializar token manager y middlewares
+	tokenMgr := redisAdapter.NewTokenManager(rdb, &cfg.JWT)
+	blacklistService := redisinfra.NewTokenBlacklistService(rdb)
+	authMiddleware := middleware.NewAuthMiddleware(tokenMgr, blacklistService, log)
+	rateLimiter := middleware.NewRateLimiter(rdb, log)
+
+	// Inicializar use cases de wallet (necesarios para acreditar fondos)
+	addFundsUC := walletuc.NewAddFundsUseCase(
+		walletRepo,
+		walletTransactionRepo,
+		userRepo,
+		auditRepo,
+		log,
+	)
+
+	// Inicializar use cases de créditos
+	purchaseCreditsUC := creditsuc.NewPurchaseCreditsUseCase(
+		creditPurchaseRepo,
+		walletRepo,
+		userRepo,
+		auditRepo,
+		pagaditoClient,
+		log,
+	)
+
+	processCallbackUC := creditsuc.NewProcessPagaditoCallbackUseCase(
+		creditPurchaseRepo,
+		walletRepo,
+		walletTransactionRepo,
+		auditRepo,
+		pagaditoClient,
+		addFundsUC,
+		log,
+	)
+
+	// Inicializar handlers
+	purchaseCreditsHandler := handlers.NewPurchaseCreditsHandler(purchaseCreditsUC, log)
+	pagaditoCallbackHandler := handlers.NewPagaditoCallbackHandler(processCallbackUC, log)
+	getPurchaseStatusHandler := handlers.NewGetPurchaseStatusHandler(log)
+
+	// Grupo de rutas de créditos
+	creditsGroup := router.Group("/api/v1/credits")
+	{
+		// POST /api/v1/credits/purchase - Comprar créditos (requiere autenticación)
+		creditsGroup.POST("/purchase",
+			authMiddleware.Authenticate(),
+			authMiddleware.RequireMinKYC("email_verified"),
+			rateLimiter.LimitByUser(20, time.Hour), // Max 20 compras por hora
+			purchaseCreditsHandler.Handle,
+		)
+
+		// GET /api/v1/credits/callback - Callback de Pagadito (PÚBLICO, sin auth)
+		creditsGroup.GET("/callback", pagaditoCallbackHandler.Handle)
+
+		// GET /api/v1/credits/purchase/:id - Obtener estado de compra (requiere auth)
+		creditsGroup.GET("/purchase/:id",
+			authMiddleware.Authenticate(),
+			getPurchaseStatusHandler.Handle,
+		)
+	}
+
+	log.Info("Rutas de créditos con Pagadito configuradas correctamente",
+		logger.String("callback_url", pagaditoConfig.ReturnURL))
 }

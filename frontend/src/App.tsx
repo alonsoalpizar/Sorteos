@@ -46,6 +46,9 @@ import { PaymentCancelPage } from "@/features/checkout/pages/PaymentCancelPage";
 
 // Wallet pages
 import { WalletPage } from "@/features/wallet/pages/WalletPage";
+import { CreditSuccess } from "@/features/wallet/pages/CreditSuccess";
+import { CreditFailed } from "@/features/wallet/pages/CreditFailed";
+import { CreditVerifying } from "@/features/wallet/pages/CreditVerifying";
 
 // Profile pages
 import { ProfilePage } from "@/features/profile/components/ProfilePage";
@@ -247,6 +250,32 @@ function AppRoutes() {
                 <MainLayout>
                   <WalletPage />
                 </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Credit Purchase Result Pages (no layout for full screen experience) */}
+          <Route
+            path="/credits/success"
+            element={
+              <ProtectedRoute>
+                <CreditSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/credits/failed"
+            element={
+              <ProtectedRoute>
+                <CreditFailed />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/credits/verifying"
+            element={
+              <ProtectedRoute>
+                <CreditVerifying />
               </ProtectedRoute>
             }
           />

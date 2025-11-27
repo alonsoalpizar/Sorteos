@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { Link } from "react-router-dom";
 import {
   Users,
   UserCog,
@@ -127,85 +128,105 @@ export function AdminDashboardPage() {
 
         {/* Módulos Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <h3 className="font-semibold text-slate-900">Usuarios</h3>
+          <Link to="/admin/users" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-slate-900">Usuarios</h3>
+              </div>
+              <p className="text-sm text-slate-600">Gestión completa de usuarios, KYC, suspensiones</p>
             </div>
-            <p className="text-sm text-slate-600">Gestión completa de usuarios, KYC, suspensiones</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-green-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <UserCog className="w-5 h-5 text-green-600" />
-              <h3 className="font-semibold text-slate-900">Organizadores</h3>
+          <Link to="/admin/organizers" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-green-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <UserCog className="w-5 h-5 text-green-600" />
+                <h3 className="font-semibold text-slate-900">Organizadores</h3>
+              </div>
+              <p className="text-sm text-slate-600">Perfiles, comisiones, verificación</p>
             </div>
-            <p className="text-sm text-slate-600">Perfiles, comisiones, verificación</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-amber-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <Ticket className="w-5 h-5 text-amber-600" />
-              <h3 className="font-semibold text-slate-900">Rifas</h3>
+          <Link to="/admin/raffles" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-amber-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <Ticket className="w-5 h-5 text-amber-600" />
+                <h3 className="font-semibold text-slate-900">Rifas</h3>
+              </div>
+              <p className="text-sm text-slate-600">Control administrativo, suspensiones, sorteos manuales</p>
             </div>
-            <p className="text-sm text-slate-600">Control administrativo, suspensiones, sorteos manuales</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-purple-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <CreditCard className="w-5 h-5 text-purple-600" />
-              <h3 className="font-semibold text-slate-900">Pagos</h3>
+          <Link to="/admin/payments" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <CreditCard className="w-5 h-5 text-purple-600" />
+                <h3 className="font-semibold text-slate-900">Pagos</h3>
+              </div>
+              <p className="text-sm text-slate-600">Procesamiento de refunds y disputas</p>
             </div>
-            <p className="text-sm text-slate-600">Procesamiento de refunds y disputas</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <DollarSign className="w-5 h-5 text-blue-600" />
-              <h3 className="font-semibold text-slate-900">Liquidaciones</h3>
+          <Link to="/admin/settlements" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-slate-900">Liquidaciones</h3>
+              </div>
+              <p className="text-sm text-slate-600">Aprobación y pagos a organizadores</p>
             </div>
-            <p className="text-sm text-slate-600">Aprobación y pagos a organizadores</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-orange-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <FolderTree className="w-5 h-5 text-orange-600" />
-              <h3 className="font-semibold text-slate-900">Categorías</h3>
+          <Link to="/admin/categories" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <FolderTree className="w-5 h-5 text-orange-600" />
+                <h3 className="font-semibold text-slate-900">Categorías</h3>
+              </div>
+              <p className="text-sm text-slate-600">CRUD completo de categorías de rifas</p>
             </div>
-            <p className="text-sm text-slate-600">CRUD completo de categorías de rifas</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-green-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <BarChart3 className="w-5 h-5 text-green-600" />
-              <h3 className="font-semibold text-slate-900">Reportes</h3>
+          <Link to="/admin/reports" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-green-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <BarChart3 className="w-5 h-5 text-green-600" />
+                <h3 className="font-semibold text-slate-900">Reportes</h3>
+              </div>
+              <p className="text-sm text-slate-600">Métricas financieras y operacionales</p>
             </div>
-            <p className="text-sm text-slate-600">Métricas financieras y operacionales</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <Bell className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-semibold text-slate-900">Notificaciones</h3>
+          <Link to="/admin/notifications" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <Bell className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-semibold text-slate-900">Notificaciones</h3>
+              </div>
+              <p className="text-sm text-slate-600">Envío de emails administrativos</p>
             </div>
-            <p className="text-sm text-slate-600">Envío de emails administrativos</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-400 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <Settings className="w-5 h-5 text-slate-600" />
-              <h3 className="font-semibold text-slate-900">Configuración</h3>
+          <Link to="/admin/system" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-400 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <Settings className="w-5 h-5 text-slate-600" />
+                <h3 className="font-semibold text-slate-900">Configuración</h3>
+              </div>
+              <p className="text-sm text-slate-600">Parámetros del sistema</p>
             </div>
-            <p className="text-sm text-slate-600">Parámetros del sistema</p>
-          </div>
+          </Link>
 
-          <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <h3 className="font-semibold text-slate-900">Auditoría</h3>
+          <Link to="/admin/audit" className="block">
+            <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-slate-900">Auditoría</h3>
+              </div>
+              <p className="text-sm text-slate-600">Logs de todas las acciones administrativas</p>
             </div>
-            <p className="text-sm text-slate-600">Logs de todas las acciones administrativas</p>
-          </div>
+          </Link>
         </div>
 
         {/* Estado del desarrollo */}

@@ -65,6 +65,24 @@ func (r *PostgresPaymentProcessorRepository) GetByProvider(provider domain.Proce
 	return &processor, nil
 }
 
+// FindByProvider obtiene un procesador por proveedor y modo sandbox
+func (r *PostgresPaymentProcessorRepository) FindByProvider(provider string, isSandbox bool) (*domain.PaymentProcessor, error) {
+	var processor domain.PaymentProcessor
+
+	if err := r.db.Where("provider = ? AND is_sandbox = ?", provider, isSandbox).First(&processor).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errors.ErrNotFound
+		}
+		r.log.Error("Error finding payment processor",
+			logger.String("provider", provider),
+			logger.Bool("is_sandbox", isSandbox),
+			logger.Error(err))
+		return nil, errors.Wrap(errors.ErrDatabaseError, err)
+	}
+
+	return &processor, nil
+}
+
 // GetActive obtiene el procesador activo
 func (r *PostgresPaymentProcessorRepository) GetActive() (*domain.PaymentProcessor, error) {
 	var processor domain.PaymentProcessor

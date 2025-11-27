@@ -118,3 +118,35 @@ export interface AddFundsOutput {
   status: TransactionStatus;
   created_at: string;
 }
+
+// Purchase Credits (Pagadito)
+export interface PurchaseCreditsInput {
+  desired_credit: string;
+  currency: string;
+  idempotency_key: string;
+}
+
+export interface PurchaseCreditsOutput {
+  purchase_id: number;
+  purchase_uuid: string;
+  payment_url: string;
+  ern: string;
+  desired_credit: string;
+  charge_amount: string;
+  expires_at: string;
+}
+
+// Credit Purchase Status
+export type CreditPurchaseStatus = "pending" | "processing" | "completed" | "failed" | "expired";
+
+export interface CreditPurchase {
+  id: number;
+  uuid: string;
+  desired_credit: string;
+  charge_amount: string;
+  currency: string;
+  status: CreditPurchaseStatus;
+  pagadito_reference: string | null;
+  created_at: string;
+  completed_at: string | null;
+}

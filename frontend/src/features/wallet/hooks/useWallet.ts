@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { walletApi } from "../api/walletApi";
-import type { ListTransactionsInput, AddFundsInput } from "../types";
+import type { ListTransactionsInput, AddFundsInput, PurchaseCreditsInput } from "../types";
 import { toast } from "sonner";
 
 // Query Keys
@@ -69,6 +69,41 @@ export function useAddFunds() {
     },
     onError: (error: any) => {
       toast.error("Error al procesar recarga", {
+        description: error.response?.data?.error?.message || error.message,
+      });
+    },
+  });
+}
+
+// Purchase Credits Mutation (Pagadito)
+export function usePurchaseCredits() {
+  return useMutation({
+    mutationFn: (input: PurchaseCreditsInput) => {
+      console.log("========================================");
+      console.log("FRONTEND - Enviando purchaseCredits");
+      console.log("========================================");
+      console.log("Input:", JSON.stringify(input, null, 2));
+      console.log("========================================");
+      return walletApi.purchaseCredits(input);
+    },
+    onSuccess: (data) => {
+      console.log("========================================");
+      console.log("FRONTEND - Respuesta exitosa");
+      console.log("========================================");
+      console.log("Response:", JSON.stringify(data, null, 2));
+      console.log("Payment URL:", data.payment_url);
+      console.log("========================================");
+      // Redirigir al usuario a la URL de pago de Pagadito
+      window.location.href = data.payment_url;
+    },
+    onError: (error: any) => {
+      console.error("========================================");
+      console.error("FRONTEND - Error en purchaseCredits");
+      console.error("========================================");
+      console.error("Error:", error);
+      console.error("Response:", error.response?.data);
+      console.error("========================================");
+      toast.error("Error al procesar la compra", {
         description: error.response?.data?.error?.message || error.message,
       });
     },
