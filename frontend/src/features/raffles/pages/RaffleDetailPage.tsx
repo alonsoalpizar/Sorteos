@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useRaffleDetail, usePublishRaffle, useDeleteRaffle } from '../../../hooks/useRaffles';
+import { useRaffleDetail, usePublishRaffle, useDeleteRaffle, useRaffleBuyers } from '../../../hooks/useRaffles';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRaffleWebSocket } from '../../../hooks/useRaffleWebSocket';
 import { useUserMode } from '../../../contexts/UserModeContext';
@@ -49,6 +49,12 @@ export function RaffleDetailPage() {
 
   const isOwner = user && data?.raffle && user.id === data.raffle.user_id;
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
+  // Cargar lista de compradores (solo para owner)
+  const { data: buyersData, isLoading: isLoadingBuyers } = useRaffleBuyers(
+    data?.raffle?.uuid || '',
+    { enabled: !!isOwner && !!data?.raffle?.uuid }
+  );
 
   // WebSocket connection for real-time updates
   const { isConnected, onNumberUpdate, onReservationExpired } = useRaffleWebSocket(data?.raffle?.uuid);
@@ -390,9 +396,9 @@ export function RaffleDetailPage() {
     }
   };
 
-  const handlePayNow = async () => {
-    console.log('handlePayNow - activeReservation:', activeReservation);
-    console.log('handlePayNow - selectedNumbers:', selectedNumbers);
+  const handleReserve = async () => {
+    console.log('handleReserve - activeReservation:', activeReservation);
+    console.log('handleReserve - selectedNumbers:', selectedNumbers);
 
     if (!activeReservation) {
       toast.error('No tienes números reservados');
@@ -406,19 +412,17 @@ export function RaffleDetailPage() {
     }
 
     try {
-      // TODO: Implementar pago desde wallet (deducir balance)
-
-      // Confirmar reserva (marca como 'confirmed' y deja de contar timeout)
+      // Confirmar reserva (marca como 'confirmed' con timeout de 24 horas)
       await reservationService.confirm(activeReservation.id);
 
       // Limpiar estado local
       setActiveReservation(null);
       setSelectedNumbers([]);
 
-      // Mostrar mensaje de éxito
-      toast.success('¡Gracias por tu compra!', {
-        description: `Has comprado ${selectedNumbers.length} número(s). Redirigiendo a tus tickets...`,
-        duration: 3000,
+      // Mostrar mensaje de éxito con instrucciones
+      toast.success('¡Números reservados exitosamente!', {
+        description: `Tienes 24 horas para coordinar el pago con el organizador. De lo contrario, los números se liberarán automáticamente.`,
+        duration: 8000,
       });
 
       // Redirigir a /my-tickets después de 2 segundos
@@ -426,8 +430,8 @@ export function RaffleDetailPage() {
         navigate('/my-tickets');
       }, 2000);
     } catch (error) {
-      console.error('Error al procesar pago:', error);
-      toast.error('Error al procesar el pago');
+      console.error('Error al confirmar reserva:', error);
+      toast.error('Error al confirmar la reserva');
     }
   };
 
@@ -522,14 +526,14 @@ export function RaffleDetailPage() {
                     </div>
                     <Button
                       size="lg"
-                      onClick={handlePayNow}
+                      onClick={handleReserve}
                       disabled={isLoadingReservation}
                       className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg w-full"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Pagar Ahora
+                      Reservar
                     </Button>
                     <Button
                       size="sm"
@@ -739,6 +743,53 @@ export function RaffleDetailPage() {
         </div>
       )}
 
+      {/* Organizer Info - Importante para coordinar pago */}
+      {raffle.organizer && !isOwner && (
+        <div className="bg-gradient-to-r from-blue-50 to-teal-50 dark:from-slate-800 dark:to-slate-800 rounded-lg border border-blue-200 dark:border-slate-700 p-6">
+          <div className="flex items-start gap-4">
+            {/* Avatar */}
+            <div className="flex-shrink-0">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                {raffle.organizer.name.charAt(0).toUpperCase()}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  {raffle.organizer.name}
+                </h3>
+                {raffle.organizer.verified && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Verificado
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Organizador de este sorteo
+              </p>
+
+              {/* Info box para coordinación de pago */}
+              <div className="bg-white/60 dark:bg-slate-700/50 rounded-lg p-3 border border-blue-100 dark:border-slate-600">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    <span className="font-medium">Coordina el pago directamente</span> con el organizador.
+                    Tienes <span className="font-semibold text-blue-600 dark:text-blue-400">24 horas</span> después de reservar para completar el pago.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Raffle Info */}
       <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
@@ -787,13 +838,151 @@ export function RaffleDetailPage() {
         </div>
       )}
 
+      {/* Lista de Compradores - Solo para Owner */}
+      {isOwner && (
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Compradores y Reservaciones
+            </h2>
+            {buyersData && (
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-green-600 dark:text-green-400">
+                  {buyersData.total_sold} vendidos
+                </span>
+                <span className="text-yellow-600 dark:text-yellow-400">
+                  {buyersData.total_reserved} reservados
+                </span>
+              </div>
+            )}
+          </div>
+
+          {isLoadingBuyers ? (
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : !buyersData?.buyers || buyersData.buyers.length === 0 ? (
+            <div className="text-center py-8">
+              <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <p className="text-slate-500 font-medium">No hay compradores aún</p>
+              <p className="text-sm text-slate-400 mt-1">
+                Cuando alguien reserve o compre números, aparecerá aquí
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {buyersData.buyers.map((buyer) => (
+                <div
+                  key={buyer.user_id}
+                  className={cn(
+                    "rounded-lg p-4 border",
+                    buyer.status === 'sold'
+                      ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                      : buyer.status === 'reserved'
+                      ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                      : "bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Info del comprador */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+                          {buyer.name}
+                        </h3>
+                        <span className={cn(
+                          "px-2 py-0.5 text-xs font-medium rounded-full",
+                          buyer.status === 'sold'
+                            ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200"
+                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-200"
+                        )}>
+                          {buyer.status === 'sold' ? 'Vendido' : 'Reservado'}
+                        </span>
+                      </div>
+
+                      {/* Email y teléfono copiables */}
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-400 mb-2">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(buyer.email);
+                            toast.success('Email copiado');
+                          }}
+                          className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          title="Click para copiar"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          {buyer.email}
+                        </button>
+                        {buyer.phone && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(buyer.phone!);
+                              toast.success('Teléfono copiado');
+                            }}
+                            className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                            title="Click para copiar"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            {buyer.phone}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Números */}
+                      <div className="flex flex-wrap gap-1">
+                        {buyer.numbers.sort((a, b) => Number(a) - Number(b)).map((num) => (
+                          <span
+                            key={num}
+                            className={cn(
+                              "px-2 py-0.5 text-xs font-mono rounded",
+                              buyer.status === 'sold'
+                                ? "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-100"
+                                : "bg-yellow-200 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100"
+                            )}
+                          >
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Expiración para reservados */}
+                      {buyer.status === 'reserved' && buyer.expires_at && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                          Expira: {new Date(buyer.expires_at).toLocaleString('es-CR')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Total */}
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-lg font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(Number(buyer.total_amount))}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {buyer.numbers.length} número{buyer.numbers.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Floating Checkout Button */}
       {!isOwner && raffle.status === 'active' && selectedNumbers.length > 0 && (
         <FloatingCheckoutButton
           selectedCount={selectedNumbers.length}
           selectedNumbers={selectedNumbers}
           totalAmount={selectedNumbers.length * Number(raffle.price_per_number)}
-          onCheckout={handlePayNow}
+          onCheckout={handleReserve}
           onCancel={handleClearSelection}
           disabled={!user || user?.kyc_level === 'none' || isLoadingReservation}
         />

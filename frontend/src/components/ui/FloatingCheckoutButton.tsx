@@ -1,4 +1,4 @@
-import { CreditCard, X } from 'lucide-react';
+import { Clock, X } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/lib/utils';
 
@@ -69,8 +69,8 @@ export function FloatingCheckoutButton({
             disabled={disabled}
             className="rounded-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
           >
-            <CreditCard className="w-5 h-5 mr-2" />
-            Pagar Ahora
+            <Clock className="w-5 h-5 mr-2" />
+            Reservar
           </Button>
         </div>
       </div>

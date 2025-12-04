@@ -186,3 +186,23 @@ export interface UserTicketsResponse {
     total_pages: number;
   };
 }
+
+// Tipos para lista de compradores (solo para organizador)
+export interface BuyerInfo {
+  user_id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  numbers: string[];
+  total_amount: string;
+  status: 'sold' | 'reserved' | 'mixed';
+  reserved_at?: string;
+  expires_at?: string;
+  sold_at?: string;
+}
+
+export interface RaffleBuyersResponse {
+  buyers: BuyerInfo[];
+  total_sold: number;
+  total_reserved: number;
+}

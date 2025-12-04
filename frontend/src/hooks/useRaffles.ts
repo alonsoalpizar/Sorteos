@@ -14,6 +14,7 @@ export const raffleKeys = {
   details: () => [...raffleKeys.all, 'detail'] as const,
   detail: (id: number | string) => [...raffleKeys.details(), id] as const,
   myTickets: (page?: number) => [...raffleKeys.all, 'my-tickets', page] as const,
+  buyers: (raffleId: string) => [...raffleKeys.all, 'buyers', raffleId] as const,
 };
 
 /**
@@ -124,5 +125,22 @@ export function useMyTickets(page: number = 1, pageSize: number = 20) {
   return useQuery({
     queryKey: raffleKeys.myTickets(page),
     queryFn: () => rafflesApi.getMyTickets(page, pageSize),
+  });
+}
+
+/**
+ * Hook para obtener lista de compradores de un sorteo (solo owner)
+ */
+export function useRaffleBuyers(
+  raffleId: string,
+  options?: { includeSold?: boolean; includeReserved?: boolean; enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: raffleKeys.buyers(raffleId),
+    queryFn: () => rafflesApi.getBuyers(raffleId, {
+      includeSold: options?.includeSold ?? true,
+      includeReserved: options?.includeReserved ?? true,
+    }),
+    enabled: options?.enabled !== false && !!raffleId,
   });
 }

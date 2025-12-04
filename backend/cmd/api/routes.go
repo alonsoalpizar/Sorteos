@@ -174,6 +174,7 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	suspendRaffleUseCase := raffleuc.NewSuspendRaffleUseCase(raffleRepo, auditRepo)
 	deleteRaffleUseCase := raffleuc.NewDeleteRaffleUseCase(raffleRepo, auditRepo)
 	getUserTicketsUseCase := raffleuc.NewGetUserTicketsUseCase(raffleNumberRepo, raffleRepo)
+	listRaffleBuyersUseCase := raffleuc.NewListRaffleBuyersUseCase(raffleRepo, raffleNumberRepo, userRepo)
 
 	// Use case de categorías
 	listCategoriesUseCase := categoryuc.NewListCategoriesUseCase(categoryRepo, log)
@@ -188,12 +189,13 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 	// Inicializar handlers
 	createRaffleHandler := raffleHandler.NewCreateRaffleHandler(createRaffleUseCase)
 	listRafflesHandler := raffleHandler.NewListRafflesHandler(listRafflesUseCase)
-	getRaffleDetailHandler := raffleHandler.NewGetRaffleDetailHandler(getRaffleDetailUseCase, raffleNumberRepo)
+	getRaffleDetailHandler := raffleHandler.NewGetRaffleDetailHandler(getRaffleDetailUseCase, raffleNumberRepo, userRepo)
 	publishRaffleHandler := raffleHandler.NewPublishRaffleHandler(publishRaffleUseCase)
 	updateRaffleHandler := raffleHandler.NewUpdateRaffleHandler(updateRaffleUseCase)
 	suspendRaffleHandler := raffleHandler.NewSuspendRaffleHandler(suspendRaffleUseCase)
 	deleteRaffleHandler := raffleHandler.NewDeleteRaffleHandler(deleteRaffleUseCase)
 	getUserTicketsHandler := raffleHandler.NewGetUserTicketsHandler(getUserTicketsUseCase)
+	listRaffleBuyersHandler := raffleHandler.NewListRaffleBuyersHandler(listRaffleBuyersUseCase)
 
 	// Handler de categorías
 	listCategoriesHandler := categoryHandler.NewListCategoriesHandler(listCategoriesUseCase)
@@ -232,6 +234,9 @@ func setupRaffleRoutes(router *gin.Engine, gormDB *gorm.DB, rdb *redis.Client, c
 			protected.POST("/:id/images", uploadImageHandler.Handle)                    // Subir imagen
 			protected.DELETE("/:id/images/:image_id", deleteImageHandler.Handle)        // Eliminar imagen
 			protected.PUT("/:id/images/:image_id/primary", setPrimaryImageHandler.Handle) // Establecer primaria
+
+			// Lista de compradores (solo para owner del sorteo)
+			protected.GET("/:id/buyers", listRaffleBuyersHandler.Handle)
 		}
 
 		// Detalle de sorteo - DESPUÉS de rutas específicas para evitar conflictos

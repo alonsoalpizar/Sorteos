@@ -45,16 +45,19 @@ type RaffleImageDTO struct {
 type GetRaffleDetailHandler struct {
 	useCase          *raffleuc.GetRaffleDetailUseCase
 	raffleNumberRepo db.RaffleNumberRepository
+	userRepo         domain.UserRepository
 }
 
 // NewGetRaffleDetailHandler crea una nueva instancia
 func NewGetRaffleDetailHandler(
 	useCase *raffleuc.GetRaffleDetailUseCase,
 	raffleNumberRepo db.RaffleNumberRepository,
+	userRepo domain.UserRepository,
 ) *GetRaffleDetailHandler {
 	return &GetRaffleDetailHandler{
 		useCase:          useCase,
 		raffleNumberRepo: raffleNumberRepo,
+		userRepo:         userRepo,
 	}
 }
 
@@ -84,7 +87,37 @@ func (h *GetRaffleDetailHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// 4. Determinar el tipo de usuario y construir DTO apropiado
+	// 4. Obtener información del organizador
+	var organizerInfo *OrganizerInfo
+	organizer, err := h.userRepo.FindByID(output.Raffle.UserID)
+	if err == nil && organizer != nil {
+		// Construir nombre del organizador
+		name := "Organizador"
+		if organizer.FirstName != nil && organizer.LastName != nil {
+			name = *organizer.FirstName + " " + *organizer.LastName
+		} else if organizer.FirstName != nil {
+			name = *organizer.FirstName
+		} else {
+			// Usar parte del email como fallback
+			name = organizer.Email[:min(len(organizer.Email), 10)] + "..."
+		}
+
+		// Verificar si el organizador tiene KYC verificado (email_verified o superior)
+		verified := organizer.KYCLevel != domain.KYCLevelNone
+
+		organizerInfo = &OrganizerInfo{
+			Name:     name,
+			Verified: verified,
+		}
+	} else {
+		// Fallback si no se encuentra el usuario
+		organizerInfo = &OrganizerInfo{
+			Name:     "Organizador",
+			Verified: false,
+		}
+	}
+
+	// 5. Determinar el tipo de usuario y construir DTO apropiado
 	var raffleDTO interface{}
 
 	// Intentar obtener user_id del contexto (si está autenticado)
@@ -94,23 +127,23 @@ func (h *GetRaffleDetailHandler) Handle(c *gin.Context) {
 
 	if !isAuthenticated {
 		// Usuario NO autenticado -> PublicRaffleDTO
-		raffleDTO = toPublicRaffleDTO(output.Raffle)
+		raffleDTO = toPublicRaffleDTOWithOrganizer(output.Raffle, organizerInfo)
 	} else {
 		userIDInt64, ok := userID.(int64)
 		if !ok {
-			raffleDTO = toPublicRaffleDTO(output.Raffle)
+			raffleDTO = toPublicRaffleDTOWithOrganizer(output.Raffle, organizerInfo)
 		} else if userIDInt64 == output.Raffle.UserID {
 			// Usuario es el dueño del sorteo -> OwnerRaffleDTO
-			raffleDTO = toOwnerRaffleDTO(output.Raffle)
+			raffleDTO = toOwnerRaffleDTOWithOrganizer(output.Raffle, organizerInfo)
 		} else {
 			// Usuario autenticado pero no es el dueño -> verificar si ha comprado
 			myTotalSpent, myNumbersCount, err := h.raffleNumberRepo.GetUserSpentOnRaffle(output.Raffle.ID, userIDInt64)
 			if err != nil || myNumbersCount == 0 {
 				// No ha comprado o error -> PublicRaffleDTO
-				raffleDTO = toPublicRaffleDTO(output.Raffle)
+				raffleDTO = toPublicRaffleDTOWithOrganizer(output.Raffle, organizerInfo)
 			} else {
 				// Ha comprado -> BuyerRaffleDTO
-				raffleDTO = toBuyerRaffleDTO(output.Raffle, myTotalSpent, myNumbersCount)
+				raffleDTO = toBuyerRaffleDTOWithOrganizer(output.Raffle, organizerInfo, myTotalSpent, myNumbersCount)
 			}
 		}
 	}

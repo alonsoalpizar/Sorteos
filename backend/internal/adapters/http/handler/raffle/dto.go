@@ -51,8 +51,16 @@ type OwnerRaffleDTO struct {
 	SettlementStatus      string           `json:"settlement_status"`
 }
 
-// toPublicRaffleDTO convierte un domain.Raffle a DTO público
+// toPublicRaffleDTO convierte un domain.Raffle a DTO público (legacy, usa toPublicRaffleDTOWithOrganizer)
 func toPublicRaffleDTO(raffle *domain.Raffle) *PublicRaffleDTO {
+	return toPublicRaffleDTOWithOrganizer(raffle, &OrganizerInfo{
+		Name:     "Organizador",
+		Verified: false,
+	})
+}
+
+// toPublicRaffleDTOWithOrganizer convierte un domain.Raffle a DTO público con info del organizador
+func toPublicRaffleDTOWithOrganizer(raffle *domain.Raffle, organizer *OrganizerInfo) *PublicRaffleDTO {
 	dto := &PublicRaffleDTO{
 		ID:             raffle.ID,
 		UUID:           raffle.UUID.String(),
@@ -68,10 +76,7 @@ func toPublicRaffleDTO(raffle *domain.Raffle) *PublicRaffleDTO {
 		AvailableCount: raffle.TotalNumbers - raffle.SoldCount - raffle.ReservedCount,
 		CategoryID:     raffle.CategoryID,
 		CreatedAt:      raffle.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		Organizer: &OrganizerInfo{
-			Name:     "Organizador", // TODO: Obtener nombre real del usuario
-			Verified: true,          // TODO: Verificar KYC del organizador
-		},
+		Organizer:      organizer,
 	}
 
 	if raffle.PublishedAt != nil {
@@ -82,7 +87,7 @@ func toPublicRaffleDTO(raffle *domain.Raffle) *PublicRaffleDTO {
 	return dto
 }
 
-// toBuyerRaffleDTO convierte a DTO de comprador con su gasto personal
+// toBuyerRaffleDTO convierte a DTO de comprador con su gasto personal (legacy)
 func toBuyerRaffleDTO(raffle *domain.Raffle, myTotalSpent string, myNumbersCount int) *BuyerRaffleDTO {
 	publicDTO := toPublicRaffleDTO(raffle)
 
@@ -93,9 +98,35 @@ func toBuyerRaffleDTO(raffle *domain.Raffle, myTotalSpent string, myNumbersCount
 	}
 }
 
-// toOwnerRaffleDTO convierte a DTO completo (solo para owner/admin)
+// toBuyerRaffleDTOWithOrganizer convierte a DTO de comprador con info del organizador
+func toBuyerRaffleDTOWithOrganizer(raffle *domain.Raffle, organizer *OrganizerInfo, myTotalSpent string, myNumbersCount int) *BuyerRaffleDTO {
+	publicDTO := toPublicRaffleDTOWithOrganizer(raffle, organizer)
+
+	return &BuyerRaffleDTO{
+		PublicRaffleDTO: *publicDTO,
+		MyTotalSpent:    myTotalSpent,
+		MyNumbersCount:  myNumbersCount,
+	}
+}
+
+// toOwnerRaffleDTO convierte a DTO completo (solo para owner/admin) (legacy)
 func toOwnerRaffleDTO(raffle *domain.Raffle) *OwnerRaffleDTO {
 	publicDTO := toPublicRaffleDTO(raffle)
+
+	return &OwnerRaffleDTO{
+		PublicRaffleDTO:       *publicDTO,
+		UserID:                raffle.UserID,
+		TotalRevenue:          raffle.TotalRevenue.String(),
+		PlatformFeePercentage: raffle.PlatformFeePercentage.String(),
+		PlatformFeeAmount:     raffle.PlatformFeeAmount.String(),
+		NetAmount:             raffle.NetAmount.String(),
+		SettlementStatus:      string(raffle.SettlementStatus),
+	}
+}
+
+// toOwnerRaffleDTOWithOrganizer convierte a DTO completo con info del organizador
+func toOwnerRaffleDTOWithOrganizer(raffle *domain.Raffle, organizer *OrganizerInfo) *OwnerRaffleDTO {
+	publicDTO := toPublicRaffleDTOWithOrganizer(raffle, organizer)
 
 	return &OwnerRaffleDTO{
 		PublicRaffleDTO:       *publicDTO,
