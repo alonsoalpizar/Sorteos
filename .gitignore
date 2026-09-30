@@ -24,8 +24,10 @@ yarn-error.log*
 
 # Variables de entorno (pero dejar .env.example)
 .env
+.env.local
 .env.production
 .env.development
+.env.pre-virtual
 
 # IDE / Editores
 .vscode/
